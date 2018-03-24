@@ -50,12 +50,14 @@ class bapProject():
 		bedtools_genome, blacklist_file, tss_file, macs2_genome_size, bs_genome, 
 		bedtools_path, bowtie2_path, java_path, macs2_path, samtools_path, r_path):
 
-		# Figure out operating system
+		# Figure out operating system just for funzies; not presently used
 		self.os = "linux"
 		if(platform.platform()[0:5]=="Darwi"):
 			self.os = "mac"
-		
+	
+		#----------------------------------
 		# fastq processing specific options
+		#----------------------------------
 		if(mode == "fastq"):	
 			
 			# Need to align with bowtie2
@@ -67,8 +69,17 @@ class bapProject():
 				sys.exit("ERROR: cannot find bowtie2 index; specify with --bowtie2-index and make sure to add the prefix along with the folder path")
 			else:
 				self.bowtie2_index = bowtie2_index
+				
+		#-----------------------------------------
+		# Verify R and all of its goodies are here
+		#-----------------------------------------
+		R = get_software_path('R', r_path)
+		check_R_packages(['Rsamtools', 'GenomicAlignments', 'GenomicRanges', 'BiocParallel', 'dplyr', 'SummarizedExperiment'], R)
+		self.R = R
 		
+		#----------------------------------
 		# Assign straightforward attributes
+		#----------------------------------
 		self.extract_mito = extract_mito
 		self.cluster = cluster
 		self.jobs = jobs
@@ -83,7 +94,9 @@ class bapProject():
 		if not overwrite:
 			self.samples, self.fastq1, self.fastq2 = filterExistingSamples(self.samples, self.fastq1, self.fastq2, output)
 		
+		#------------------------
 		# Handle reference genome
+		#------------------------
 		self.reference_genome = reference_genome
 		if any(self.reference_genome == s for s in supported_genomes):
 			click.echo(gettime() + "Found designated reference genome: %s" % self.reference_genome)
@@ -101,8 +114,10 @@ class bapProject():
 					sys.exit("ERROR: specify valid reference genome with --reference-genome flag; QUITTING")
 				else:
 					sys.exit("ERROR: non-supported reference genome specified so these five must be validly specified: --bedtools-genome, --blacklist-file, --tss-file; QUITTING")
-					
+		
+		#------------------------------		
 		# Make sure all files are valid
+		#------------------------------	
 		if(bedtools_genome != ""):
 			if(os.path.isfile(bedtools_genome)):
 				self.bedtoolsGenomeFile = bedtools_genome
@@ -121,15 +136,12 @@ class bapProject():
 			else: 
 				sys.exit("Could not find the transcription start sites file: %s" % tss_file)		
 		
-		
-	# Define a method to dump the object as a .yaml/dictionary
+	#--------------------------------------------------------------------------------
+	# Define a method to dump the object as a .yaml/dictionary for use in other files
+	#--------------------------------------------------------------------------------
 	def __iter__(self):
 		
 		# Purposefully skip samples, fastq1, fastq2 -- will put individual samples there in call
-		yield 'py_trim', self.py_trim
-		yield 'PEAT', self.PEAT
-		yield 'bg2bw', self.bg2bw
-		yield 'bedclip', self.bedclip
 		yield 'script_dir', self.script_dir
 		yield 'tssFile', self.tssFile
 		yield 'blacklistFile', self.blacklistFile

@@ -38,7 +38,10 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 
-@click.option('--R-path', default = "", help='Path to R; by default, assumes that R is in PATH')
+@click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
+
+@click.option('--barcode-tag', '-b', default = "XB", help='Tag in the .bam file(s) that point to the barcode.')
+@click.option('--minimum-barcode-fragments', '-bf', default = "XB", help='Tag in the .bam file(s) that point to the barcode.')
 
 @click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH; only needed for "fastq" mode.')
 @click.option('--bowtie2-index', '-bi', default = "", help='Path to the bowtie2 index; should be specified as if you were calling bowtie2 (with file index prefix); only needed for "fastq" mode.')
@@ -48,13 +51,14 @@ def main(mode, input, output, ncores,
 	cluster, jobs,
 	extract_mito, keep_temp_files,
 	bedtools_genome, blacklist_file, tss_file, r_path, 
+	barcode_tag, minimum_barcode_fragments,
 	bowtie2_path, bowtie2_index):
 	
 	"""
 	bap: Bead-based scATAC-seq data Processing \n
 	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
 	
-	modes = ['bam', 'check', 'support']\n
+	mode = ['bam', 'check', 'support']\n
 	"""
 	
 	__version__ = get_distribution('bap').version
@@ -67,22 +71,20 @@ def main(mode, input, output, ncores,
 	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]  
 
 	if(mode == "support"):
+		'''
+		Show supported genomes and then bow out
+		'''
 		click.echo(gettime() + "List of built-in genomes supported in bap:")
 		click.echo(gettime() + str(supported_genomes))
 		sys.exit(gettime() + 'Specify one of these genomes or provide your own files (see documentation).')
 		
-	# Verify dependencies
-	R = get_software_path('R', r_path)
-	check_R_packages(['Rsamtools', 'GenomicAlignments', 'GenomicRanges', 'BiocParallel', 'dplyr', 'SummarizedExperiment'], R)
-	
-	# Need chromosome sizes and blacklist
-	bedtoolsGenomeFile, blacklistFile = getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, supported_genomes)
-	
-	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, bowtie2_index,
-		cluster, jobs, peak_width, keep_duplicates, max_javamem, trash_mito, reference_genome,
-		clipl, clipr, py_trim, keep_temp_files, skip_fastqc, overwrite,
-		bedtools_genome, blacklist_file, tss_file, macs2_genome_size, bs_genome, 
-		bedtools_path, bowtie2_path, java_path, macs2_path, samtools_path, r_path)	
+	# Verify dependencies and set up an object to do all the dirty work
+	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, 
+		cluster, jobs,
+		extract_mito, keep_temp_files,
+		bedtools_genome, blacklist_file, tss_file, r_path, 
+		barcode_tag, minimum_barcode_fragments,
+		bowtie2_path, bowtie2_index)	
 
 	# Make a counts table from user-supplied peaks and bam files
 	if(mode == 'bam'):

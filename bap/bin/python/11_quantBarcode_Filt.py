@@ -8,15 +8,18 @@ from collections import Counter
 from contextlib import contextmanager
 
 opts = OptionParser()
-usage = "usage: %prog [options] [inputs] Software to process aligned bam files filter based on prevalent cell barcodes"
+usage = "usage: %prog [options] [inputs] Script to process aligned .bam files to 1) filter based on prevalent cell barcodes and 2) split based on valid chromosomes"
 opts = OptionParser(usage=usage)
-opts.add_option("--input", "-i", help="Name of the first .bam file")
-opts.add_option("--barcodeTag", default = 'CB', help="Name of the first .bam file")
-opts.add_option("--min-fragments", "-m", default = 100, help="Minimum number of fragments for consideration")
+opts.add_option("--input", "-i", required = True, help="Name of the .bam file to parse")
+opts.add_option("--name", "-n", required = True, help="Name of the set of .bam files to collate")
+opts.add_option("--barcode-tag", default = 'CB', help="Name of the first .bam file")
+opts.add_option("--min-fragments", "-m", default = 100, help="Minimum number of fragments for barcode consideration")
 
 options, arguments = opts.parse_args()
 
 bamname = options.input
+name = options.name
+
 barcodeTag = options.barcodeTag
 minFrag = options.min_fragments
 
@@ -68,7 +71,7 @@ def multi_file_manager(files, mode='rt'):
 # Import Barcodes and strip whitespace
 bc = list(barcodes.keys())
 chrs = ["chr" + x for x in ["1","2","3","4"]]
-files = ["out." + chr + ".bam" for chr in chrs]
+files = [name + "." + chr + ".bam" for chr in chrs]
 
 # Open all the output files and spit out the filtered data
 bam = pysam.AlignmentFile(bamname, "rb")
@@ -80,7 +83,7 @@ with multi_file_manager(files) as fopen:
 bam.close()
 
 # Write out barcode file
-bcfile = open("out.barcodequants.csv", "w") 
+bcfile = open(name + ".barcodequants.csv", "w") 
 for k, v in barcodes.items():
     bcfile.write(k +","+ str(v)+"\n")
 bcfile.close() 
