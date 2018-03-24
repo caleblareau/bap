@@ -1,0 +1,49 @@
+import os
+import subprocess
+import shutil
+import pysam
+from os.path import join
+
+configfile: config["cfp"]     
+outdir = config["output"]
+script_dir = config["script_dir"]          
+
+# A Snakemake regular expression matching the bam file paths
+SAMPLES, = glob_wildcards(join(outdir, ".internal/samples/{sample}.fastqs.txt"))
+fastqstxtin = '{sample}.fastqs.txt'
+
+oneProatacSample_py = script_dir + "/bin/python/oneProatacSample.py"
+
+rule all:
+	input:
+		outdir + "/final/samples.txt"
+
+rule process_one_sample:
+	input:
+		txtin = join(outdir + "/.internal/samples", fastqstxtin)
+	output:
+		trimlog = outdir + "/logs/samples/{sample}.sampleQC.tsv"
+	threads:
+		4
+	run:
+		# Get sample information
+		sample = output.trimlog.replace(outdir + "/logs/samples/", "").replace(".sampleQC.tsv", "")
+		with open(input.txtin) as f:
+			line1 = f.read()
+			fastq1 = line1.split("\t")[0].strip()
+			fastq2 = line1.split("\t")[1].strip()
+		
+		# Process one samle
+		pycall = " ".join(['python', oneProatacSample_py, config["cfp"], fastq1, fastq2, sample])
+		os.system(pycall)
+
+# Collate everything
+rule make_sample_list:
+	input:
+		trimlogs = expand(outdir + "/logs/samples/{sample}.sampleQC.tsv", sample=SAMPLES)
+	output:
+		allSamplesFile = outdir + "/final/samples.txt"
+	run: 	
+		for file in input.trimlogs:
+			sample = file.replace(outdir + "/logs/samples/", "").replace(".sampleQC.tsv", "")
+			os.system("echo " + sample + " >> " + output.allSamplesFile)

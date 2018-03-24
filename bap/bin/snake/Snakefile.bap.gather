@@ -1,0 +1,24 @@
+import os
+import subprocess
+import shutil
+import pysam
+from os.path import join
+
+configfile: config["cfp"]     
+outdir = config["output"]
+script_dir = config["script_dir"]          
+name = config["name"] 
+
+
+rule all:
+	input:
+		outdir + "/final/"+name+".multiqc.html"
+
+rule runMultiQC:
+	input:
+		multiqcyaml = script_dir + "/anno/multiqc/proatac.multiqc.config.yaml"
+	output:
+		outdir + "/final/"+name+".multiqc.html"
+	run:
+		multiqc_call = "multiqc -c " + script_dir + "/anno/multiqc/proatac.multiqc.config.yaml -f "+outdir+"/logs/ -o "+outdir+"/final -n "+name+".multiqc -i "+name
+		os.system(multiqc_call)

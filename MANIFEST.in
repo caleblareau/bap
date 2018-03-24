@@ -1,0 +1,13 @@
+# Prune tests, data, and other stuff
+prune bap.egg-info/
+prune tests/
+prune *.DS_Store
+
+
+# Scripts
+recursive-include bap *
+
+# Misc
+include Authors.rst
+include LICENSE.txt
+include NEWS
