@@ -99,13 +99,3 @@ findDoubles <- function(bamfile, barcodeTag = "CB", jaccard_frag_cutoff = 0.02, 
 # Execute
 bamfile <- "N711-Exp31-Sample9.ready2.bam.allele.bam"
 implicatedPairs <- findDoubles(bamfile)
-
-
-p1 <- ggplot(implicatedPairs, aes(x = jaccard_frag, y = jaccard_bp)) + geom_point() +
-  theme_bw() + labs(x = "Jaccard Frag", y = "Jaccard BP")
-
-p2 <- ggplot(implicatedPairs, aes(x = jaccard_frag, y = jaccard_approx_frag)) + geom_point() +
-  theme_bw() + labs(x = "Jaccard Frag", y = "Jaccard Approx. Frag")
-
-cowplot::ggsave(cowplot::plot_grid(p1, p2, nrow = 1), filename = "compare2jaccard.pdf", 
-                width = 8, height = 4)

@@ -15,8 +15,8 @@ def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, sup
 
 	'''
 	Function that isn't actually a bapProject specific function.
-	Used in summitsToPeaks mode to infer high quality peaks from an 
-	array of summit files.
+	Used to collate the built-in genomes with the possibility that the
+	user specified another genome.
 	'''
 	
 	# Handle bedtools
@@ -55,37 +55,25 @@ class bapProject():
 		if(platform.platform()[0:5]=="Darwi"):
 			self.os = "mac"
 		
-		# Add Path to PEAT
-		if(self.os == "mac"):
-			self.PEAT = script_dir + "/bin/static/PEAT_cl123_mac"
-			self.bg2bw = script_dir + "/bin/static/bedGraphToBigWig_mac"
-			self.bedclip = script_dir + "/bin/static/bedClip_mac"
-		else:
-			self.PEAT = script_dir + "/bin/static/PEAT_cl123_linux"
-			self.bg2bw = script_dir + "/bin/static/bedGraphToBigWig_linux"
-			self.bedclip = script_dir + "/bin/static/bedClip_linux"
+		# fastq processing specific options
+		if(mode == "fastq"):	
 			
-		# verify bowtie2 index
-		bwt2idxfiles = os.popen("ls " + bowtie2_index + "*.bt2*").read().strip().split("\n")
-		if(len(bwt2idxfiles) < 6):
-			sys.exit("ERROR: cannot find bowtie2 index; specify with --bowtie2-index and make sure to add the prefix along with the folder path")
-		else:
-			self.bowtie2_index = bowtie2_index
+			# Need to align with bowtie2
+			self.bowtie2 = get_software_path('bowtie2', bowtie2_path)
+			
+			# verify bowtie2 index
+			bwt2idxfiles = os.popen("ls " + bowtie2_index + "*.bt2*").read().strip().split("\n")
+			if(len(bwt2idxfiles) < 6):
+				sys.exit("ERROR: cannot find bowtie2 index; specify with --bowtie2-index and make sure to add the prefix along with the folder path")
+			else:
+				self.bowtie2_index = bowtie2_index
 		
 		# Assign straightforward attributes
-		self.clipl = clipl
-		self.clipr = clipr
-		self.py_trim = py_trim
-		self.peak_width = peak_width
-		self.max_javamem = max_javamem
-		self.trash_mito = trash_mito
-		self.keep_duplicates = keep_duplicates
+		self.extract_mito = extract_mito
 		self.cluster = cluster
 		self.jobs = jobs
-		self.name = name
 		self.output = output
 		self.mode = mode
-		self.skip_fastqc = skip_fastqc
 		self.script_dir = script_dir
 		
 		# Collect samples / fastq lists
@@ -103,23 +91,7 @@ class bapProject():
 			self.tssFile = script_dir + "/anno/TSS/" + self.reference_genome + ".refGene.TSS.bed"
 			self.blacklistFile = script_dir + "/anno/blacklist/" + self.reference_genome + ".full.blacklist.bed"
 			self.bedtoolsGenomeFile = script_dir + "/anno/bedtools/chrom_" + self.reference_genome + ".sizes"
-			
-			# Set up effective genome size for macs2
-			if self.reference_genome == 'hg19':
-				self.BSgenome = 'BSgenome.Hsapiens.UCSC.hg19'
-				self.macs2_genome_size = 'hs'
-			elif self.reference_genome == 'hg38':
-				self.BSgenome = 'BSgenome.Hsapiens.UCSC.hg38'
-				self.macs2_genome_size = 'hs'
-			elif self.reference_genome == 'mm9':
-				self.BSgenome = 'BSgenome.Mmusculus.UCSC.mm9'
-				self.macs2_genome_size = 'mm'
-			elif self.reference_genome == 'mm10':
-				self.BSgenome = 'BSgenome.Mmusculus.UCSC.mm10'
-				self.macs2_genome_size = 'mm'
-			else:
-				self.BSgenome = ''
-				self.macs2_genome_size = '4.57e9'
+
 		else: 
 			click.echo(gettime() + "Could not identify this reference genome: %s" % self.reference_genome)
 			click.echo(gettime() + "Attempting to infer necessary input files from user specification.")
@@ -128,7 +100,7 @@ class bapProject():
 				if reference_genome == '':
 					sys.exit("ERROR: specify valid reference genome with --reference-genome flag; QUITTING")
 				else:
-					sys.exit("ERROR: non-supported reference genome specified so all five of these must be validly specified: --bedtools-genome, --blacklist-file, --tss-file, --macs2-genome-size, --bs-genome; QUITTING")
+					sys.exit("ERROR: non-supported reference genome specified so these five must be validly specified: --bedtools-genome, --blacklist-file, --tss-file; QUITTING")
 					
 		# Make sure all files are valid
 		if(bedtools_genome != ""):
@@ -147,21 +119,8 @@ class bapProject():
 			if(os.path.isfile(tss_file)):
 				self.tssFile = tss_file
 			else: 
-				sys.exit("Could not find the bedtools genome file: %s" % tss_file)		
+				sys.exit("Could not find the transcription start sites file: %s" % tss_file)		
 		
-		if(bs_genome != ""):
-			self.BSgenome = bs_genome
-		
-		if(macs2_genome_size != ""):
-			self.macs2_genome_size = macs2_genome_size
-	
-		# Setup software paths
-		self.bedtools = get_software_path('bedtools', bedtools_path)
-		self.bowtie2 = get_software_path('bowtie2', bowtie2_path)
-		self.java = get_software_path('java', java_path)
-		self.macs2 = get_software_path('macs2', macs2_path)
-		self.samtools = get_software_path('samtools', samtools_path)
-		self.R = get_software_path('R', r_path)
 		
 	# Define a method to dump the object as a .yaml/dictionary
 	def __iter__(self):

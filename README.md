@@ -1,2 +1,35 @@
 # bap
-Bead single-cell atac processing
+**B**ead-based sc**A**TAC-seq data **P**rocessing
+
+## About
+This is an integrated `python` (>= 3.6) and `R` package that
+performs analysis and identification of bead doublets and processes
+data files for downstream analyses for SureCell single-cell ATAC-seq data. 
+
+## Install
+
+**Recommended:**
+First, create a `python` virtual environment in some working directory to keep things tidy:
+
+```
+python3 -m venv venv3
+source venv3/bin/activate
+```
+
+Next, install `bap`:
+
+```
+git clone https://github.com/caleblareau/bap.git
+cd bap
+pip3 install -e . 
+```
+
+Verify install:
+
+```
+bap --help
+```
+
+#### Contact
+Lead: [Caleb Lareau](clareau@broadinstitute.org)
+<br><br>

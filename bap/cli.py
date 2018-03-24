@@ -20,53 +20,41 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.command()
 @click.version_option()
 
-@click.argument('mode', type=click.Choice(['bam', 'support']))
+@click.argument('mode', type=click.Choice(['bam', 'check', 'support']))
 
 @click.option('--input', '-i', default = ".", required=True, help='Input for bap; varies by which mode is specified; see documentation')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; see documentation.')
-@click.option('--name', '-n', default="bap",  help='Prefix for project name')
-@click.option('--ncores', '-c', default = "detect", help='Number of cores to run the main job in parallel.')
 
-@click.option('--bowtie2-index', '-bi', default = "", required=True, help='Path to the bowtie2 index; should be specified as if you were calling bowtie2 (with file index prefix)')
+@click.option('--ncores', '-c', default = "detect", help='Number of cores to run the main job in parallel.')
+@click.option('--reference-genome', '-r', default = "", help='Support for built-in genome; choices are hg19, mm9, hg38, mm10, hg19_mm10_c (species mix)')
+
 @click.option('--cluster', default = "",  help='Message to send to Snakemake to execute jobs on cluster interface; see documentation.')
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
 
-@click.option('--peaks-file', '-pf', default = "", help='Path to a pre-defined peaks file; option is only useful in `counts` mode')
-@click.option('--by-rgid', is_flag = True, help='Option to makes counts table RGID aware; option is only useful in `counts` mode')
-
-@click.option('--peak-width', '-pw', default = "250", help='Fixed width value of resulting peaks from summit calling / padding. 250, 500 recommended.')
-@click.option('--keep-duplicates', '-kd', is_flag=True, help='Keep optical/PCR duplicates')
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
-@click.option('--reference-genome', '-rg', default = "", help='Support for built-in genome; choices are hg19, mm9, hg38, mm10, hg19_mm10_c (species mix)')
-
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
-@click.option('--skip-fastqc', '-sf', is_flag=True, help='Throw this flag to skip fastqc on the trimmed fastqs; will only run if software is discovered in the path.')
-@click.option('--overwrite', '-ov', is_flag=True, help='Throw this flag to always retrim, realign, reprocess, etc. each sample even if it already exists in output (see documentation).')
 
 @click.option('--bedtools-genome', '-bg', default = "", help='Path to bedtools genome file; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
-@click.option('--macs2_genome_size', '-mg', default = "", help='String passed to macs2 for ; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
-@click.option('--bs-genome', '-bs', default = "", help='String corresponding to the R/Bioconductor package for BS genome of build; overrides default if --reference-genome flag is set and is necessary for non-supported genomes..')
 
-@click.option('--bedtools-path', default = "", help='Path to bedtools; by default, assumes that bedtools is in PATH')
-@click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH')
-@click.option('--macs2-path', default = "", help='Path to macs2; by default, assumes that macs2 is in PATH')
-@click.option('--samtools-path', default = "", help='Path to samtools; by default, assumes that samtools is in PATH')
 @click.option('--R-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 
-def main(mode, input, output, name, ncores, bowtie2_index,
-	cluster, jobs, peaks_file, by_rgid,
-	peak_width, keep_duplicates, max_javamem, trash_mito, reference_genome,
-	clipl, clipr, py_trim, keep_temp_files, skip_fastqc, overwrite,
-	bedtools_genome, blacklist_file, tss_file, macs2_genome_size, bs_genome, 
-	bedtools_path, bowtie2_path, java_path, macs2_path, samtools_path, r_path):
+@click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH; only needed for "fastq" mode.')
+@click.option('--bowtie2-index', '-bi', default = "", help='Path to the bowtie2 index; should be specified as if you were calling bowtie2 (with file index prefix); only needed for "fastq" mode.')
+
+
+def main(mode, input, output, ncores, 
+	cluster, jobs,
+	extract_mito, keep_temp_files,
+	bedtools_genome, blacklist_file, tss_file, r_path, 
+	bowtie2_path, bowtie2_index):
 	
 	"""
-	bap: a toolkit for PROcessing ATAC-seq data. \n
-	Caleb Lareau, clareau <at> broadinstitute <dot> org
+	bap: Bead-based scATAC-seq data Processing \n
+	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
 	
-	modes = ['bam', 'support']\n
+	modes = ['bam', 'check', 'support']\n
 	"""
 	
 	__version__ = get_distribution('bap').version
@@ -83,46 +71,24 @@ def main(mode, input, output, name, ncores, bowtie2_index,
 		click.echo(gettime() + str(supported_genomes))
 		sys.exit(gettime() + 'Specify one of these genomes or provide your own files (see documentation).')
 		
+	# Verify dependencies
+	R = get_software_path('R', r_path)
+	check_R_packages(['Rsamtools', 'GenomicAlignments', 'GenomicRanges', 'BiocParallel', 'dplyr', 'SummarizedExperiment'], R)
 	
-	# Take a collection of summits files and return a consensus set of peaks	
-	if(mode == 'summitsToPeaks'):
-		click.echo(gettime() + "Starting inference of peaks from summits.")
-		
-		# Need chromosome sizes and blacklist
-		bedtoolsGenomeFile, blacklistFile = getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, supported_genomes)
-		
-		# Figure out which samples to process
-		bedFiles = os.popen("ls " + input.rstrip("/") + "/*summits.bed*").read().strip().split("\n")
-		if(len(bedFiles) < 1):
-			sys.exist("No summit *summits.bed* files found; QUITTING")
-		else:
-			click.echo(gettime() + "Calling peaks from these samples:")
-			click.echo(gettime() + str(bedFiles))
-		
-		# Verify dependencies
-		R = get_software_path('R', r_path)
-		check_R_packages(['data.table', 'GenomicRanges', 'tools'], R)
-		
-		# Execute software
-		make_folder(output)
-		summitRcall = " ".join([R +"script", script_dir + "/bin/R/summitsToCleanPeaks.R", ",".join(bedFiles), peak_width, blacklistFile, bedtoolsGenomeFile, str(999999999), str(0.01), output, name])
-		os.system(summitRcall)	
-		click.echo(gettime() + "Completed peak inference from summit files.")
-		sys.exit()
+	# Need chromosome sizes and blacklist
+	bedtoolsGenomeFile, blacklistFile = getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, supported_genomes)
 	
-	# TO DO: 
-	# Make a mode to handle split-pool data
-	if(mode == 'indexSplit'):
-		sys.exit("Mode does not actually work yet")
-	
+	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, bowtie2_index,
+		cluster, jobs, peak_width, keep_duplicates, max_javamem, trash_mito, reference_genome,
+		clipl, clipr, py_trim, keep_temp_files, skip_fastqc, overwrite,
+		bedtools_genome, blacklist_file, tss_file, macs2_genome_size, bs_genome, 
+		bedtools_path, bowtie2_path, java_path, macs2_path, samtools_path, r_path)	
+
 	# Make a counts table from user-supplied peaks and bam files
-	if(mode == 'counts'):
-		click.echo(gettime() + "Attempting to assemble counts table from user-specified input.")
-		
-		# Verify dependencies
-		R = get_software_path('R', r_path)
-		check_R_packages(['chromVAR', 'SummarizedExperiment', 'tools'], R)
-		
+	if(mode == 'bam'):
+	
+		click.echo(gettime() + "Attempting to parse supplied .bam files for analysis.")
+	
 		# Make sure that there are samples to process / there is a peak file
 		bamfiles = os.popen("ls " + input.rstrip("/") + "/*.bam").read().strip().split("\n")
 		if(len(bamfiles) < 1):
@@ -133,18 +99,9 @@ def main(mode, input, output, name, ncores, bowtie2_index,
 		if(os.path.isfile(peaks_file)):
 			click.echo(gettime() + "Found peaks file: " + peaks_file)
 		
-		# Execute software
-		make_folder(output)
-		countsRcall = " ".join([R +"script", script_dir + "/bin/R/makeCountsTable.R", input, peaks_file, str(by_rgid), output, name])
-		os.system(countsRcall)	
-		click.echo(gettime() + "Completed peak inference from summit files.")
-		sys.exit()
+
 	
-	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, bowtie2_index,
-		cluster, jobs, peak_width, keep_duplicates, max_javamem, trash_mito, reference_genome,
-		clipl, clipr, py_trim, keep_temp_files, skip_fastqc, overwrite,
-		bedtools_genome, blacklist_file, tss_file, macs2_genome_size, bs_genome, 
-		bedtools_path, bowtie2_path, java_path, macs2_path, samtools_path, r_path)
+
 	
 	if (mode == "check"):
 		click.echo(gettime() + "Dependencies and user-reported file paths OK")
@@ -256,3 +213,4 @@ def main(mode, input, output, name, ncores, bowtie2_index,
 			click.echo(gettime() + "Intermediate files successfully removed.")
 		
 	click.echo(gettime() + "Complete.")
+	
