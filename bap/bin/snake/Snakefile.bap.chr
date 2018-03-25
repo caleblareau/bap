@@ -23,7 +23,7 @@ SAMPLES = [x.strip() for x in SAMPLES]
 rdsin = [x.replace("/filt_split/", "/frag_overlap/").replace(".bam", "_overlapCount.rds") for x in SAMPLES]
 simple = [x.replace(output + "/temp/filt_split/", "").replace(".bam", "") for x in SAMPLES]
 
-findDoubles_R = script_dir + "/bin/R/12_findDoubles_fast.R"
+fragOverlaps_R = script_dir + "/bin/R/12_fragOverlapMetricsChr.R"
 determineDoubles_R = script_dir + "/bin/R/13_callDoublets.R"
 
 rule all:
@@ -39,7 +39,7 @@ rule process_one_chromosome:
 		1
 	run:
 		# Process one chromosome file
-		r_call1 = " ".join([R+"script", findDoubles_R, input.bam, barcode_tag, barcodeQuantFile])
+		r_call1 = " ".join([R+"script", fragOverlaps_R, input.bam, barcode_tag, barcodeQuantFile])
 		os.system(r_call1)
 
 # Collate everything
