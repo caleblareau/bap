@@ -44,21 +44,43 @@ def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, sup
 	return(bedtoolsGenomeFile, blacklistFile)
 
 class bapProject():
-	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, bowtie2_index,
-		cluster, jobs, peak_width, keep_duplicates, max_javamem, trash_mito, reference_genome,
-		clipl, clipr, py_trim, keep_temp_files, skip_fastqc, overwrite,
-		bedtools_genome, blacklist_file, tss_file, macs2_genome_size, bs_genome, 
-		bedtools_path, bowtie2_path, java_path, macs2_path, samtools_path, r_path):
-
+	def __init__(self, script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
+		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments,
+		extract_mito, keep_temp_files,
+		bedtools_genome, blacklist_file, tss_file, r_path, 
+		barcode_tag, bam_name,
+		bowtie2_path, bowtie2_index):
+		
+				
+		#----------------------------------
+		# Assign straightforward attributes
+		#----------------------------------
+		self.script_dir = script_dir
+		self.mode = mode
+		self.output = output
+		self.cluster = cluster
+		self.jobs = jobs
+		self.extract_mito = extract_mito
+		
+		self.barcode_tag = barcode_tag
+		self.bam_name = bam_name
+		
 		# Figure out operating system just for funzies; not presently used
 		self.os = "linux"
 		if(platform.platform()[0:5]=="Darwi"):
 			self.os = "mac"
-	
+		
+		if(mode == "bam"):
+			self.bamfile = input
+			self.bowtie2 = "NA"
+			self.bowtie2_index = "bowtie2_index"
+		
 		#----------------------------------
-		# fastq processing specific options
+		# fastq processing specific options -- needs improvement
 		#----------------------------------
 		if(mode == "fastq"):	
+			
+			self.bamfile = "NA"
 			
 			# Need to align with bowtie2
 			self.bowtie2 = get_software_path('bowtie2', bowtie2_path)
@@ -69,31 +91,18 @@ class bapProject():
 				sys.exit("ERROR: cannot find bowtie2 index; specify with --bowtie2-index and make sure to add the prefix along with the folder path")
 			else:
 				self.bowtie2_index = bowtie2_index
+			
+			# Collect samples / fastq lists
+			# self.samples, self.fastq1, self.fastq2 = inferSampleVectors(input)
+
 				
-		#-----------------------------------------
-		# Verify R and all of its goodies are here
-		#-----------------------------------------
+		#------------------------------------------
+		# Verify R and all of its packages are here
+		#------------------------------------------
 		R = get_software_path('R', r_path)
 		check_R_packages(['Rsamtools', 'GenomicAlignments', 'GenomicRanges', 'BiocParallel', 'dplyr', 'SummarizedExperiment'], R)
 		self.R = R
-		
-		#----------------------------------
-		# Assign straightforward attributes
-		#----------------------------------
-		self.extract_mito = extract_mito
-		self.cluster = cluster
-		self.jobs = jobs
-		self.output = output
-		self.mode = mode
-		self.script_dir = script_dir
-		
-		# Collect samples / fastq lists
-		self.samples, self.fastq1, self.fastq2 = inferSampleVectors(input)
-		
-		# remove samples that have been previously processed
-		if not overwrite:
-			self.samples, self.fastq1, self.fastq2 = filterExistingSamples(self.samples, self.fastq1, self.fastq2, output)
-		
+
 		#------------------------
 		# Handle reference genome
 		#------------------------
@@ -141,31 +150,24 @@ class bapProject():
 	#--------------------------------------------------------------------------------
 	def __iter__(self):
 		
-		# Purposefully skip samples, fastq1, fastq2 -- will put individual samples there in call
 		yield 'script_dir', self.script_dir
+		yield 'mode', self.mode
+		yield 'output', self.output
+		yield 'bamfile', self.bamfile
+
+		yield 'cluster', self.cluster
+		yield 'jobs', self.jobs
+		
+		yield 'extract_mito', self.extract_mito
 		yield 'tssFile', self.tssFile
 		yield 'blacklistFile', self.blacklistFile
 		yield 'bedtoolsGenomeFile', self.bedtoolsGenomeFile
-		yield 'BSgenome', self.BSgenome
-		yield 'macs2_genome_size', self.macs2_genome_size
-		yield 'clipl', self.clipl
-		yield 'clipr', self.clipr
-		yield 'peak_width', self.peak_width
-		yield 'max_javamem', self.max_javamem
-		yield 'trash_mito', self.trash_mito
-		yield 'keep_duplicates', self.keep_duplicates
-		yield 'cluster', self.cluster
-		yield 'jobs', self.jobs
-		yield 'name', self.name
-		yield 'output', self.output
-		yield 'mode', self.mode
-		yield 'skip_fastqc', self.skip_fastqc
-		yield 'bedtools', self.bedtools
+		yield 'R', self.R
+		
+		yield 'barcode_tag', self.barcode_tag
+		yield 'bam_name', self.bam_name
+		
 		yield 'bowtie2', self.bowtie2
 		yield 'bowtie2_index', self.bowtie2_index
-		yield 'java', self.java
-		yield 'macs2', self.macs2
-		yield 'samtools', self.samtools
-		yield 'R', self.R
 		
 	

@@ -22,14 +22,17 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.argument('mode', type=click.Choice(['bam', 'check', 'support']))
 
-@click.option('--input', '-i', default = ".", required=True, help='Input for bap; varies by which mode is specified; see documentation')
+@click.option('--input', '-i', required=True, help='Input for bap; varies by which mode is specified; see documentation')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; see documentation.')
 
 @click.option('--ncores', '-c', default = "detect", help='Number of cores to run the main job in parallel.')
-@click.option('--reference-genome', '-r', default = "", help='Support for built-in genome; choices are hg19, mm9, hg38, mm10, hg19_mm10_c (species mix)')
+@click.option('--reference-genome', '-r', default = "hg19", help='Support for built-in genome; choices are hg19, mm9, hg38, mm10, hg19_mm10_c (species mix)')
 
 @click.option('--cluster', default = "",  help='Message to send to Snakemake to execute jobs on cluster interface; see documentation.')
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
+
+@click.option('--minimum-barcode-fragments', '-bf', default = 1000, help='Minimum number of fragments (non-unique, may include mito) to be thresholded for doublet merging.')
+@click.option('--minimum-cell-fragments', '-cf', default = 1000, help='Minimum number of fragments (unique, no mito) to be thresholded for final output.')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
@@ -37,21 +40,20 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--bedtools-genome', '-bg', default = "", help='Path to bedtools genome file; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
-
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 
-@click.option('--barcode-tag', '-b', default = "XB", help='Tag in the .bam file(s) that point to the barcode.')
-@click.option('--minimum-barcode-fragments', '-bf', default = "XB", help='Tag in the .bam file(s) that point to the barcode.')
+@click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the barcode; valid for bam mode.')
+@click.option('--bam-name', '-bn', default="bap_out", help='Name for the sam')
 
 @click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH; only needed for "fastq" mode.')
 @click.option('--bowtie2-index', '-bi', default = "", help='Path to the bowtie2 index; should be specified as if you were calling bowtie2 (with file index prefix); only needed for "fastq" mode.')
 
 
-def main(mode, input, output, ncores, 
-	cluster, jobs,
+def main(mode, input, output, ncores, reference_genome,
+	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments,
 	extract_mito, keep_temp_files,
 	bedtools_genome, blacklist_file, tss_file, r_path, 
-	barcode_tag, minimum_barcode_fragments,
+	barcode_tag, bam_name,
 	bowtie2_path, bowtie2_index):
 	
 	"""
@@ -79,15 +81,18 @@ def main(mode, input, output, ncores,
 		sys.exit(gettime() + 'Specify one of these genomes or provide your own files (see documentation).')
 		
 	# Verify dependencies and set up an object to do all the dirty work
-	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, 
-		cluster, jobs,
+	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
+		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments,
 		extract_mito, keep_temp_files,
 		bedtools_genome, blacklist_file, tss_file, r_path, 
-		barcode_tag, minimum_barcode_fragments,
-		bowtie2_path, bowtie2_index)	
-
+		barcode_tag, bam_name,
+		bowtie2_path, bowtie2_index)
+		
+	with open("bap.p.out", 'w') as yaml_file:
+		yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
+		
 	# Make a counts table from user-supplied peaks and bam files
-	if(mode == 'bam'):
+	if(mode == 'bamCC'):
 	
 		click.echo(gettime() + "Attempting to parse supplied .bam files for analysis.")
 	
@@ -101,10 +106,6 @@ def main(mode, input, output, ncores,
 		if(os.path.isfile(peaks_file)):
 			click.echo(gettime() + "Found peaks file: " + peaks_file)
 		
-
-	
-
-	
 	if (mode == "check"):
 		click.echo(gettime() + "Dependencies and user-reported file paths OK")
 		click.echo("\nbap will process the following samples / files with bulk / single specified: \n")
