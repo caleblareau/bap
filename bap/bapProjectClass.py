@@ -60,10 +60,11 @@ class bapProject():
 		self.output = output
 		self.cluster = cluster
 		self.jobs = jobs
+		self.minimum_barcode_fragments = minimum_barcode_fragments
+		self.minimum_cell_fragments = minimum_cell_fragments
 		self.extract_mito = extract_mito
 		
 		self.barcode_tag = barcode_tag
-		self.bam_name = bam_name
 		
 		# Figure out operating system just for funzies; not presently used
 		self.os = "linux"
@@ -74,6 +75,11 @@ class bapProject():
 			self.bamfile = input
 			self.bowtie2 = "NA"
 			self.bowtie2_index = "bowtie2_index"
+			self.bam_name = bam_name
+			
+			if(bam_name == "default"):
+				filename, file_extension = os.path.splitext(self.bamfile)
+				self.bam_name = os.path.basename(filename)
 		
 		#----------------------------------
 		# fastq processing specific options -- needs improvement
@@ -81,6 +87,7 @@ class bapProject():
 		if(mode == "fastq"):	
 			
 			self.bamfile = "NA"
+			self.bam_name = "NA"
 			
 			# Need to align with bowtie2
 			self.bowtie2 = get_software_path('bowtie2', bowtie2_path)
@@ -157,6 +164,8 @@ class bapProject():
 
 		yield 'cluster', self.cluster
 		yield 'jobs', self.jobs
+		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
+		yield 'minimum_cell_fragments', self.minimum_cell_fragments
 		
 		yield 'extract_mito', self.extract_mito
 		yield 'tssFile', self.tssFile

@@ -42,8 +42,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 
-@click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the barcode; valid for bam mode.')
-@click.option('--bam-name', '-bn', default="bap_out", help='Name for the sam')
+@click.option('--barcode-tag', '-bt', default = "CB", help='Tag in the .bam file(s) that point to the barcode; valid for bam mode.')
+@click.option('--bam-name', '-bn', default="default", help='Name for the sam')
 
 @click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH; only needed for "fastq" mode.')
 @click.option('--bowtie2-index', '-bi', default = "", help='Path to the bowtie2 index; should be specified as if you were calling bowtie2 (with file index prefix); only needed for "fastq" mode.')
@@ -87,79 +87,40 @@ def main(mode, input, output, ncores, reference_genome,
 		bedtools_genome, blacklist_file, tss_file, r_path, 
 		barcode_tag, bam_name,
 		bowtie2_path, bowtie2_index)
-		
-	with open("bap.p.out", 'w') as yaml_file:
-		yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
-		
+
 	# Make a counts table from user-supplied peaks and bam files
-	if(mode == 'bamCC'):
+	if(mode == 'bam'):
 	
 		click.echo(gettime() + "Attempting to parse supplied .bam files for analysis.")
 	
-		# Make sure that there are samples to process / there is a peak file
-		bamfiles = os.popen("ls " + input.rstrip("/") + "/*.bam").read().strip().split("\n")
-		if(len(bamfiles) < 1):
-			sys.exist("No sample *.bam files found in user-specified input; QUITTING")
-		else:
-			click.echo(gettime() + "Making a counts table from these samples:")
-			click.echo(gettime() + str(bamfiles))
-		if(os.path.isfile(peaks_file)):
-			click.echo(gettime() + "Found peaks file: " + peaks_file)
+		# Make sure that the .bam file is valid
+		if(not os.path.exists(input)):
+			sys.exit("Cannot parse supplied .bam file in --input")
+		if(not os.path.exists(input + ".bai")):
+			sys.exit("Index supplied .bam before proceeding")
 		
-	if (mode == "check"):
-		click.echo(gettime() + "Dependencies and user-reported file paths OK")
-		click.echo("\nbap will process the following samples / files with bulk / single specified: \n")
-		print("Sample", "Fastq1", "Fastq2")
-		for x in range(len(p.samples)):
-			print(p.samples[x], p.fastq1[x], p.fastq2[x])
-		click.echo("\nIf this table doesn't look right, consider specifying a manually created sample input table (see documentation).\n")
-		sys.exit(gettime() + "Successful check complete; QUITTING.")
-	
-	# Single or bulk processing
-	if(mode == "single" or mode == "bulk"):
-
-		# Potentially submit jobs to cluster		
+		# Determine number of cores in main job
 		if(ncores == "detect"):
 			ncores = str(available_cpu_count())
 		else:
 			ncores = str(ncores)
 		
+		# Parameterize optional snakemake configuration
 		snakeclust = ""
 		njobs = int(jobs)
 		if(njobs > 0 and cluster != ""):
-			snakeclust = " --jobs " + jobs + " --cluster '" + cluster + "' "
-			click.echo(gettime() + "Recognized flags to process jobs on a computing cluster.")		
+			snakeclust = " --jobs " + str(jobs) + " --cluster '" + cluster + "' "
+			click.echo(gettime() + "Recognized flags to process jobs on a cluster.")
 		
 		# Make output folders
-		of = output; logs = of + "/logs"; fin = of + "/final"; trim = of + "/01_trimmed"; 
-		aligned = of + "/02_aligned_reads"; processed = of + "/03_processed_reads";
-		qc = of + "/04_qc"
+		of = output; logs = of + "/logs"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
+		temp_filt_split = temp + "/filt_split"
 		
-		folders = [of, logs, fin, trim, aligned, processed, qc,
-			of + "/.internal/parseltongue", of + "/.internal/samples",
-			logs + "/bowtie2", logs + "/trim", logs + "/macs2",
-			of + "/03_processed_reads/temp", fin + "/plots"]
+		folders = [of, logs, fin, mito, temp, temp_filt_split, 
+			of + "/.internal/parseltongue", of + "/.internal/samples"]
 	
 		mkfolderout = [make_folder(x) for x in folders]
 		
-		make_folder(logs + "/picard")
-		make_folder(logs + "/picard/inserts")
-		make_folder(logs + "/tss")
-		make_folder(logs + "/samples")
-		make_folder(of + "/mito")
-		
-		if not keep_duplicates:
-			make_folder(logs + "/picard/markdups")
-		if not skip_fastqc:
-			make_folder(logs + "/fastqc")
-			
-		if(mode == "bulk"):
-			make_folder(of + "/final/bams")
-			make_folder(of + "/final/summits")
-			make_folder(of + "/04_qc/macs2_each")
-		if(mode == "single"):
-			make_folder(of + "/03_processed_reads/bams")
-
 		# Create internal README files 
 		if not os.path.exists(of + "/.internal/README"):
 			with open(of + "/.internal/README" , 'w') as outfile:
@@ -171,20 +132,58 @@ def main(mode, input, output, ncores, reference_genome,
 			with open(of + "/.internal" + "/samples" + "/README" , 'w') as outfile:
 				outfile.write("This folder creates samples to be interpreted by Snakemake; don't modify it.\n\n")
 		
+		#-------------------------------------------------------
+		# Step 1- Filter and split input .bam file by chromosome
+		#-------------------------------------------------------
+		line1 = 'python ' +script_dir+'/bin/python/11_quantBarcode_Filt.py --input '+p.bamfile
+		line2 = ' --name ' + p.bam_name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
+		line3 = p.barcode_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
+		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile
+			
+		filt_split_cmd = line1 + line2 + line3 + line4
+		os.system(filt_split_cmd)
+		
+		#---------------------------------------
+		# Step 2- Process fragments by Snakemake
+		#---------------------------------------
+		
+		# Round trip the .yaml of user configuration
+		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
+		with open(y_s, 'w') as yaml_file:
+			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
+		
+		#-------------------------------------------------------
+		# Final-- remove intermediate files if necessary
+		#-------------------------------------------------------
+		if keep_temp_files:
+			click.echo(gettime() + "Temporary files not deleted since --keep-temp-files was specified.")
+		else:
+			if(mode == "bulk" or mode == "single"):
+				byefolder = of
+			
+			shutil.rmtree(byefolder + "/.internal")
+			shutil.rmtree(byefolder + "/temp")
+
+			if(not extract_mito):
+				shutil.rmtree(byefolder + "/mito")
+			
+			click.echo(gettime() + "Intermediate files successfully removed.")
+		
+			
+	# If we get to this stage in the processing, then everything worked
+	if (mode == "check"):
+		click.echo(gettime() + "Dependencies and user-reported file paths OK")
+	
+	# Single or bulk processing
+	if(mode == "single" or mode == "bulk"):
+
+		
 		# Create promoter file:
 		ptss = of + "/.internal/promoter.tss.bed"
 		if not os.path.exists(ptss):
 			os.system('''awk '{print $1"\t"$2-2000"\t"$3+2000"\t"$4}' '''+ p.tssFile + " > " + ptss)
-			
-		# Set up sample bam plain text file
-		for i in range(len(p.samples)):
-			with open(of + "/.internal/samples/" + p.samples[i] + ".fastqs.txt" , 'w') as outfile:
-				outfile.write(p.fastq1[i] + "\t" + p.fastq2[i])
-		
-		y_s = of + "/.internal/parseltongue/bap.object.yaml"
-		with open(y_s, 'w') as yaml_file:
-			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
-		
+
+
 		snakecmd_scatter = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.scatter --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_scatter)
 		
@@ -199,21 +198,7 @@ def main(mode, input, output, ncores, reference_genome,
 		snakecmd_gather = 'snakemake --snakefile '+script_dir+'/bin/snake/Snakefile.bap.gather --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_gather)
 		
-		if keep_temp_files:
-			click.echo(gettime() + "Temporary files not deleted since --keep-temp-files was specified.")
-		else:
-			if(mode == "bulk" or mode == "single"):
-				byefolder = of
-			
-			shutil.rmtree(byefolder + "/.internal")
-			shutil.rmtree(byefolder + "/01_trimmed")
-			shutil.rmtree(byefolder + "/02_aligned_reads")
-			shutil.rmtree(byefolder + "/03_processed_reads")
-			shutil.rmtree(byefolder + "/04_qc")
-			if(trash_mito):
-				shutil.rmtree(byefolder + "/mito")
-			
-			click.echo(gettime() + "Intermediate files successfully removed.")
+
 		
 	click.echo(gettime() + "Complete.")
 	
