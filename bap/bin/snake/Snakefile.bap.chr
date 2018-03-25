@@ -1,0 +1,56 @@
+import os
+import subprocess
+import shutil
+
+from os.path import join
+
+configfile: config["cfp"]     
+outdir = config["output"]
+script_dir = config["script_dir"]          
+R = config["R"] 
+name = config["bam_name"] 
+output = config["output"] 
+barcode_tag = config["barcode_tag"] 
+minimum_barcode_fragments = config["minimum_barcode_fragments"] 
+
+# Determine .bam files to execute for fragment overlap analysis
+infile1 = outdir + "/.internal/samples/" + "/" + name + ".chrbam.txt"
+barcodeQuantFile =  outdir + "/final/" + name + ".barcodequants.csv"
+
+with open(infile1) as f:
+    SAMPLES = f.readlines()
+SAMPLES = [x.strip() for x in SAMPLES] 
+rdsin = [x.replace("/filt_split/", "/frag_overlap/").replace(".bam", "_overlapCount.rds") for x in SAMPLES]
+simple = [x.replace(output + "/temp/filt_split/", "").replace(".bam", "") for x in SAMPLES]
+
+findDoubles_R = script_dir + "/bin/R/12_findDoubles_fast.R"
+determineDoubles_R = script_dir + "/bin/R/13_callDoublets.R"
+
+rule all:
+	input:
+		outdir + "/final/"+name+".implicatedBarcodes.csv"
+
+rule process_one_chromosome:
+	input:
+		bam = output + "/temp/filt_split/" + "{name}" + ".bam"
+	output:
+		outrds =  output + "/temp/frag_overlap/" + "{name}" + "_overlapCount.rds"
+	threads:
+		1
+	run:
+		# Process one chromosome file
+		r_call1 = " ".join([R+"script", findDoubles_R, input.bam, barcode_tag, barcodeQuantFile])
+		os.system(r_call1)
+
+# Collate everything
+rule determine_barcode_merges:
+	input:
+		rdsin = rdsin
+	output:
+		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv"
+	run: 	
+		# collate chr inference and make a single file
+		rdsdir = outdir + "/temp/frag_overlap"
+		r_call2 = " ".join([R+"script", determineDoubles_R, rdsdir, output.outcsv])
+		print(r_call2)
+		os.system(r_call2)

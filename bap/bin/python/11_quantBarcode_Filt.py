@@ -89,9 +89,12 @@ with open(bedtoolsGenomeFile) as f:
 
 chrlenpass = {x : chrlens[x] for x in chrlens if int(chrlens[x]) >= minChromosomeSize }
 chrs = list(chrlenpass.keys())
-print(chrs)
 
 bamchrfiles = [out + "/" + name + "." + chr + ".bam" for chr in chrs]
+bamchrrouter = open(out.replace("temp/filt_split", ".internal/samples") + "/" + name + ".chrbam.txt", "w") 
+for v in bamchrfiles:
+    bamchrrouter.write(v+"\n")
+bamchrrouter.close() 
 
 # Open all the output files and spit out the filtered data
 bam = pysam.AlignmentFile(bamname, "rb")
@@ -103,7 +106,7 @@ with multi_file_manager(bamchrfiles) as fopen:
 bam.close()
 
 # Write out barcode file
-bcfile = open(out + "/" + name + ".barcodequants.csv", "w") 
+bcfile = open(out.replace("temp/filt_split", "final") + "/" + name + ".barcodequants.csv", "w") 
 for k, v in barcodes.items():
     bcfile.write(k +","+ str(v)+"\n")
 bcfile.close() 

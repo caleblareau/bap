@@ -114,9 +114,11 @@ def main(mode, input, output, ncores, reference_genome,
 		
 		# Make output folders
 		of = output; logs = of + "/logs"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
-		temp_filt_split = temp + "/filt_split"
+		temp_filt_split = temp + "/filt_split"; temp_frag_overlap = temp + "/frag_overlap"
+		temp_group_bam_chr = temp + "/group_bam_chr"
 		
-		folders = [of, logs, fin, mito, temp, temp_filt_split, 
+		folders = [of, logs, fin, mito, temp,
+			temp_filt_split, temp_frag_overlap,temp_group_bam_chr, 
 			of + "/.internal/parseltongue", of + "/.internal/samples"]
 	
 		mkfolderout = [make_folder(x) for x in folders]
@@ -151,6 +153,9 @@ def main(mode, input, output, ncores, reference_genome,
 		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
 		with open(y_s, 'w') as yaml_file:
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
+			
+		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '" -T'
+		os.system(snakecmd_chr)
 		
 		#-------------------------------------------------------
 		# Final-- remove intermediate files if necessary
@@ -184,8 +189,7 @@ def main(mode, input, output, ncores, reference_genome,
 			os.system('''awk '{print $1"\t"$2-2000"\t"$3+2000"\t"$4}' '''+ p.tssFile + " > " + ptss)
 
 
-		snakecmd_scatter = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.scatter --cores '+ncores+' --config cfp="' + y_s + '" -T'
-		os.system(snakecmd_scatter)
+		
 		
 		if(mode == 'single'):
 			
