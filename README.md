@@ -30,6 +30,18 @@ Verify install:
 bap --help
 ```
 
+
+## Simple Test
+
+Try a sample analysis on the test .bam file:
+
+```
+cd tests
+bap bam -i data/test.small.bam -z
+```
+
+Verify that there are files `bap_out/final`
+
 #### Contact
 Lead: [Caleb Lareau](clareau@broadinstitute.org)
 <br><br>
