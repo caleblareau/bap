@@ -7,7 +7,7 @@ library(tools)
 # as well as summary and QC metrics and visuals
 
 # TO DO:
-# actually call doublets
+# actually call doublets -- make another additional text file
 # produce QC plot
 # make barcode key/value
 
@@ -32,7 +32,7 @@ lapply(rdsFiles, readRDS) %>%
   rbindlist() %>% as.data.frame() %>%
   group_by(barc1, barc2) %>%
   summarise(N_both = sum(n_both), N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2)) %>%
-  mutate(jaccard_approx_frag = round((N_both)/(N_barc1 + N_barc2- N_both + 1),4)) -> ovdf
+  mutate(jaccard_frag = round(((N_both)/(N_barc1 + N_barc2 - N_both + 1))/2,4)) -> ovdf
 
 write.table(ovdf, file = tblOut,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
