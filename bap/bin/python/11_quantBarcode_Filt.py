@@ -8,7 +8,7 @@ from collections import Counter
 from contextlib import contextmanager
 
 opts = OptionParser()
-usage = "usage: %prog [options] [inputs] Script to process aligned .bam files to 1) filter based on prevalent cell barcodes and 2) split based on valid chromosomes"
+usage = "usage: %prog [options] [inputs] Script to process aligned .bam files to 1) filter based on prevalent cell barcodes;  2) split based on valid chromosomes; and 3) filter for unique fragments"
 opts = OptionParser(usage=usage)
 
 opts.add_option("--input", "-i", help="Name of the .bam file to parse")
@@ -34,14 +34,14 @@ minChromosomeSize = int(options.min_chromosome_size)
 bam = pysam.AlignmentFile(bamname, "rb")
 
 def getBarcode(intags):
-    '''
-    Parse out the barcode per-read
 	'''
-    for tg in intags:
-    	if(barcodeTag == tg[0]):
-    		return(tg[1])
-    return("NA")
-    
+	Parse out the barcode per-read
+	'''
+	for tg in intags:
+		if(barcodeTag == tg[0]):
+			return(tg[1])
+	return("NA")
+	
 
 def filterReadBarcodes(intags, bc):
 	'''
@@ -55,8 +55,25 @@ def filterReadBarcodes(intags, bc):
 
 # Loop over bam and extract the barcode of interest
 barcodes = ['NA'] 
+barcode_bp = ['NA']
+bp = 0
+
+# Loop through; count and de-duplicate for counts
 for read in bam:
-	barcodes.append(getBarcode(read.tags))
+	read_barcode = getBarcode(read.tags)
+	
+	# New base pair -- no duplicates
+	if(read.reference_start != bp):
+		bp = read.reference_start
+		barcode_bp = [read_barcode]
+		barcodes.append(read_barcode)
+	
+	# Same base pair -- verify that it's not existing barcodes
+	else:
+		if( not read_barcode in barcode_bp):
+			barcodes.append(read_barcode)
+			barcode_bp.append(read_barcode)
+			
 bam.close()
 
 # Define barcode numbers and filter
@@ -71,21 +88,21 @@ bc = list(barcodes.keys())
 # Function to open lots of files
 @contextmanager
 def multi_file_manager(files, mode='rt'):
-    """
-    Open multiple files and make sure they all get closed.
-    """
-    files = [pysam.AlignmentFile(file, "wb", template = bam) for file in files]
-    yield files
-    for file in files:
-        file.close()
+	"""
+	Open multiple files and make sure they all get closed.
+	"""
+	files = [pysam.AlignmentFile(file, "wb", template = bam) for file in files]
+	yield files
+	for file in files:
+		file.close()
 
 # Determine chromosomes for overlaps with fragments based on bedtools genome
 
 chrlens = {}
 with open(bedtoolsGenomeFile) as f:
-  for line in f:
-    tok = line.split("\t")
-    chrlens[tok[0]] = tok[1].strip()
+	for line in f:
+		tok = line.split("\t")
+		chrlens[tok[0]] = tok[1].strip()
 
 chrlenpass = {x : chrlens[x] for x in chrlens if int(chrlens[x]) >= minChromosomeSize }
 chrs = list(chrlenpass.keys())
@@ -93,26 +110,37 @@ chrs = list(chrlenpass.keys())
 bamchrfiles = [out + "/" + name + "." + chr + ".bam" for chr in chrs]
 bamchrrouter = open(out.replace("temp/filt_split", ".internal/samples") + "/" + name + ".chrbam.txt", "w") 
 for v in bamchrfiles:
-    bamchrrouter.write(v+"\n")
+	bamchrrouter.write(v+"\n")
 bamchrrouter.close() 
 
 # Open all the output files and spit out the filtered data
+barcode_bp = ['NA']
+bp = 0
 bam = pysam.AlignmentFile(bamname, "rb")
 with multi_file_manager(bamchrfiles) as fopen:
 	for read in bam:
-		if(filterReadBarcodes(read.tags, bc) != "NA" and read.reference_name in chrs):
-				idx = chrs.index(read.reference_name)
+		read_barcode = filterReadBarcodes(read.tags, bc)
+		if(read_barcode != "NA" and read.reference_name in chrs):
+			idx = chrs.index(read.reference_name)
+			# New base pair -- no duplicates; write out and update
+			if(read.reference_start != bp):
+				bp = read.reference_start
+				barcode_bp = [read_barcode]
 				fopen[idx].write(read)
+				
+			# Same base pair -- verify that it's not existing barcodes
+			else:
+				# Still at the same base pair; verify that we haven't seen this barcode before
+				if( not read_barcode in barcode_bp):
+					barcode_bp.append(read_barcode)
+					fopen[idx].write(read)
 bam.close()
 
 # Write out barcode file
 bcfile = open(out.replace("temp/filt_split", "final") + "/" + name + ".barcodequants.csv", "w") 
 for k, v in barcodes.items():
-    bcfile.write(k +","+ str(v)+"\n")
+	bcfile.write(k +","+ str(v)+"\n")
 bcfile.close() 
 
 for bamfilechr in bamchrfiles:
 	pysam.index(bamfilechr)
-
-
-
