@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import re
 
 from os.path import join
 
@@ -20,8 +21,8 @@ barcodeQuantFile =  outdir + "/final/" + name + ".barcodequants.csv"
 with open(infile1) as f:
     SAMPLES = f.readlines()
 SAMPLES = [x.strip() for x in SAMPLES] 
-rdsin = [x.replace("/filt_split/", "/frag_overlap/").replace(".bam", "_overlapCount.rds") for x in SAMPLES]
-simple = [x.replace(output + "/temp/filt_split/", "").replace(".bam", "") for x in SAMPLES]
+rdsin = [re.sub(".bam$", "_overlapCount.rds", x.replace("/filt_split/", "/frag_overlap/")) for x in SAMPLES]
+simple = [re.sub(".bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES]
 
 fragOverlaps_R = script_dir + "/bin/R/12_fragOverlapMetricsChr.R"
 determineDoubles_R = script_dir + "/bin/R/13_callDoublets.R"

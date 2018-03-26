@@ -27,11 +27,21 @@ barcodeQuantFile <- args[i+3]
 # Don't execute-- strictly for testing
 if(FALSE){
   base <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests"
+  bamfile <- paste0(base, "/", "bap_out/temp/filt_split/N711-Exp31-Sample9.ready2.bam.allele.chr6.bam")
+  barcodeTag <- "CB"
+  rdsOut <- paste0(base, "/", "bap_out/temp/frag_overlap/test.small.chr3_overlapCount.rds")
+  barcodeQuantFile <- paste0(base, "/", "bap_out/final/test.small.barcodequants.csv")
+}
+
+# More involed Testing
+if(FALSE){
+  base <- "/Users/lareauc/Desktop/GM_parse_biorad/"
   bamfile <- paste0(base, "/", "bap_out/temp/filt_split/test.small.chr3.bam")
   barcodeTag <- "CB"
   rdsOut <- paste0(base, "/", "bap_out/temp/frag_overlap/test.small.barcodequants.csv")
   barcodeQuantFile <- paste0(base, "/", "bap_out/final/test.small.barcodequants.csv")
 }
+
 
 suppressMessages(suppressWarnings(library(Rsamtools)))
 suppressMessages(suppressWarnings(library(GenomicAlignments)))
