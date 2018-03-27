@@ -116,12 +116,17 @@ bamchrrouter.close()
 # Open all the output files and spit out the filtered data
 barcode_bp = ['NA']
 bp = 0
+print(chrs)
 bam = pysam.AlignmentFile(bamname, "rb")
 with multi_file_manager(bamchrfiles) as fopen:
 	for read in bam:
 		read_barcode = filterReadBarcodes(read.tags, bc)
-		if(read_barcode != "NA" and read.reference_name in chrs):
-			idx = chrs.index(read.reference_name)
+		try:
+			read_chr = read.reference_name
+		except ValueError:
+			read_chr = "NA"
+		if(read_barcode != "NA" and read_chr in chrs):
+			idx = chrs.index(read_chr)
 			# New base pair -- no duplicates; write out and update
 			if(read.reference_start != bp):
 				bp = read.reference_start
