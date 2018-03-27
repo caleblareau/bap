@@ -22,7 +22,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.argument('mode', type=click.Choice(['bam', 'check', 'support']))
 
-@click.option('--input', '-i', required=True, help='Input for bap; varies by which mode is specified; see documentation')
+@click.option('--input', '-i', help='Input for bap; varies by which mode is specified; see documentation')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; see documentation.')
 
 @click.option('--ncores', '-c', default = "detect", help='Number of cores to run the main job in parallel.')
@@ -42,7 +42,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 
-@click.option('--barcode-tag', '-bt', default = "CB", help='Tag in the .bam file(s) that point to the barcode; valid for bam mode.')
+@click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the barcode; valid for bam mode.')
 @click.option('--bam-name', '-bn', default="default", help='Name for the sam')
 
 @click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH; only needed for "fastq" mode.')
@@ -163,9 +163,7 @@ def main(mode, input, output, ncores, reference_genome,
 		if keep_temp_files:
 			click.echo(gettime() + "Temporary files not deleted since --keep-temp-files was specified.")
 		else:
-			if(mode == "bulk" or mode == "single"):
-				byefolder = of
-			
+			byefolder = of
 			shutil.rmtree(byefolder + "/.internal")
 			shutil.rmtree(byefolder + "/temp")
 

@@ -8,7 +8,7 @@ dependencies = ['click','pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysa
 
 setup(
     name='bap',
-    version='0.0.2',
+    version='0.0.3',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
