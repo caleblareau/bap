@@ -274,4 +274,4 @@ def available_cpu_count():
 		pass
 
 	raise Exception('Can not determine number of CPUs on this system')
-	
+

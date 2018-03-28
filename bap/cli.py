@@ -140,7 +140,7 @@ def main(mode, input, output, ncores, reference_genome,
 		line1 = 'python ' +script_dir+'/bin/python/11_quantBarcode_Filt.py --input '+p.bamfile
 		line2 = ' --name ' + p.bam_name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.barcode_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
-		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile
+		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores)
 			
 		filt_split_cmd = line1 + line2 + line3 + line4
 		os.system(filt_split_cmd)
