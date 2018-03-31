@@ -37,7 +37,7 @@ Try a sample analysis on the test .bam file:
 
 ```
 cd tests
-bap bam -i data/test.small.bam -z
+bap bam -i data/test.small.bam -bt CB
 ```
 
 Verify that there are files `bap_out/final`
