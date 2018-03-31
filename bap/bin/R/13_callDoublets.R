@@ -2,6 +2,7 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(tools)
+"%ni%" <- Negate("%in%")
 
 # This function / script for processed chromosome files to produce consensus barcode doublets
 # as well as summary and QC metrics and visuals
@@ -18,23 +19,75 @@ if(file_path_sans_ext(basename(args[1])) == "R"){
   i <- 0
 }
 
-rdsDir <- args[i+1]
-tblOut <- args[i+2]
+rdsDir <- args[i+1] # directory of .rds files
+nbcin <- args[i+2] # file path to the number of barcodes for each observed barcode
+tblOut <- args[i+3] # filepath to write the implicated barcode pairs
+min_jaccard_frag <- as.numeric(args[i+4])
+name <- args[i+5] #name prefix for file naming convention
 
 # For devel only
 if(FALSE){
   rdsDir <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/temp/frag_overlap"
+  nbcin <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodequants.csv"
   tblOut <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.implicatedBarcodes.csv"
+  name <- "test.small"
+  min_jaccard_frag <- 0.01
 }
 rdsFiles <- list.files(rdsDir, full.names = TRUE)
 
+# Implicate overlapping fragments
 lapply(rdsFiles, readRDS) %>%
   rbindlist() %>% as.data.frame() %>%
   group_by(barc1, barc2) %>%
   summarise(N_both = sum(n_both)/2, N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2)) %>% # overlaps called twice
   filter(N_both > 1) %>%
-  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>%
-  arrange(desc(jaccard_frag)) -> ovdf
+  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% filter(jaccard_frag > min_jaccard_frag) %>% 
+  arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
 
 write.table(ovdf, file = tblOut,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
+
+# Import the number of barcodes per bead
+nBC <- data.frame(fread(nbcin)) %>% arrange(desc(V2)); colnames(nBC) <- c("BeadBarcode", "FragCount")
+nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
+
+# Guess at how wide we need to make the barcodes to handle leading zeros
+guess <- ceiling(log10(dim(nBC)[1]))
+
+idx <- 1
+
+# Loop through and eat up barcodes
+while(dim(nBC)[1] > 0){
+  barcode <- as.character(nBC[1,1])
+  barcode_combine <- barcode
+  
+  # Find friends that are similarly implicated and append from Barcode 1
+  friendsRow1 <- which(barcode ==  ovdf[,"barc1", drop = TRUE])
+  if(length(friendsRow1) > 0){
+    friends1 <- as.character(ovdf[friendsRow1,"barc2"])
+    ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow1,]
+    barcode_combine <- c(barcode_combine, friends1)
+  }
+  
+  # Find friends that are similarly implicated and append from Barcode 2
+  friendsRow2 <- which(barcode ==  ovdf[,"barc2", drop = TRUE])
+  if(length(friendsRow2) > 0){
+    friends2 <- as.character(ovdf[friendsRow2,"barc1"])
+    ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow2,]
+    barcode_combine <- c(barcode_combine, friends2)
+  }
+  
+  # Make a drop barcode and save our progress
+  dropBarcode <- paste0(name, "_BC", formatC(idx, width=guess, flag="0"), "_N", sprintf("%02d", length(barcode_combine)))
+  nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine,  3] <- dropBarcode
+  idx <- idx + 1
+  
+  # Remove barcodes that we've dealt with
+  nBC <- nBC[nBC$BeadBarcode %ni% barcode_combine,]
+  
+}
+
+write.table(nBC_keep[,c("BeadBarcode", "DropBarcode")],
+            file = gsub(".implicatedBarcodes.csv$", ".barcodeTranslate.tsv", tblOut),
+            quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
+

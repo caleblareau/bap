@@ -8,11 +8,11 @@ dependencies = ['click','pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysa
 
 setup(
     name='bap',
-    version='0.0.4',
+    version='0.0.5',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
-    author_email='caleblareau@g.harvard.edu',
+    author_email='clareau@broadinstitute.org',
     description='Bead-based scATAC-seq data Processing.',
     long_description=__doc__,
     packages=find_packages(exclude=['tests']),

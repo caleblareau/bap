@@ -33,6 +33,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 1000, help='Minimum number of fragments (non-unique, may include mito) to be thresholded for doublet merging.')
 @click.option('--minimum-cell-fragments', '-cf', default = 1000, help='Minimum number of fragments (unique, no mito) to be thresholded for final output.')
+@click.option('--minimum-jaccard-fragments', '-ji', default = 0.025, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
@@ -42,6 +43,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 
+@click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
 @click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the barcode; valid for bam mode.')
 @click.option('--bam-name', '-bn', default="default", help='Name for the sam')
 
@@ -50,10 +52,10 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 
 def main(mode, input, output, ncores, reference_genome,
-	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments,
+	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
 	extract_mito, keep_temp_files,
 	bedtools_genome, blacklist_file, tss_file, r_path, 
-	barcode_tag, bam_name,
+	drop_tag, barcode_tag, bam_name,
 	bowtie2_path, bowtie2_index):
 	
 	"""
@@ -82,10 +84,10 @@ def main(mode, input, output, ncores, reference_genome,
 		
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
-		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments,
+		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
 		extract_mito, keep_temp_files,
 		bedtools_genome, blacklist_file, tss_file, r_path, 
-		barcode_tag, bam_name,
+		drop_tag, barcode_tag, bam_name,
 		bowtie2_path, bowtie2_index)
 
 	# Make a counts table from user-supplied peaks and bam files
@@ -115,10 +117,10 @@ def main(mode, input, output, ncores, reference_genome,
 		# Make output folders
 		of = output; logs = of + "/logs"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
 		temp_filt_split = temp + "/filt_split"; temp_frag_overlap = temp + "/frag_overlap"
-		temp_group_bam_chr = temp + "/group_bam_chr"
+		temp_drop_barcode = temp + "/drop_barcode"
 		
 		folders = [of, logs, fin, mito, temp,
-			temp_filt_split, temp_frag_overlap,temp_group_bam_chr, 
+			temp_filt_split, temp_frag_overlap,temp_drop_barcode, 
 			of + "/.internal/parseltongue", of + "/.internal/samples"]
 	
 		mkfolderout = [make_folder(x) for x in folders]
@@ -145,9 +147,9 @@ def main(mode, input, output, ncores, reference_genome,
 		filt_split_cmd = line1 + line2 + line3 + line4
 		os.system(filt_split_cmd)
 		
-		#---------------------------------------
-		# Step 2- Process fragments by Snakemake
-		#---------------------------------------
+		#-------------------------------------------
+		# Step 2 / 3- Process fragments by Snakemake
+		#-------------------------------------------
 		
 		# Round trip the .yaml of user configuration
 		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"

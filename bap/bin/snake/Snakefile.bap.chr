@@ -2,6 +2,7 @@ import os
 import subprocess
 import shutil
 import re
+import pysam
 
 from os.path import join
 
@@ -12,7 +13,9 @@ R = config["R"]
 name = config["bam_name"] 
 output = config["output"] 
 barcode_tag = config["barcode_tag"] 
-minimum_barcode_fragments = config["minimum_barcode_fragments"] 
+drop_tag = config["drop_tag"] 
+minimum_barcode_fragments = str(config["minimum_barcode_fragments"])
+minimum_jaccard_fragments = str(config["minimum_jaccard_fragments"])
 
 # Determine .bam files to execute for fragment overlap analysis
 infile1 = outdir + "/.internal/samples/" + "/" + name + ".chrbam.txt"
@@ -20,16 +23,19 @@ barcodeQuantFile =  outdir + "/final/" + name + ".barcodequants.csv"
 
 with open(infile1) as f:
     SAMPLES = f.readlines()
+
 SAMPLES = [x.strip() for x in SAMPLES] 
 rdsin = [re.sub(".bam$", "_overlapCount.rds", x.replace("/filt_split/", "/frag_overlap/")) for x in SAMPLES]
 simple = [re.sub(".bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES]
+chrOut = [x.replace("/filt_split/", "/drop_barcode/") for x in SAMPLES]
 
 fragOverlaps_R = script_dir + "/bin/R/12_fragOverlapMetricsChr.R"
 determineDoubles_R = script_dir + "/bin/R/13_callDoublets.R"
+paintDropBarcode_py = script_dir + "/bin/python/14_paintDropBarcode.py"
 
 rule all:
 	input:
-		outdir + "/final/"+name+".implicatedBarcodes.csv"
+		outdir + "/final/"+name+".bap.bam.bai"
 
 rule process_one_chromosome:
 	input:
@@ -48,10 +54,36 @@ rule determine_barcode_merges:
 	input:
 		rdsin = rdsin
 	output:
-		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv"
+		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv",
+		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv",
 	run: 	
 		# collate chr inference and make a single file
 		rdsdir = outdir + "/temp/frag_overlap"
-		r_call2 = " ".join([R+"script", determineDoubles_R, rdsdir, output.outcsv])
-		print(r_call2)
+		r_call2 = " ".join([R+"script", determineDoubles_R, rdsdir, barcodeQuantFile, output.outcsv, minimum_jaccard_fragments, name])
 		os.system(r_call2)
+
+# Translate bead barcodes to droplet barcodes
+rule reannotate_droplets:
+	input:
+		dictionary = outdir + "/final/"+name+".barcodeTranslate.tsv",
+		bam = output + "/temp/filt_split/" + "{name}" + ".bam"
+	output:
+		outbam = output + "/temp/drop_barcode/" + "{name}" + ".bam",
+		outbambai = output + "/temp/drop_barcode/" + "{name}" + ".bam.bai"
+	run: 	
+		# Reannotate each individual chromosome file
+		py_call = " ".join(["python", paintDropBarcode_py, "--input", input.bam, "--output", output.outbam, "--bead-barcode", barcode_tag, "--drop-barcode", drop_tag, "--dict-file", input.dictionary])
+		os.system(py_call)
+		pysam.index(output.outbam)
+
+# Final merge of everything
+rule final_merge:
+	input:
+		chrOut = chrOut
+	output:
+		finalbam = outdir + "/final/"+name+".bap.bam",
+		finalbambai = outdir + "/final/"+name+".bap.bam.bai"
+	run:
+		merge_parameters = [output.finalbam] + input.chrOut
+		pysam.merge(*merge_parameters)
+		pysam.index(output.finalbam)

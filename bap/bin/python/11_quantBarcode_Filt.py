@@ -160,4 +160,3 @@ for k, v in barcodes.items():
 	bcfile.write(k +","+ str(v)+"\n")
 bcfile.close() 
 
-

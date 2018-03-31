@@ -45,10 +45,10 @@ def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, sup
 
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
-		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments,
+		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
 		extract_mito, keep_temp_files,
 		bedtools_genome, blacklist_file, tss_file, r_path, 
-		barcode_tag, bam_name,
+		drop_tag, barcode_tag, bam_name,
 		bowtie2_path, bowtie2_index):
 		
 				
@@ -60,10 +60,15 @@ class bapProject():
 		self.output = output
 		self.cluster = cluster
 		self.jobs = jobs
+		
+		if(minimum_jaccard_fragments > 1):
+			sys.exit("Cannot specify jaccard fragments > 1; user specified : %s" % str(minimum_jaccard_fragments))
+		
 		self.minimum_barcode_fragments = minimum_barcode_fragments
 		self.minimum_cell_fragments = minimum_cell_fragments
+		self.minimum_jaccard_fragments = minimum_jaccard_fragments
 		self.extract_mito = extract_mito
-		
+		self.drop_tag = barcode_tag
 		self.barcode_tag = barcode_tag
 		
 		# Figure out operating system just for funzies; not presently used
@@ -166,6 +171,7 @@ class bapProject():
 		yield 'jobs', self.jobs
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
 		yield 'minimum_cell_fragments', self.minimum_cell_fragments
+		yield 'minimum_jaccard_fragments', self.minimum_jaccard_fragments
 		
 		yield 'extract_mito', self.extract_mito
 		yield 'tssFile', self.tssFile
@@ -173,6 +179,7 @@ class bapProject():
 		yield 'bedtoolsGenomeFile', self.bedtoolsGenomeFile
 		yield 'R', self.R
 		
+		yield 'drop_tag', self.drop_tag
 		yield 'barcode_tag', self.barcode_tag
 		yield 'bam_name', self.bam_name
 		
