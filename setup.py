@@ -4,11 +4,11 @@ BAP: Bead-based scATAC-seq data Processing
 from setuptools import find_packages, setup
 from distutils.core import setup, Extension
 
-dependencies = ['click','pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
+dependencies = ['click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
 
 setup(
     name='bap',
-    version='0.0.5',
+    version='0.10',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
@@ -28,8 +28,8 @@ setup(
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',
-         'Development Status :: 2 - Pre-Alpha',
-        # 'Development Status :: 3 - Alpha',
+        # 'Development Status :: 2 - Pre-Alpha',
+         'Development Status :: 3 - Alpha',
         # 'Development Status :: 4 - Beta',
         # 'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
