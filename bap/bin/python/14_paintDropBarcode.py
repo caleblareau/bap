@@ -45,27 +45,30 @@ out = pysam.AlignmentFile(outname, "wb", template = bam)
 barcode_bp = ['NA']
 bp = 0
 
-for read in bam:
-	bead_bc = getBarcode(read.tags)
-	drop_bc = d.get(bead_bc, "NA")
+try:
+	for read in bam:
+		bead_bc = getBarcode(read.tags)
+		drop_bc = d.get(bead_bc, "NA")
 	
-	# Handle droplet barcodes that we want to consider writing out
-	if(drop_bc != "NA"):
+		# Handle droplet barcodes that we want to consider writing out
+		if(drop_bc != "NA"):
 	
-		# New base pair -- no duplicates
-		if(read.reference_start != bp):
-			bp = read.reference_start
-			barcode_bp = [drop_bc]
-			read.tags = read.tags + [(db, drop_bc)]
-			out.write(read)
-		else:
-			if( not drop_bc in barcode_bp):
-				barcode_bp.append(drop_bc)
+			# New base pair -- no duplicates
+			if(read.reference_start != bp):
+				bp = read.reference_start
+				barcode_bp = [drop_bc]
 				read.tags = read.tags + [(db, drop_bc)]
 				out.write(read)
+			else:
+				if( not drop_bc in barcode_bp):
+					barcode_bp.append(drop_bc)
+					read.tags = read.tags + [(db, drop_bc)]
+					out.write(read)
 			
-		read.tags = read.tags + [(db, drop_bc)]
-		out.write(read)
+			read.tags = read.tags + [(db, drop_bc)]
+			out.write(read)
+except OSError: 
+	print('Finished parsing bam')
 	
 bam.close()
 out.close()

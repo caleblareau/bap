@@ -31,8 +31,9 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--cluster', default = "",  help='Message to send to Snakemake to execute jobs on cluster interface; see documentation.')
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
 
-@click.option('--minimum-barcode-fragments', '-bf', default = 1000, help='Minimum number of fragments (non-unique, may include mito) to be thresholded for doublet merging.')
-@click.option('--minimum-cell-fragments', '-cf', default = 1000, help='Minimum number of fragments (unique, no mito) to be thresholded for final output.')
+@click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
+
+@click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
 @click.option('--minimum-jaccard-fragments', '-ji', default = 0.025, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')

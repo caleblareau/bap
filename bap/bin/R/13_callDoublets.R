@@ -31,25 +31,27 @@ if(FALSE){
   nbcin <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodequants.csv"
   tblOut <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.implicatedBarcodes.csv"
   name <- "test.small"
-  min_jaccard_frag <- 0.01
+  min_jaccard_frag <- 0.005
 }
 rdsFiles <- list.files(rdsDir, full.names = TRUE)
+
+
+# Import the number of barcodes per bead
+nBC <- data.frame(fread(nbcin)) %>% arrange(desc(V2)); colnames(nBC) <- c("BeadBarcode", "FragCount")
+nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
+nBCv <- nBC$FragCount; names(nBCv) <- nBC$BeadBarcode
 
 # Implicate overlapping fragments
 lapply(rdsFiles, readRDS) %>%
   rbindlist() %>% as.data.frame() %>%
   group_by(barc1, barc2) %>%
-  summarise(N_both = sum(n_both)/2, N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2)) %>% # overlaps called twice
-  filter(N_both > 1) %>%
+  summarise(N_both = sum(n_both)/2) %>% # overlaps called twice
+  filter(N_both > 1) %>% mutate(N_barc1 = nBCv[barc1], N_barc2 = nBCv[barc2]) %>% 
   mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% filter(jaccard_frag > min_jaccard_frag) %>% 
   arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
 
 write.table(ovdf, file = tblOut,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
-
-# Import the number of barcodes per bead
-nBC <- data.frame(fread(nbcin)) %>% arrange(desc(V2)); colnames(nBC) <- c("BeadBarcode", "FragCount")
-nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
 
 # Guess at how wide we need to make the barcodes to handle leading zeros
 guess <- ceiling(log10(dim(nBC)[1]))
