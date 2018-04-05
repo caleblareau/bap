@@ -4,6 +4,8 @@ library(ggplot2)
 library(tools)
 "%ni%" <- Negate("%in%")
 
+options(scipen=999)
+
 # This function / script for processed chromosome files to produce consensus barcode doublets
 # as well as summary and QC metrics and visuals
 

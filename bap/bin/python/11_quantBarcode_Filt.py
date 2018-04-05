@@ -128,7 +128,7 @@ pool.close()
 # Flatten list and determine count / barcodes passing filter
 list_barcodes = [item for sublist in list_barcodes for item in sublist]
 barcodes = Counter(list_barcodes)
-barcodes = {x : barcodes[x] for x in barcodes if barcodes[x] >= minFrag }
+barcodes = {x : barcodes[x] for x in barcodes if barcodes[x] >= minFrag and x != "NA"}
 bc = list(barcodes.keys())
 
 #-------
