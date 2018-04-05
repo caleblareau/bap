@@ -5,7 +5,8 @@
 ## Author(s): Nicolas Servant, Eric Viara
 ## Contact: nicolas.servant@curie.fr
 ## This software is distributed without any guarantee under the terms of the BSD-3 licence.
-## See the LICENCE file for details
+## Modified by Caleb Lareau, Broad Institute for Python 3 compatibility
+## 4 April 2018
 
 """
 Script to assign an allelic status to a 'N' aligned BAM file
@@ -21,14 +22,14 @@ import pysam
 
 def usage():
     """Usage function"""
-    print "Usage : python markAllelicStatus.py"
-    print "-i/--ibam <BAM/SAM file of mapped reads>"
-    print "-s/--snp <SNP file information - VCF format>"
-    print "[-r/--rstat] <Generate a report with descriptive statistics>"
-    print "[-t/--tag] <tag used to report allelic expression. Default XA>"
-    print "[-o/--out] <output BAM file. Default is stdin>"
-    print "[-v/--verbose] <verbose>"
-    print "[-h/--help] <Help>"
+    print("Usage : python markAllelicStatus.py")
+    print("-i/--ibam <BAM/SAM file of mapped reads>")
+    print("-s/--snp <SNP file information - VCF format>")
+    print("[-r/--rstat] <Generate a report with descriptive statistics>")
+    print("[-t/--tag] <tag used to report allelic expression. Default XA>")
+    print("[-o/--out] <output BAM file. Default is stdin>")
+    print("[-v/--verbose] <verbose>")
+    print("[-h/--help] <Help>")
     return
 
 
@@ -44,7 +45,7 @@ def get_args():
              "output=",
              "rstat", "verbose", "help"])
     except getopt.GetoptError as err:
-        print str(err)
+        print(str(err))
         usage()
         sys.exit(-1)
     return opts
@@ -89,7 +90,7 @@ def load_vcf( in_file, filter_qual=False, verbose=False, debug=False ):
     debug = if True, debug mode [boolean]
     """
     if verbose:
-        print "## Loading VCF file '", in_file, "'..."
+        print("## Loading VCF file '", in_file, "'...")
 
     vcf_handle = open(in_file)    
     header = []
@@ -107,7 +108,7 @@ def load_vcf( in_file, filter_qual=False, verbose=False, debug=False ):
             header[0]    = header[0][1:]
             samples = [ s.split('.')[0] for s in header[9:] ]
             if len(samples) > 1:
-                print >> sys.stderr, "Warning : Multisamples VCF detected. Only the first genotype will be used !"
+                print("Warning : Multisamples VCF detected. Only the first genotype will be used !")
             continue
         else:
             fields = line.split('\t',9)
@@ -122,14 +123,14 @@ def load_vcf( in_file, filter_qual=False, verbose=False, debug=False ):
             if var_counter == 1:
                 format = fields[8] if n>8 else None
                 if format.split(':')[0] != "GT":
-                    print >> sys.stderr,"Error : Invalid format - GT not detected at first position in ", format         
+                    print("Error : Invalid format - GT not detected at first position in ", format)       
                     sys.exit(-1)
 
             genotypes  = fields[9].split('\t') if fields[9] else []
             geno = get_snp_gt(genotypes[0].split(':')[0], ref, alt)      
             if filter_qual == False or (filter_qual == True and qfilter=="PASS"):
                 if debug:
-                    print >> sys.stderr, str(chrom) + " - " + str(start) + " - "+ str(qfilter) +" -REF= " + str(ref) + " -ALT= " + str(alt) + " - G1=" + str(geno[0]) + " - G2=" + str(geno[1])
+                    print(str(chrom) + " - " + str(start) + " - "+ str(qfilter) +" -REF= " + str(ref) + " -ALT= " + str(alt) + " - G1=" + str(geno[0]) + " - G2=" + str(geno[1]))
                 ## store only discriminant SNP
                 if geno[0] != geno[1]:
                     snp_counter+=1
@@ -138,11 +139,11 @@ def load_vcf( in_file, filter_qual=False, verbose=False, debug=False ):
                     snps[(str(chrn), int(start), '2')] = geno[1]
 
         if (var_counter % 100000 == 0 and verbose):
-                print "##", var_counter
+                print("##", var_counter)
  
     vcf_handle.close()
     if verbose:
-        print "## Number of loaded SNPs =",len(snps)/2, "over",var_counter
+        print("## Number of loaded SNPs =",len(snps)/2, "over",var_counter)
     return snps
 
 
@@ -179,28 +180,23 @@ def get_mismatches_positions(read, base=None):
     while y < len(md):
         if md[y].isdigit():
             digits.append(md[y])
-            #print "digits="+str(md[y])
         elif not md[y].isalnum(): ## simply ignore deletion
             y += 1
             while md[y].isalpha():
-                #print "isAlpha="+md[y]
                 y+=1
             #x-=1
             x += int(''.join(digits))
             digits = []
             continue
         elif md[y].isalpha():
-            #print "alpha="+md[y]
             if len(digits) > 0:
                 offset = int(''.join(digits))
                 if base is None or (base is not None and md[y] == base):
                     npos.append(x + offset + 1)               
                 digits = []
                 x += offset + 1 
-                #print "x pos="+str(x)
         y+=1
 
-    #print npos
     ## Update N position if an insertion is detected upstream the N position
     ## l is the read based position
     if read.cigarstring.find("I") != -1:
@@ -209,7 +205,6 @@ def get_mismatches_positions(read, base=None):
         for t in cig:
             if t[0] == 1:
                 for n in range(len(npos)):
-                    #print "N=" + str(npos[n]) + " l=" + str(l) + "t=" + str(t)
                     if npos[n] > l:
                         npos[n] = npos[n]+t[1]
             if int(t[0]) != 3 and int(t[0]) != 2: ## skip splice junction
@@ -232,7 +227,7 @@ def getGenomePos(read, pos):
         genomePos = read.get_reference_positions(full_length=True)
         for y in pos:
             if genomePos[y] == None:
-                print >> sys.stderr, "Warning : no genomic position found for ", read.qname, "at position", y
+                print("Warning : no genomic position found for "+ read.qname+"at position"+str(y))
                 ngenomepos.append(None)
             else:
                 ngenomepos.append(genomePos[y])
@@ -249,7 +244,6 @@ def getBaseAt(read, pos):
     """
     nuc = []
     for p in pos:
-        #print (p)
         nuc.append(read.seq[p])
     return nuc
 
@@ -274,7 +268,6 @@ def getAllelicStatus(chrom, gpos, genotype, snps, debug=False):
     chrn = re.sub("^[Cc]hr","",chrom)
 
     for i in range(len(genotype)):
-        #print >> sys.stderr, chrn, gpos[i], genotype[i]
         if gpos[i] != None:
             if snps.has_key((str(chrn), int(gpos[i]), '1')) and snps.has_key((str(chrn), int(gpos[i]), '2')):
                 if snps[(str(chrn), int(gpos[i]), '1')] == genotype[i]:
@@ -282,7 +275,7 @@ def getAllelicStatus(chrom, gpos, genotype, snps, debug=False):
                 elif snps[(str(chrn), int(gpos[i]), '2')] == genotype[i]:
                     g2_count+=1
                 else:
-                    print >> sys.stderr, "Warning : no SNPs found at position " + chrom + ":" + str(gpos[i]+1) + ". N ignored"
+                    print("Warning : no SNPs found at position " + chrom + ":" + str(gpos[i]+1) + ". N ignored")
 
     if g1_count > 0 and g2_count > 0:
         code = 3
@@ -343,7 +336,7 @@ if __name__ == "__main__":
     
     # Read the SAM/BAM file
     if verbose:
-        print "## Opening SAM/BAM file '", mappedReadsFile, "'..."
+        print("## Opening SAM/BAM file '", mappedReadsFile, "'...")
     infile = pysam.Samfile(mappedReadsFile, "rb")
 
     #samOut:
@@ -351,20 +344,12 @@ if __name__ == "__main__":
         outfile = pysam.AlignmentFile(output, "w", template=infile)
     else:
         outfile = pysam.AlignmentFile(output, "wb", template=infile)
-     
-   # Verbose mode                                                                                                                                                        
-    if verbose:
-        print "## " + __file__
-        print "## ibam=", mappedReadsFile
-        print "## snpFile=", snpFile
-        print "## tag=", tag
-        print "## output=" + output 
-        print "## verbose=", verbose, "\n"
+
 
     # Reads are 0-based too (for both SAM and BAM format)
     # Loop on all reads
     if verbose:
-        print "## Assigning allele specific information ..."
+        print("## Assigning allele specific information ...")
 
   
     for read in infile.fetch(until_eof=True):
@@ -382,7 +367,7 @@ if __name__ == "__main__":
                 if debug:
                     for i in range(len(Nreadpos)):
                         if Ngenomepos[i] != None:
-                            print >> sys.stderr, str(read_chrom) +"\t"+ str(Ngenomepos[i]) + "\t" + str(Ngenomepos[i]+1) + "\t" + str(read.qname) + "/N/" + str(Nbase[i]) + "\t" + str(tagval)
+                            print(str(read_chrom) +"\t"+ str(Ngenomepos[i]) + "\t" + str(Ngenomepos[i]+1) + "\t" + str(read.qname) + "/N/" + str(Nbase[i]) + "\t" + str(tagval))
                 if tagval == 0:
                     ua_counter += 1
                 elif tagval == 1:
@@ -401,7 +386,7 @@ if __name__ == "__main__":
         outfile.write(read)
 
         if (reads_counter % 100000 == 0 and verbose):
-            print "##", reads_counter
+            print("##", reads_counter)
 
     # Close handler
  
