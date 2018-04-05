@@ -68,7 +68,7 @@ class bapProject():
 		self.minimum_cell_fragments = minimum_cell_fragments
 		self.minimum_jaccard_fragments = minimum_jaccard_fragments
 		self.extract_mito = extract_mito
-		self.drop_tag = barcode_tag
+		self.drop_tag = drop_tag
 		self.barcode_tag = barcode_tag
 		
 		# Figure out operating system just for funzies; not presently used

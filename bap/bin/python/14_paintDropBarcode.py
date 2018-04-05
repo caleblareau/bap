@@ -59,15 +59,14 @@ try:
 				barcode_bp = [drop_bc]
 				read.tags = read.tags + [(db, drop_bc)]
 				out.write(read)
+				
 			else:
 				if( not drop_bc in barcode_bp):
 					barcode_bp.append(drop_bc)
 					read.tags = read.tags + [(db, drop_bc)]
 					out.write(read)
-			
-			read.tags = read.tags + [(db, drop_bc)]
-			out.write(read)
-except OSError: 
+
+except OSError: # Truncated bam file from previous iteration handle
 	print('Finished parsing bam')
 	
 bam.close()
