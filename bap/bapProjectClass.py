@@ -43,11 +43,22 @@ def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, sup
 			
 	return(bedtoolsGenomeFile, blacklistFile)
 
+def mitoChr(reference_genome, mito_chromosome):
+	if(mito_chromosome != "default"):
+		return(mito_chromosome)
+	else:
+		if(reference_genome in ["hg19", "mm10", "hg38", "mm10"]):
+			return("chrM")
+		elif(reference_genome == "hg19_mm10_c"):
+			return("humanM")
+		else:
+			return("hg19_chrM")
+
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
 		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
 		extract_mito, keep_temp_files,
-		bedtools_genome, blacklist_file, tss_file, r_path, 
+		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,
 		bowtie2_path, bowtie2_index):
 		
@@ -157,6 +168,9 @@ class bapProject():
 			else: 
 				sys.exit("Could not find the transcription start sites file: %s" % tss_file)		
 		
+		self.mitochr =  mitoChr(reference_genome, mito_chromosome)
+		
+		
 	#--------------------------------------------------------------------------------
 	# Define a method to dump the object as a .yaml/dictionary for use in other files
 	#--------------------------------------------------------------------------------
@@ -177,6 +191,7 @@ class bapProject():
 		yield 'tssFile', self.tssFile
 		yield 'blacklistFile', self.blacklistFile
 		yield 'bedtoolsGenomeFile', self.bedtoolsGenomeFile
+		yield 'mitochr', self.mitochr
 		yield 'R', self.R
 		
 		yield 'drop_tag', self.drop_tag

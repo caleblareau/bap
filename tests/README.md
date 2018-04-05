@@ -7,4 +7,9 @@ In development, these commands are what is assumed to have been run
 ```
 bap bam -i data/test.small.bam -z -bt CB -ji 0.002 
 ```
+with mitochondria:
+```
+bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em
+```
+
 

@@ -42,10 +42,11 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--bedtools-genome', '-bg', default = "", help='Path to bedtools genome file; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
+@click.option('--mito-chromosome', '-mc', default = "default", help='Name of the mitochondrial chromosome; only necessary to specify if the reference genome is unknown but will overwrite default if needbe')
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 
 @click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
-@click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the barcode; valid for bam mode.')
+@click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode; valid for bam mode.')
 @click.option('--bam-name', '-bn', default="default", help='Name for the sam')
 
 @click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH; only needed for "fastq" mode.')
@@ -55,7 +56,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 def main(mode, input, output, ncores, reference_genome,
 	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
 	extract_mito, keep_temp_files,
-	bedtools_genome, blacklist_file, tss_file, r_path, 
+	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, barcode_tag, bam_name,
 	bowtie2_path, bowtie2_index):
 	
@@ -87,7 +88,7 @@ def main(mode, input, output, ncores, reference_genome,
 	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
 		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
 		extract_mito, keep_temp_files,
-		bedtools_genome, blacklist_file, tss_file, r_path, 
+		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,
 		bowtie2_path, bowtie2_index)
 
@@ -160,6 +161,21 @@ def main(mode, input, output, ncores, reference_genome,
 		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_chr)
 		
+		#-----------------------------------
+		# Process mitochondria if so desired
+		#-----------------------------------
+		if(extract_mito):
+			click.echo(gettime() + "Creating a new .bam file for mitochondria.")
+			
+			dict_file = fin+"/"+p.bam_name+".barcodeTranslate.tsv"
+			
+			line1 = 'python ' +script_dir+'/bin/python/15_processMito.py --input '+p.bamfile
+			line2 = ' --output ' + mito + "/" + p.bam_name + ".mito.bam" + " --mitochr " + p.mitochr 
+			line3 = ' --bead-barcode ' + p.barcode_tag + ' --drop-barcode ' + p.drop_tag + " --dict-file " + dict_file
+			mito_cmd = line1 + line2 + line3
+			
+			os.system(mito_cmd)
+			
 		#-------------------------------------------------------
 		# Final-- remove intermediate files if necessary
 		#-------------------------------------------------------
@@ -188,21 +204,6 @@ def main(mode, input, output, ncores, reference_genome,
 		ptss = of + "/.internal/promoter.tss.bed"
 		if not os.path.exists(ptss):
 			os.system('''awk '{print $1"\t"$2-2000"\t"$3+2000"\t"$4}' '''+ p.tssFile + " > " + ptss)
-
-
-		
-		
-		if(mode == 'single'):
-			
-			# Merge into one .bam file:
-			finalmergedbam = fin + "/"+p.name+".merged.bam"
-			if not os.path.isfile(finalmergedbam):
-				os.system(p.samtools + " merge " +finalmergedbam+" "+ of + "/03_processed_reads/bams/*.bam")
-				pysam.index(finalmergedbam)
-			
-		snakecmd_gather = 'snakemake --snakefile '+script_dir+'/bin/snake/Snakefile.bap.gather --cores '+ncores+' --config cfp="' + y_s + '" -T'
-		os.system(snakecmd_gather)
-		
 
 		
 	click.echo(gettime() + "Complete.")
