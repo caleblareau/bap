@@ -74,3 +74,5 @@ except OSError: # Truncated bam file from previous iteration handle
 	
 bam.close()
 out.close()
+pysam.index(outname)
+

@@ -32,7 +32,6 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
-
 @click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
 @click.option('--minimum-jaccard-fragments', '-ji', default = 0.025, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
 
