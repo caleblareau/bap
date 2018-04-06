@@ -82,7 +82,7 @@ while(dim(nBC)[1] > 0){
   }
   
   # Make a drop barcode and save our progress
-  dropBarcode <- paste0(name, "_BC", formatC(idx, width=guess, flag="0"), "_N", sprintf("%02d", length(barcode_combine)))
+  dropBarcode <- paste0(name, "_BC", formatC(idx, width=guess, flag="0", digits = 20), "_N", sprintf("%02d", length(barcode_combine)))
   nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine,  3] <- dropBarcode
   idx <- idx + 1
   
