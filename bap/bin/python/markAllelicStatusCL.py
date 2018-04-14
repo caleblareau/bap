@@ -245,7 +245,7 @@ def getBaseAt(read, pos):
     nuc = []
     for p in pos:
         try:
-            nuc.append(read.seq[p]
+            nuc.append(read.seq[p])
         except:
            pass
     return nuc
