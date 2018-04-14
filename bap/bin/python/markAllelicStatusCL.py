@@ -134,11 +134,12 @@ def load_vcf( in_file, filter_qual=False, verbose=False, debug=False ):
                     print(str(chrom) + " - " + str(start) + " - "+ str(qfilter) +" -REF= " + str(ref) + " -ALT= " + str(alt) + " - G1=" + str(geno[0]) + " - G2=" + str(geno[1]))
                 
                 ## store only discriminant SNP
-                if geno[0] != geno[1] and len(geno[0]) == 1 and len(geno[1]) == 1:
-                    snp_counter+=1
-                    chrn = re.sub("^[Cc]hr","",chrom)
-                    snps[(str(chrn), int(start), '1')] = geno[0]
-                    snps[(str(chrn), int(start), '2')] = geno[1]
+                if geno[0] != geno[1]:
+                    if len(str(geno[0])) == 1 and len(str(geno[1])) == 1:
+                        snp_counter+=1
+                        chrn = re.sub("^[Cc]hr","",chrom)
+                        snps[(str(chrn), int(start), '1')] = geno[0]
+                        snps[(str(chrn), int(start), '2')] = geno[1]
 
         if (var_counter % 100000 == 0 and verbose):
                 print("##", var_counter)
@@ -229,10 +230,10 @@ def getGenomePos(read, pos):
         genomePos = read.get_reference_positions(full_length=True)
         for y in pos:
             if y < len(genomePos):
-            	if genomePos[y] == None:
-                	ngenomepos.append(None)
-            	else:
-                	ngenomepos.append(genomePos[y])
+                if genomePos[y] == None:
+                    ngenomepos.append(None)
+                else:
+                    ngenomepos.append(genomePos[y])
     return ngenomepos
     
 
