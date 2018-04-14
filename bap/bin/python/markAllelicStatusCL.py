@@ -18,6 +18,7 @@ import sys
 import os
 import re
 import pysam
+import gzip
 
 
 def usage():
@@ -291,6 +292,38 @@ def getAllelicStatus(chrom, gpos, genotype, snps, debug=False):
 
     return code
 
+def replace_str_index(text,index=0,replacement=''):
+    return '%s%s%s'%(text[:index],replacement,text[index+1:])
+
+def WASP(chrom, gpos, genotype, snps, tagval, read, debug=False):
+    """
+    Do the WASP-style allele swap
+    """
+    
+    name = read.query_name
+    pos = read.query_alignment_start
+    name = name + "_-_" + chrom + ":" + str(gpos[pos])
+
+    # Read attributes
+    q = pysam.array_to_qualitystring(read.query_qualities)
+    r = read.query_sequence
+    
+    chrn = re.sub("^[Cc]hr","",chrom)
+    if(tagval == 1):
+        for i in range(len(genotype)):
+            if gpos[i] != None:
+                if (str(chrn), int(gpos[i]), '1') in snps.keys() and (str(chrn), int(gpos[i]), '2') in snps.keys():
+                    r = replace_str_index(r, i, snps[(str(chrn), int(gpos[i]), '2')])
+    if(tagval == 2):
+        for i in range(len(genotype)):
+            if gpos[i] != None:
+                if (str(chrn), int(gpos[i]), '1') in snps.keys() and (str(chrn), int(gpos[i]), '2') in snps.keys():
+                    r = replace_str_index(r, i, snps[(str(chrn), int(gpos[i]), '1')])
+
+    o = "@"+name+"\n"+r+"\n+\n"+q+"\n"
+    return(o)
+
+
 if __name__ == "__main__":
 
     # Read command line arguments
@@ -352,7 +385,9 @@ if __name__ == "__main__":
     # Loop on all reads
     if verbose:
         print("## Assigning allele specific information ...")
-
+        
+    # Open up a new .fastq file for permuted
+    permuted = gzip.open(re.sub(r'\.bam$|\.sam$', '.realign.fastq.gz', output), 'wb')
   
     for read in infile.fetch(until_eof=True):
         reads_counter += 1
@@ -377,7 +412,11 @@ if __name__ == "__main__":
                 elif tagval == 2:
                     g2_counter += 1
                 elif tagval == 3:
-                    cf_counter += 1                                        
+                    cf_counter += 1      
+                    
+                # Write the permuted alleles fastq file
+                if(tagval == 1 or tagval == 2):
+                    permuted.write(str.encode(WASP(read_chrom, genomePos, bases, snps, tagval, read, debug=debug)))                                  
             else:
                 read.set_tag(tag, 0)
                 ua_counter += 1
@@ -391,7 +430,8 @@ if __name__ == "__main__":
             print("##", reads_counter)
 
     # Close handler
- 
+    permuted.close()
+    
     # Write stats file
     if report:
         handle_stat = open(re.sub(r'\.bam$|\.sam$', '.allelstat', output), 'w')
