@@ -9,8 +9,8 @@
 ## 4 April 2018
 
 """
-Script to assign an allelic status to a 'N' aligned BAM file
-Note that the VCF file is loaded in RAM.
+Script to assign an allelic status to an aligned BAM file
+That breaks the dependency on the 'N'-- much slower
 """
 
 import getopt
@@ -22,7 +22,7 @@ import pysam
 
 def usage():
     """Usage function"""
-    print("Usage : python markAllelicStatus.py")
+    print("Usage : python markAllelicStatusCL.py")
     print("-i/--ibam <BAM/SAM file of mapped reads>")
     print("-s/--snp <SNP file information - VCF format>")
     print("[-r/--rstat] <Generate a report with descriptive statistics>")
@@ -226,11 +226,11 @@ def getGenomePos(read, pos):
     if len(pos) > 0:
         genomePos = read.get_reference_positions(full_length=True)
         for y in pos:
-            if genomePos[y] == None:
-                print("Warning : no genomic position found for "+ read.qname+"at position"+str(y))
-                ngenomepos.append(None)
-            else:
-                ngenomepos.append(genomePos[y])
+            if y < len(genomePos):
+            	if genomePos[y] == None:
+                	ngenomepos.append(None)
+            	else:
+                	ngenomepos.append(genomePos[y])
     return ngenomepos
     
 
@@ -244,7 +244,10 @@ def getBaseAt(read, pos):
     """
     nuc = []
     for p in pos:
-        nuc.append(read.seq[p])
+        try:
+            nuc.append(read.seq[p]
+        except:
+           pass
     return nuc
 
 
@@ -333,7 +336,6 @@ if __name__ == "__main__":
 
     # Read the SNP file
     snps = load_vcf(snpFile, filter_qual=False, verbose=verbose, debug=False)
-    
     # Read the SAM/BAM file
     if verbose:
         print("## Opening SAM/BAM file '", mappedReadsFile, "'...")
@@ -356,12 +358,12 @@ if __name__ == "__main__":
         reads_counter += 1
         if not read.is_unmapped:## and read.cigarstring.find("D") != -1:
             read_chrom = infile.getrname(read.tid)
-            Nreadpos = get_mismatches_positions(read, base="N")
-            if (len(Nreadpos)>0):
-                N_counter += len(Nreadpos)
-                Ngenomepos = getGenomePos(read, Nreadpos)
-                Nbase = getBaseAt(read, Nreadpos)
-                tagval = getAllelicStatus(read_chrom, Ngenomepos, Nbase, snps, debug=debug)
+            genomePos = getGenomePos(read, list(range(0,read.reference_length-1)))
+            bases = getBaseAt(read,range(0,read.reference_length-1))
+            tagval = getAllelicStatus(read_chrom, genomePos, bases, snps, debug=debug)
+
+            if (tagval> -1):
+
                 read.set_tag(tag, tagval)
             
                 if debug:
