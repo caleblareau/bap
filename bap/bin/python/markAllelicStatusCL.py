@@ -132,8 +132,9 @@ def load_vcf( in_file, filter_qual=False, verbose=False, debug=False ):
             if filter_qual == False or (filter_qual == True and qfilter=="PASS"):
                 if debug:
                     print(str(chrom) + " - " + str(start) + " - "+ str(qfilter) +" -REF= " + str(ref) + " -ALT= " + str(alt) + " - G1=" + str(geno[0]) + " - G2=" + str(geno[1]))
+                
                 ## store only discriminant SNP
-                if geno[0] != geno[1]:
+                if geno[0] != geno[1] and len(geno[0]) == 1 and len(geno[1]) == 1:
                     snp_counter+=1
                     chrn = re.sub("^[Cc]hr","",chrom)
                     snps[(str(chrn), int(start), '1')] = geno[0]
@@ -278,8 +279,7 @@ def getAllelicStatus(chrom, gpos, genotype, snps, debug=False):
                     g1_count+=1
                 elif snps[(str(chrn), int(gpos[i]), '2')] == genotype[i]:
                     g2_count+=1
-                else:
-                    print("Warning : no SNPs found at position " + chrom + ":" + str(gpos[i]+1) + ". N ignored")
+
 
     if g1_count > 0 and g2_count > 0:
         code = 3
