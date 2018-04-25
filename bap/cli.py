@@ -34,6 +34,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
 @click.option('--minimum-jaccard-fragments', '-ji', default = 0.025, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
+@click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (making this merging useless)')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
@@ -53,7 +54,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 
 def main(mode, input, output, ncores, reference_genome,
-	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
+	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
 	extract_mito, keep_temp_files,
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, barcode_tag, bam_name,
@@ -85,7 +86,7 @@ def main(mode, input, output, ncores, reference_genome,
 		
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
-		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
+		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
 		extract_mito, keep_temp_files,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,

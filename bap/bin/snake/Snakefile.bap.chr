@@ -16,6 +16,7 @@ barcode_tag = config["barcode_tag"]
 drop_tag = config["drop_tag"] 
 minimum_barcode_fragments = str(config["minimum_barcode_fragments"])
 minimum_jaccard_fragments = str(config["minimum_jaccard_fragments"])
+one_to_one = str(config["one_to_one"])
 
 # Determine .bam files to execute for fragment overlap analysis
 infile1 = outdir + "/.internal/samples/" + "/" + name + ".chrbam.txt"
@@ -59,7 +60,7 @@ rule determine_barcode_merges:
 	run: 	
 		# collate chr inference and make a single file
 		rdsdir = outdir + "/temp/frag_overlap"
-		r_call2 = " ".join([R+"script", determineDoubles_R, rdsdir, barcodeQuantFile, output.outcsv, minimum_jaccard_fragments, name])
+		r_call2 = " ".join([R+"script", determineDoubles_R, rdsdir, barcodeQuantFile, output.outcsv, minimum_jaccard_fragments, name, one_to_one])
 		os.system(r_call2)
 
 # Translate bead barcodes to droplet barcodes

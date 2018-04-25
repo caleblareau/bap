@@ -51,6 +51,7 @@ def getBarcode(intags):
 def getUniqueBarcodes(chrom):
 	barcodes = ['NA'] 
 	barcode_bp = ['NA']
+	barcodes_all = ['NA']
 	bp = 0
 
 	bam = pysam.AlignmentFile(bamname,'rb')
@@ -58,6 +59,7 @@ def getUniqueBarcodes(chrom):
 	
 	for read in Itr:
 		read_barcode = getBarcode(read.tags)
+		barcodes_all.append(read_barcode)
 	
 		# New base pair -- no duplicates
 		if(read.reference_start != bp):
@@ -70,7 +72,7 @@ def getUniqueBarcodes(chrom):
 			if( not read_barcode in barcode_bp):
 				barcodes.append(read_barcode)
 				barcode_bp.append(read_barcode)
-	return(barcodes)
+	return(barcodes, barcodes_all)
 
 
 #---------------------------------------------------------
@@ -122,12 +124,14 @@ bamchrrouter.close()
 # Quantify the barcodes
 results = []
 pool = Pool(processes=cpu)
-list_barcodes = pool.map(getUniqueBarcodes, chrs)
+list_barcodes, barcodes_all = zip(*pool.map(getUniqueBarcodes, chrs))
 pool.close()
 
 # Flatten list and determine count / barcodes passing filter
 list_barcodes = [item for sublist in list_barcodes for item in sublist]
+barcodes_all = [item for sublist in barcodes_all for item in sublist]
 barcodes = Counter(list_barcodes)
+barcodes_all = Counter(barcodes_all)
 barcodes = {x : barcodes[x] for x in barcodes if barcodes[x] >= minFrag and x != "NA"}
 bc = list(barcodes.keys())
 
@@ -157,6 +161,6 @@ with multi_file_manager(bamchrfiles) as fopen:
 # Write out barcode file
 bcfile = open(out.replace("temp/filt_split", "final") + "/" + name + ".barcodequants.csv", "w") 
 for k, v in barcodes.items():
-	bcfile.write(k +","+ str(v)+"\n")
+	bcfile.write(k +","+ str(v)+"," + str(barcodes_all.get(k)) + "\n")
 bcfile.close() 
 

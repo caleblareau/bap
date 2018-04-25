@@ -26,6 +26,9 @@ nbcin <- args[i+2] # file path to the number of barcodes for each observed barco
 tblOut <- args[i+3] # filepath to write the implicated barcode pairs
 min_jaccard_frag <- as.numeric(args[i+4])
 name <- args[i+5] #name prefix for file naming convention
+one_to_one <- args[i+6] #arguement for keeping bead : drop conversion 1 to 1
+one_to_one <- one_to_one == "True" # Fix to R boolean
+
 
 # For devel only
 if(FALSE){
@@ -34,14 +37,15 @@ if(FALSE){
   tblOut <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.implicatedBarcodes.csv"
   name <- "test.small"
   min_jaccard_frag <- 0.005
+  one_to_one <- FALSE
 }
 rdsFiles <- list.files(rdsDir, full.names = TRUE)
 
 
 # Import the number of barcodes per bead
-nBC <- data.frame(fread(nbcin)) %>% arrange(desc(V2)); colnames(nBC) <- c("BeadBarcode", "FragCount")
+nBC <- data.frame(fread(nbcin)) %>% arrange(desc(V2)); colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount")
 nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
-nBCv <- nBC$FragCount; names(nBCv) <- nBC$BeadBarcode
+nBCv <- nBC$UniqueFragCount; names(nBCv) <- nBC$BeadBarcode
 
 # Implicate overlapping fragments
 lapply(rdsFiles, readRDS) %>%
@@ -81,14 +85,19 @@ while(dim(nBC)[1] > 0){
     barcode_combine <- c(barcode_combine, friends2)
   }
   
+  # If user species one to one, then only remove that one barcode
+  if(one_to_one){
+    barcode_combine <- barcode
+  }
+  
   # Make a drop barcode and save our progress
   dropBarcode <- paste0(name, "_BC", formatC(idx, width=guess, flag="0", digits = 20), "_N", sprintf("%02d", length(barcode_combine)))
-  nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine,  3] <- dropBarcode
+  
+  nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "DropBarcode"] <- dropBarcode
   idx <- idx + 1
   
   # Remove barcodes that we've dealt with
   nBC <- nBC[nBC$BeadBarcode %ni% barcode_combine,]
-  
 }
 
 write.table(nBC_keep[,c("BeadBarcode", "DropBarcode")],

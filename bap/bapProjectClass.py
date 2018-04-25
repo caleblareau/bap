@@ -56,7 +56,7 @@ def mitoChr(reference_genome, mito_chromosome):
 
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
-		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments,
+		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
 		extract_mito, keep_temp_files,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,
@@ -78,6 +78,7 @@ class bapProject():
 		self.minimum_barcode_fragments = minimum_barcode_fragments
 		self.minimum_cell_fragments = minimum_cell_fragments
 		self.minimum_jaccard_fragments = minimum_jaccard_fragments
+		self.one_to_one = one_to_one
 		self.extract_mito = extract_mito
 		self.drop_tag = drop_tag
 		self.barcode_tag = barcode_tag
@@ -186,6 +187,7 @@ class bapProject():
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
 		yield 'minimum_cell_fragments', self.minimum_cell_fragments
 		yield 'minimum_jaccard_fragments', self.minimum_jaccard_fragments
+		yield 'one_to_one', self.one_to_one
 		
 		yield 'extract_mito', self.extract_mito
 		yield 'tssFile', self.tssFile
