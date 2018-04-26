@@ -6,6 +6,10 @@ This is an integrated `python` (>= 3.6) and `R` package that
 performs analysis and identification of bead doublets and processes
 data files for downstream analyses for SureCell single-cell ATAC-seq data. 
 
+## Quality control statistics
+
+[Descriptions about QC metrics](documentation/aboutQC.md)
+
 ## Install
 
 **Recommended:**
@@ -43,5 +47,5 @@ bap bam -i data/test.small.bam -bt CB
 Verify that there are files `bap_out/final`
 
 #### Contact
-Lead: [Caleb Lareau](clareau@broadinstitute.org)
+Lead: [Caleb Lareau](mailto:clareau@broadinstitute.org)
 <br><br>
