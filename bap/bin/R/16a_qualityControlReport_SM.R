@@ -1,9 +1,9 @@
-library(Rsamtools)
-library(GenomicAlignments)
-library(GenomicRanges)
-library(dplyr)
-library(data.table)
-library(tools)
+suppressMessages(suppressWarnings(library(Rsamtools)))
+suppressMessages(suppressWarnings(library(GenomicAlignments)))
+suppressMessages(suppressWarnings(library(GenomicRanges)))
+suppressMessages(suppressWarnings(library(dplyr)))
+suppressMessages(suppressWarnings(library(data.table)))
+suppressMessages(suppressWarnings(library(tools)))
 
 "%ni%" <- Negate("%in%")
 
@@ -71,17 +71,19 @@ if(file_path_sans_ext(basename(args[1])) == "R"){
   i <- 0
 }
 
+
 bamFile <- args[i+1] # directory of .rds files
 barcodeTranslateFile <- args[i+2] # file path to the number of barcodes for each observed barcode
 barcodeQuantsFile <- args[i+3] # filepath to write the implicated barcode pairs
-
+tssFile <- args[i+4]
+tag <- args[i+5]
 
 # For devel only
 if(FALSE){
-  bamFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.bap.bam"
-  barcodeTranslateFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodeTranslate.tsv"
-  barcodeQuantsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodequants.csv"
-  tssFile <-  "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/TSS/hg19.refGene.TSS.bed"
+  bamFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/small_mix.bap.bam"
+  barcodeTranslateFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/small_mix.barcodeTranslate.tsv"
+  barcodeQuantsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/small_mix.barcodequants.csv"
+  tssFile <-  "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/TSS/hg19-mm10.refGene.TSS.bed"
   tag <- "DB"
 }
 
@@ -95,16 +97,21 @@ df <- data.frame(fread(tssFile))
 df$V2 <- df$V2 - 2000
 df$V3 <- df$V3 + 2000
 
+
 # Deal with TSS enrichment %
 promoter <- makeGRangesFromDataFrame(df, seqnames.field = "V1", start.field = "V2", end.field = "V3")
 ov <- findOverlaps(promoter, GA)
 df <- data.frame(mcols(GA))
 df$TSS <- as.numeric(1:dim(df)[1] %in% subjectHits(ov))
+df$mouse <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "m")
+df$human <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "h")
 rm(ov); rm(GA); rm(promoter)
-colnames(df) <- c("isize", "DropBarcode", "TSS")
+colnames(df) <- c("isize", "DropBarcode", "TSS", "human", "mouse")
 sbdf <- df %>% group_by(DropBarcode) %>% summarise(tssPproportion = round(mean(TSS), 3),
                                                    meanInsertSize = round(mean(isize)),
-                                                   medianInsertSize = round(median(isize))) %>% data.frame()
+                                                   medianInsertSize = round(median(isize)),
+                                                   nHumanReads = sum(human),
+                                                   nMouseReads = sum(mouse)) %>% data.frame()
 rm(df)
 
 # Import old barcode stats
