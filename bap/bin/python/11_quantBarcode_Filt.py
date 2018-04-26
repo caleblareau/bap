@@ -112,6 +112,10 @@ with open(bedtoolsGenomeFile) as f:
 		tok = line.split("\t")
 		chrlens[tok[0]] = tok[1].strip()
 
+# Split into those that are short (mitochondria) and long (nuclear)
+chrlenfail = {x : chrlens[x] for x in chrlens if int(chrlens[x]) < minChromosomeSize }
+chrsOther = list(chrlenfail.keys())
+
 chrlenpass = {x : chrlens[x] for x in chrlens if int(chrlens[x]) >= minChromosomeSize }
 chrs = list(chrlenpass.keys())
 
@@ -126,6 +130,14 @@ results = []
 pool = Pool(processes=cpu)
 list_barcodes, barcodes_all = zip(*pool.map(getUniqueBarcodes, chrs))
 pool.close()
+
+# Quantify read numbers for short chromosomes ==> mitochondria
+pool = Pool(processes=cpu)
+unique_bc_short, all_bc_short = zip(*pool.map(getUniqueBarcodes, chrsOther))
+pool.close()
+all_bc_short = [item for sublist in all_bc_short for item in sublist]
+all_bc_short = Counter(all_bc_short)
+
 
 # Flatten list and determine count / barcodes passing filter
 list_barcodes = [item for sublist in list_barcodes for item in sublist]
@@ -160,7 +172,12 @@ with multi_file_manager(bamchrfiles) as fopen:
 
 # Write out barcode file
 bcfile = open(out.replace("temp/filt_split", "final") + "/" + name + ".barcodequants.csv", "w") 
+bcfile.write("Barcode,UniqueNuclear,TotalNuclear,TotalMito"+ "\n")
 for k, v in barcodes.items():
-	bcfile.write(k +","+ str(v)+"," + str(barcodes_all.get(k)) + "\n")
+	if(all_bc_short.get(k) == None):
+		mito = 0
+	else:
+		mito = all_bc_short.get(k)
+	bcfile.write(k +","+ str(v)+"," + str(barcodes_all.get(k)) + "," + str(mito) + "\n")
 bcfile.close() 
 

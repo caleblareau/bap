@@ -91,7 +91,12 @@ def main(mode, input, output, ncores, reference_genome,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,
 		bowtie2_path, bowtie2_index)
-
+	
+	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
+		speciesMix = True
+	else:
+		speciesMix = False
+	
 	# Make a counts table from user-supplied peaks and bam files
 	if(mode == 'bam'):
 	
@@ -160,9 +165,25 @@ def main(mode, input, output, ncores, reference_genome,
 			
 		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_chr)
-		
+
 		#-----------------------------------
-		# Process mitochondria if so desired
+		# Step 4 - QC stats / outside Snakemake since not-essential
+		#-----------------------------------
+		barcodeTranslateFile = p.output + "/final/" + p.bam_name + ".barcodeTranslate.tsv"
+		barcodeQuantFile =  p.output + "/final/" + p.bam_name + ".barcodequants.csv"
+		finalBamFile = p.output + "/final/" + p.bam_name + ".bap.bam"
+		
+		if(speciesMix):
+			qc_R = script_dir + "/bin/R/16a_qualityControlReport_SM.R"
+		else:
+			qc_R = script_dir + "/bin/R/16_qualityControlReport.R"
+
+		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag])
+		print(r_callQC)
+		os.system(r_callQC)
+
+		#-----------------------------------
+		# Step 5 - Process mitochondria
 		#-----------------------------------
 		if(extract_mito):
 			click.echo(gettime() + "Creating a new .bam file for mitochondria.")
@@ -175,7 +196,7 @@ def main(mode, input, output, ncores, reference_genome,
 			mito_cmd = line1 + line2 + line3
 			
 			os.system(mito_cmd)
-			
+		
 		#-------------------------------------------------------
 		# Final-- remove intermediate files if necessary
 		#-------------------------------------------------------
@@ -196,15 +217,5 @@ def main(mode, input, output, ncores, reference_genome,
 	if (mode == "check"):
 		click.echo(gettime() + "Dependencies and user-reported file paths OK")
 	
-	# Single or bulk processing
-	if(mode == "single" or mode == "bulk"):
-
-		
-		# Create promoter file:
-		ptss = of + "/.internal/promoter.tss.bed"
-		if not os.path.exists(ptss):
-			os.system('''awk '{print $1"\t"$2-2000"\t"$3+2000"\t"$4}' '''+ p.tssFile + " > " + ptss)
-
-		
 	click.echo(gettime() + "Complete.")
 	

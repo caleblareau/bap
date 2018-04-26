@@ -43,7 +43,7 @@ rdsFiles <- list.files(rdsDir, full.names = TRUE)
 
 
 # Import the number of barcodes per bead
-nBC <- data.frame(fread(nbcin)) %>% arrange(desc(V2)); colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount")
+nBC <- data.frame(fread(nbcin, header = TRUE)) %>% arrange(desc(UniqueNuclear)); colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount", "TotalMitoCount")
 nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
 nBCv <- nBC$UniqueFragCount; names(nBCv) <- nBC$BeadBarcode
 

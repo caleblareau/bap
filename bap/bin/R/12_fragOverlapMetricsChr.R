@@ -80,7 +80,7 @@ if(FALSE){
 }
 
 # Establish the barcode counts normally
-bq <- data.frame(fread(barcodeQuantFile, header = FALSE, sep = ","))
+bq <- data.frame(fread(barcodeQuantFile, header = TRUE, sep = ","))
 keepBarcodesGlobal <- as.character(bq[,1])
 rm(bq)
 
