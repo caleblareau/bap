@@ -77,6 +77,7 @@ barcodeTranslateFile <- args[i+2] # file path to the number of barcodes for each
 barcodeQuantsFile <- args[i+3] # filepath to write the implicated barcode pairs
 tssFile <- args[i+4]
 tag <- args[i+5]
+blacklistFile <- args[i+6]
 
 # For devel only
 if(FALSE){
@@ -85,6 +86,7 @@ if(FALSE){
   barcodeQuantsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/small_mix.barcodequants.csv"
   tssFile <-  "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/TSS/hg19-mm10.refGene.TSS.bed"
   tag <- "DB"
+  blacklistFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19-mm10.full.blacklist.bed"
 }
 
 # Parse .bam file
@@ -98,11 +100,20 @@ df$V2 <- df$V2 - 2000
 df$V3 <- df$V3 + 2000
 
 
+# Set up blacklist file
+bf <- data.frame(fread(blacklistFile))
+blacklist <- makeGRangesFromDataFrame(bf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
+
+# Remove blacklist reads before proceeding
+ov1 <- findOverlaps(blacklist, GA)
+GA <- GA[1:length(GA) %ni% subjectHits(ov1)]
+
 # Deal with TSS enrichment %
 promoter <- makeGRangesFromDataFrame(df, seqnames.field = "V1", start.field = "V2", end.field = "V3")
 ov <- findOverlaps(promoter, GA)
 df <- data.frame(mcols(GA))
 df$TSS <- as.numeric(1:dim(df)[1] %in% subjectHits(ov))
+
 df$mouse <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "m")
 df$human <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "h")
 rm(ov); rm(GA); rm(promoter)

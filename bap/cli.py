@@ -178,7 +178,7 @@ def main(mode, input, output, ncores, reference_genome,
 		else:
 			qc_R = script_dir + "/bin/R/16_qualityControlReport.R"
 
-		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag])
+		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile])
 		print(r_callQC)
 		os.system(r_callQC)
 

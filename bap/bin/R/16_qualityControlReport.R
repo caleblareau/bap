@@ -77,6 +77,7 @@ barcodeTranslateFile <- args[i+2] # file path to the number of barcodes for each
 barcodeQuantsFile <- args[i+3] # filepath to write the implicated barcode pairs
 tssFile <- args[i+4]
 tag <- args[i+5]
+blacklistFile <- args[i+6]
 
 # For devel only
 if(FALSE){
@@ -85,6 +86,7 @@ if(FALSE){
   barcodeQuantsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodequants.csv"
   tssFile <-  "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/TSS/hg19.refGene.TSS.bed"
   tag <- "DB"
+  blacklistFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19.full.blacklist.bed"
 }
 
 # Parse .bam file
