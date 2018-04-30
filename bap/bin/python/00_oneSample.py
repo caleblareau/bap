@@ -41,7 +41,7 @@ tfq2 = outdir + "/01_trimmed/" + sample + "_2.trim.fastq.gz"
 # 02 Align with bwa
 bwalog = outdir+"/logs/bwa/" + sample + ".log"
 sortedbam = outdir + '/02_aligned_reads/'+sample+'.st.bam'
-bwacall = bwa + ' mem -t '+ncores+' '+ bowtie2index +' -1 '+tfq1+' -2 '+tfq2+' 2> '+bwalog+' | ' + samtools + ' view -bS - | ' + samtools + ' sort -@ 4 - -o ' +sortedbam
+bwacall = bwa + ' mem -t '+ncores+' '+ bwa_index +' -1 '+tfq1+' -2 '+tfq2+' 2> '+bwalog+' | ' + samtools + ' view -bS - | ' + samtools + ' sort -@ 4 - -o ' +sortedbam
 print("Aligning data with bwa mem")
 os.system(bwacall)
 

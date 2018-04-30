@@ -141,6 +141,17 @@ def main(mode, input, output, ncores, reference_genome,
 		snakecmd_c1fastq = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bapc1fastq.c1fastq --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_c1fastq)
 		
+		if keep_temp_files:
+			click.echo(gettime() + "Temporary files not deleted since --keep-temp-files was specified.")
+		else:
+			byefolder = of
+			shutil.rmtree(byefolder + "/.internal")
+			shutil.rmtree(byefolder + "/01_trimmed")
+			shutil.rmtree(byefolder + "/02_aligned_reads")
+			shutil.rmtree(byefolder + "/03_processed_reads")
+			
+			click.echo(gettime() + "Intermediate files successfully removed.")
+		
 		sys.exit(gettime() + 'All done')
 	
 	if(mode == "support"):
