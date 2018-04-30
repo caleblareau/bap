@@ -200,7 +200,7 @@ class bapProject():
 		yield 'barcode_tag', self.barcode_tag
 		yield 'bam_name', self.bam_name
 		
-		yield 'bowtie2', self.bowtie2
-		yield 'bowtie2_index', self.bowtie2_index
+		yield 'bwa', self.bwa
+		yield 'bwa_index', self.bwa_index
 		
 	

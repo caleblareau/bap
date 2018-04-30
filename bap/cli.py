@@ -20,7 +20,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.command()
 @click.version_option()
 
-@click.argument('mode', type=click.Choice(['bam', 'check', 'support']))
+@click.argument('mode', type=click.Choice(['bam', 'c1-fastq', 'check', 'support']))
 
 @click.option('--input', '-i', help='Input for bap; varies by which mode is specified; see documentation')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; see documentation.')
@@ -49,8 +49,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode; valid for bam mode.')
 @click.option('--bam-name', '-bn', default="default", help='Name for the sam')
 
-@click.option('--bowtie2-path', default = "", help='Path to bowtie2; by default, assumes that bowtie2 is in PATH; only needed for "fastq" mode.')
-@click.option('--bowtie2-index', '-bi', default = "", help='Path to the bowtie2 index; should be specified as if you were calling bowtie2 (with file index prefix); only needed for "fastq" mode.')
+@click.option('--bwa-path', default = "", help='Path to bwa; by default, assumes that bwa is in PATH; only needed for "c1fastq" mode.')
+@click.option('--bwa-index', '-bi', default = "", help='Path to the bwa (.fa) index; should be specified as if you were calling bwa (with file index prefix); only needed for "c1fastq" mode.')
 
 
 def main(mode, input, output, ncores, reference_genome,
@@ -58,7 +58,7 @@ def main(mode, input, output, ncores, reference_genome,
 	extract_mito, keep_temp_files,
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, barcode_tag, bam_name,
-	bowtie2_path, bowtie2_index):
+	bwa_path, bwa_index):
 	
 	"""
 	bap: Bead-based scATAC-seq data Processing \n
@@ -75,7 +75,12 @@ def main(mode, input, output, ncores, reference_genome,
 	# Determine which genomes are available
 	rawsg = os.popen('ls ' + script_dir + "/anno/bedtools/*.sizes").read().strip().split("\n")
 	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]  
-
+	
+	if(mode == "c1fastq"):
+		click.echo(gettime() + "Preprocessing data as if it were from a C1 experiment...")
+		
+		sys.exit(gettime() + 'All done')
+	
 	if(mode == "support"):
 		'''
 		Show supported genomes and then bow out
@@ -90,7 +95,7 @@ def main(mode, input, output, ncores, reference_genome,
 		extract_mito, keep_temp_files,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,
-		bowtie2_path, bowtie2_index)
+		bwa_path, bwa_index)
 	
 	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
 		speciesMix = True
