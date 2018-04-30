@@ -27,3 +27,8 @@ bowtie2 -x /Volumes/dat/genomes/hg19_bwt2/hg19 -U ann.realign.fastq.gz
 
 ```
 
+# Testing the C1 parsing
+```
+bap c1fastq --input c1fastqinput.csv -bi /Volumes/dat/genomes/hg19_bwa/hg19.fa -z
+```
+

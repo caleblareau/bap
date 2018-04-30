@@ -6,6 +6,7 @@ from os.path import join
 
 configfile: config["cfp"]     
 outdir = config["output"]
+name = config["name"]
 script_dir = config["script_dir"]          
 samtools = "samtools"
 
@@ -17,7 +18,7 @@ oneSample_py = script_dir + "/bin/python/00_oneSample.py"
 
 rule all:
 	input:
-		outdir + "/fin.merged.bam.bai"
+		outdir + "/" +name+".merged.bam.bai"
 
 rule process_one_sample:
 	input:
@@ -43,7 +44,7 @@ rule merge_all:
 	input:
 		bams = expand(outdir + "/03_processed_reads/{sample}.st.anno.bam", sample=SAMPLES)
 	output:
-		outdir + "/fin.merged.bam.bai"
+		outdir + "/" +name+".merged.bam.bai"
 	run: 	
 		# merge via pysam or something
 		finalmergedbam = outdir + "/"+name+".merged.bam"

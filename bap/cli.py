@@ -132,6 +132,7 @@ def main(mode, input, output, ncores, reference_genome,
 		d["script_dir"] = script_dir
 		d["barcode_tag"] = barcode_tag
 		d["output"] = output
+		d["name"] = os.path.basename(output)
 		
 		y_s = of + "/.internal/parseltongue/c1fastq.object.yaml"
 		with open(y_s, 'w') as yaml_file:
