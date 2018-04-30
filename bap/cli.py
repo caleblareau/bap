@@ -20,7 +20,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.command()
 @click.version_option()
 
-@click.argument('mode', type=click.Choice(['bam', 'c1-fastq', 'check', 'support']))
+@click.argument('mode', type=click.Choice(['bam', 'c1fastq', 'check', 'support']))
 
 @click.option('--input', '-i', help='Input for bap; varies by which mode is specified; see documentation')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; see documentation.')
@@ -64,7 +64,7 @@ def main(mode, input, output, ncores, reference_genome,
 	bap: Bead-based scATAC-seq data Processing \n
 	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
 	
-	mode = ['bam', 'check', 'support']\n
+	mode = ['bam', 'c1fastq', 'check', 'support']\n
 	"""
 	
 	__version__ = get_distribution('bap').version
@@ -76,8 +76,70 @@ def main(mode, input, output, ncores, reference_genome,
 	rawsg = os.popen('ls ' + script_dir + "/anno/bedtools/*.sizes").read().strip().split("\n")
 	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]  
 	
+	# Determine number of cores in main job
+	if(ncores == "detect"):
+		ncores = str(available_cpu_count())
+	else:
+		ncores = str(ncores)
+	
+	# Parameterize optional snakemake configuration
+	snakeclust = ""
+	njobs = int(jobs)
+	if(njobs > 0 and cluster != ""):
+		snakeclust = " --jobs " + str(jobs) + " --cluster '" + cluster + "' "
+		click.echo(gettime() + "Recognized flags to process jobs on a cluster.")
+	
+	#------------
+	# C1 Analysis
+	#------------
+	
 	if(mode == "c1fastq"):
 		click.echo(gettime() + "Preprocessing data as if it were from a C1 experiment...")
+		
+		# Figure out input
+		samples, fastq1, fastq2 = inferSampleVectors(input)
+		
+		# Make output folders
+		of = output; logs = of + "/logs"; fin = of + "/final"; trim = of + "/01_trimmed"; 
+		aligned = of + "/02_aligned_reads"; processed = of + "/03_processed_reads"
+		
+		folders = [of, logs, fin, trim, aligned, processed, 
+			of + "/.internal/parseltongue", of + "/.internal/samples",
+			logs + "/bwa", logs + "/trim"]
+	
+		mkfolderout = [make_folder(x) for x in folders]
+
+		# Create internal README files 
+		if not os.path.exists(of + "/.internal/README"):
+			with open(of + "/.internal/README" , 'w') as outfile:
+				outfile.write("This folder creates important (small) intermediate; don't modify it.\n\n")
+		if not os.path.exists(of + "/.internal/parseltongue/README"):	
+			with open(of + "/.internal/parseltongue/README" , 'w') as outfile:
+				outfile.write("This folder creates intermediate output to be interpreted by Snakemake; don't modify it.\n\n")
+		if not os.path.exists(of + "/.internal/samples/README"):
+			with open(of + "/.internal" + "/samples" + "/README" , 'w') as outfile:
+				outfile.write("This folder creates samples to be interpreted by Snakemake; don't modify it.\n\n")
+			
+		# Set up sample bam plain text file
+		for i in range(len(samples)):
+			with open(of + "/.internal/samples/" + samples[i] + ".fastqs.txt" , 'w') as outfile:
+				outfile.write(fastq1[i] + "\t" + fastq2[i])
+		
+		# Set up dictionary with all the goodies
+		d = {}
+		d["bwa"] = get_software_path('bwa', bwa_path)
+		d["bwa_index"] = bwa_index
+		d["script_dir"] = script_dir
+		d["barcode_tag"] = barcode_tag
+		d["output"] = output
+		
+		y_s = of + "/.internal/parseltongue/c1fastq.object.yaml"
+		with open(y_s, 'w') as yaml_file:
+			yaml.dump(dict(d), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
+		
+		# Trim, align, annotate, and merge via snakemake
+		snakecmd_c1fastq = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bapc1fastq.c1fastq --cores '+ncores+' --config cfp="' + y_s + '" -T'
+		os.system(snakecmd_c1fastq)
 		
 		sys.exit(gettime() + 'All done')
 	
@@ -112,19 +174,6 @@ def main(mode, input, output, ncores, reference_genome,
 			sys.exit("Cannot parse supplied .bam file in --input")
 		if(not os.path.exists(input + ".bai")):
 			sys.exit("Index supplied .bam before proceeding")
-		
-		# Determine number of cores in main job
-		if(ncores == "detect"):
-			ncores = str(available_cpu_count())
-		else:
-			ncores = str(ncores)
-		
-		# Parameterize optional snakemake configuration
-		snakeclust = ""
-		njobs = int(jobs)
-		if(njobs > 0 and cluster != ""):
-			snakeclust = " --jobs " + str(jobs) + " --cluster '" + cluster + "' "
-			click.echo(gettime() + "Recognized flags to process jobs on a cluster.")
 		
 		# Make output folders
 		of = output; logs = of + "/logs"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"

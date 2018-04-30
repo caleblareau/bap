@@ -7,6 +7,7 @@ from os.path import join
 configfile: config["cfp"]     
 outdir = config["output"]
 script_dir = config["script_dir"]          
+samtools = "samtools"
 
 # A Snakemake regular expression matching the bam file paths
 SAMPLES, = glob_wildcards(join(outdir, ".internal/samples/{sample}.fastqs.txt"))
@@ -16,18 +17,18 @@ oneSample_py = script_dir + "/bin/python/00_oneSample.py"
 
 rule all:
 	input:
-		outdir + "/final/samples.txt"
+		outdir + "/fin.merged.bam.bai"
 
 rule process_one_sample:
 	input:
 		txtin = join(outdir + "/.internal/samples", fastqstxtin)
 	output:
-		trimlog = outdir + "/logs/samples/{sample}.sampleQC.bam.bai"
+		bam = outdir + "/03_processed_reads/{sample}.st.anno.bam"
 	threads:
 		4
 	run:
 		# Get sample information
-		sample = output.trimlog.replace(outdir + "/logs/samples/", "").replace(".sampleQC.tsv", "")
+		sample = output.bam.replace(outdir + "/03_processed_reads/", "").replace(".st.anno.bam", "")
 		with open(input.txtin) as f:
 			line1 = f.read()
 			fastq1 = line1.split("\t")[0].strip()
@@ -38,12 +39,13 @@ rule process_one_sample:
 		os.system(pycall)
 
 # Collate everything
-rule make_sample_list:
+rule merge_all:
 	input:
-		trimlogs = expand(outdir + "/logs/samples/{sample}.sampleQC.tsv", sample=SAMPLES)
+		bams = expand(outdir + "/03_processed_reads/{sample}.st.anno.bam", sample=SAMPLES)
 	output:
-		allSamplesFile = outdir + "/final/samples.txt"
+		outdir + "/fin.merged.bam.bai"
 	run: 	
-		for file in input.trimlogs:
-			sample = file.replace(outdir + "/logs/samples/", "").replace(".sampleQC.tsv", "")
-			os.system("echo " + sample + " >> " + output.allSamplesFile)
+		# merge via pysam or something
+		finalmergedbam = outdir + "/"+name+".merged.bam"
+		os.system(samtools + " merge " +finalmergedbam+" "+ outdir + "/03_processed_reads/*.bam")
+		pysam.index(finalmergedbam)
