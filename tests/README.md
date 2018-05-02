@@ -15,7 +15,7 @@ bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em
 
 ## testing species mixing
 ```
-bap bam -i data/small_mix.bam -bt XB -ji 0.002 -r hg19-mm10 -z
+ bap bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0
 ```
 
 ## testing the phasing

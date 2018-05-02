@@ -17,6 +17,8 @@ opts.add_option("--input", "-i", help="Name of the .bam file to parse")
 opts.add_option("--name", "-n", help="Name of the set of .bam files to collate")
 opts.add_option("--output", "-o", help="Path to the output directory for these")
 
+opts.add_option("--mapq", default = 30, help="Minimum mapq for a read to be kept")
+
 opts.add_option("--barcode-tag", default = 'CB', help="Name of the first .bam file")
 opts.add_option("--min-fragments", default = 100, help="Minimum number of fragments for barcode consideration")
 opts.add_option("--bedtools-genome", help="Filepath to bedtools genome.")
@@ -28,6 +30,8 @@ options, arguments = opts.parse_args()
 bamname = options.input
 name = options.name
 out = options.output
+
+minmapq = float(options.mapq)
 
 barcodeTag = options.barcode_tag
 minFrag = int(options.min_fragments)
@@ -58,20 +62,21 @@ def getUniqueBarcodes(chrom):
 	Itr = bam.fetch(str(chrom),multiple_iterators=True)
 	
 	for read in Itr:
-		read_barcode = getBarcode(read.tags)
-		barcodes_all.append(read_barcode)
+		if(read.mapping_quality > minmapq):
+			read_barcode = getBarcode(read.tags)
+			barcodes_all.append(read_barcode)
 	
-		# New base pair -- no duplicates
-		if(read.reference_start != bp):
-			bp = read.reference_start
-			barcode_bp = [read_barcode]
-			barcodes.append(read_barcode)
-	
-		# Same base pair -- verify that it's not existing barcodes
-		else:
-			if( not read_barcode in barcode_bp):
+			# New base pair -- no duplicates
+			if(read.reference_start != bp):
+				bp = read.reference_start
+				barcode_bp = [read_barcode]
 				barcodes.append(read_barcode)
-				barcode_bp.append(read_barcode)
+	
+			# Same base pair -- verify that it's not existing barcodes
+			else:
+				if( not read_barcode in barcode_bp):
+					barcodes.append(read_barcode)
+					barcode_bp.append(read_barcode)
 	return(barcodes, barcodes_all)
 
 
@@ -89,19 +94,20 @@ def writeUniquePassingReads(chrom):
 	bam = pysam.AlignmentFile(bamname,'rb')
 	Itr = bam.fetch(str(chrom),multiple_iterators=True)
 	for read in Itr:
-		read_barcode = getBarcode(read.tags)
-		# New base pair -- no duplicates; write out and update
-		if(read.reference_start != bp):
-			bp = read.reference_start
-			barcode_bp = [read_barcode]
-			file.write(read)
-				
-			# Same base pair -- verify that it's not existing barcodes
-		else:
-			# Still at the same base pair; verify that we haven't seen this barcode before
-			if( not read_barcode in barcode_bp):
-				barcode_bp.append(read_barcode)
+		if(read.mapping_quality > minmapq):
+			read_barcode = getBarcode(read.tags)
+			# New base pair -- no duplicates; write out and update
+			if(read.reference_start != bp):
+				bp = read.reference_start
+				barcode_bp = [read_barcode]
 				file.write(read)
+				
+				# Same base pair -- verify that it's not existing barcodes
+			else:
+				# Still at the same base pair; verify that we haven't seen this barcode before
+				if( not read_barcode in barcode_bp):
+					barcode_bp.append(read_barcode)
+					file.write(read)
 	bam.close()
 	return(chrom)
 

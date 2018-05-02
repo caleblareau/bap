@@ -57,7 +57,7 @@ def mitoChr(reference_genome, mito_chromosome):
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
 		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
-		extract_mito, keep_temp_files,
+		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,
 		bowtie2_path, bowtie2_index):
@@ -71,6 +71,7 @@ class bapProject():
 		self.output = output
 		self.cluster = cluster
 		self.jobs = jobs
+		self.mapq = mapq
 		
 		if(minimum_jaccard_fragments > 1):
 			sys.exit("Cannot specify jaccard fragments > 1; user specified : %s" % str(minimum_jaccard_fragments))
@@ -90,8 +91,8 @@ class bapProject():
 		
 		if(mode == "bam"):
 			self.bamfile = input
-			self.bowtie2 = "NA"
-			self.bowtie2_index = "bowtie2_index"
+			self.bwa = "NA"
+			self.bwa_index = "bwa_index"
 			self.bam_name = bam_name
 			
 			if(bam_name == "default"):
@@ -190,6 +191,8 @@ class bapProject():
 		yield 'one_to_one', self.one_to_one
 		
 		yield 'extract_mito', self.extract_mito
+		yield 'mapq', self.mapq
+		
 		yield 'tssFile', self.tssFile
 		yield 'blacklistFile', self.blacklistFile
 		yield 'bedtoolsGenomeFile', self.bedtoolsGenomeFile

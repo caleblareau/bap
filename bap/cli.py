@@ -38,6 +38,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
+@click.option('--mapq', '-mq', default = 30, help='Minimum mapping quality to keep read for downstream analyses')
 
 @click.option('--bedtools-genome', '-bg', default = "", help='Path to bedtools genome file; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
@@ -55,7 +56,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 def main(mode, input, output, ncores, reference_genome,
 	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
-	extract_mito, keep_temp_files,
+	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, barcode_tag, bam_name,
 	bwa_path, bwa_index):
@@ -166,7 +167,7 @@ def main(mode, input, output, ncores, reference_genome,
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
 		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
-		extract_mito, keep_temp_files,
+		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, barcode_tag, bam_name,
 		bwa_path, bwa_index)
@@ -215,7 +216,7 @@ def main(mode, input, output, ncores, reference_genome,
 		line1 = 'python ' +script_dir+'/bin/python/11_quantBarcode_Filt.py --input '+p.bamfile
 		line2 = ' --name ' + p.bam_name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.barcode_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
-		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores)
+		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
 			
 		filt_split_cmd = line1 + line2 + line3 + line4
 		os.system(filt_split_cmd)
@@ -245,7 +246,6 @@ def main(mode, input, output, ncores, reference_genome,
 			qc_R = script_dir + "/bin/R/16_qualityControlReport.R"
 
 		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile])
-		print(r_callQC)
 		os.system(r_callQC)
 
 		#-----------------------------------
