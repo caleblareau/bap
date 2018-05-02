@@ -117,7 +117,7 @@ df$TSS <- as.numeric(1:dim(df)[1] %in% subjectHits(ov))
 df$mouse <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "m")
 df$human <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "h")
 rm(ov); rm(GA); rm(promoter)
-colnames(df) <- c("isize", "DropBarcode", "TSS", "human", "mouse")
+colnames(df) <- c("isize", "DropBarcode", "TSS", "mouse", "human")
 sbdf <- df %>% group_by(DropBarcode) %>% summarise(tssPproportion = round(mean(TSS), 3),
                                                    meanInsertSize = round(mean(isize)),
                                                    medianInsertSize = round(median(isize)),
