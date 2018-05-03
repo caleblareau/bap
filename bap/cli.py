@@ -30,6 +30,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--cluster', default = "",  help='Message to send to Snakemake to execute jobs on cluster interface; see documentation.')
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
+@click.option('--keep-going',is_flag=True, help='Force bap to run until end even if a chromosome acts funky. ')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
@@ -55,7 +56,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 
 def main(mode, input, output, ncores, reference_genome,
-	cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
+	cluster, jobs, keep_going, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
 	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, barcode_tag, bam_name,
@@ -82,6 +83,12 @@ def main(mode, input, output, ncores, reference_genome,
 		ncores = str(available_cpu_count())
 	else:
 		ncores = str(ncores)
+	
+	# Snakemake force keep going
+	if(keep_going):
+		kg = " --keep-going "
+	else:
+		kg = ""
 	
 	# Parameterize optional snakemake configuration
 	snakeclust = ""
@@ -140,7 +147,7 @@ def main(mode, input, output, ncores, reference_genome,
 			yaml.dump(dict(d), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 		
 		# Trim, align, annotate, and merge via snakemake
-		snakecmd_c1fastq = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bapc1fastq.c1fastq --cores '+ncores+' --config cfp="' + y_s + '" -T'
+		snakecmd_c1fastq = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bapc1fastq.c1fastq --cores '+ncores+kg+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_c1fastq)
 		
 		if keep_temp_files:
@@ -230,7 +237,8 @@ def main(mode, input, output, ncores, reference_genome,
 		with open(y_s, 'w') as yaml_file:
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 			
-		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '" -T'
+		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+kg+' --config cfp="' + y_s + '" -T'
+		print(snakecmd_chr)
 		os.system(snakecmd_chr)
 
 		#-----------------------------------
