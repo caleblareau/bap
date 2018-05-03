@@ -17,7 +17,7 @@ findDoubles <- function(bamfile, barcodeTag = "CB", jaccard_frag_cutoff = 0.02, 
   
   # Import Reads
   GA <- readGAlignments(bamfile, param = ScanBamParam(
-    flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = properPair),
+    flag = scanBamFlag(isProperPair = properPair),
     tag = c(barcodeTag), mapqFilter = mapqFilter))
   GA <- GA[!(as.character(seqnames(GA)) %in% c("chrY", "chrM"))]
   

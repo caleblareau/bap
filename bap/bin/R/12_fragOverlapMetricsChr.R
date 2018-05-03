@@ -54,7 +54,7 @@ findDoubles_df <- function(bamfile, barcodeTag, mapqFilter = 0, properPair = TRU
   
   # Import Reads
   GA <- readGAlignments(bamfile, param = ScanBamParam(
-    flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = properPair),
+    flag = scanBamFlag(isProperPair = properPair),
     tag = c(barcodeTag), mapqFilter = mapqFilter))
   GAfilt <- GA[mcols(GA)[,barcodeTag] %in% keepBarcodesGlobal]
   rm(GA)

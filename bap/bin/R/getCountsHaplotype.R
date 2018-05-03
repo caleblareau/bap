@@ -13,7 +13,7 @@ getCountsHaplotype <- function(bamfile, peaks, barcodeTag = "CB", haplotypeTag =
   
   # Import Reads
   GA <- readGAlignments(bamfile, param = ScanBamParam(
-    flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = properPair),
+    flag = scanBamFlag(isProperPair = properPair),
     tag = c(barcodeTag, haplotypeTag), mapqFilter = mapqFilter))
   GA <- GA[!(as.character(seqnames(GA)) %in% c("chrY", "chrM"))]
   
