@@ -48,7 +48,7 @@ bq <- data.frame(fread(barcodeQuantFile, header = TRUE, sep = ","))
 keepBarcodesGlobal <- as.character(bq[,1])
 rm(bq)
 
-findDoubles_df <- function(bamfile, barcodeTag, mapqFilter = 30, properPair = FALSE){
+findDoubles_df <- function(bamfile, barcodeTag, mapqFilter = 0, properPair = TRUE){
   
   rdsOut <- gsub(".bam", "_overlapCount.rds", gsub("/filt_split/", "/frag_overlap/", bamfile))
   

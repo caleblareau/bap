@@ -40,7 +40,7 @@ if(FALSE){
   one_to_one <- FALSE
 }
 rdsFiles <- list.files(rdsDir, full.names = TRUE)
-
+rdsFiles <- rdsFiles[sapply(lapply(rdsFiles,file.info), function(x) x$size) > 0]
 
 # Import the number of barcodes per bead
 nBC <- data.frame(fread(nbcin, header = TRUE)) %>% arrange(desc(UniqueNuclear)); colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount", "TotalMitoCount")
@@ -48,9 +48,7 @@ nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
 nBCv <- nBC$UniqueFragCount; names(nBCv) <- nBC$BeadBarcode
 
 # Implicate overlapping fragments
-lapply(rdsFiles, readRDS) -> o
-o[sapply(o, is.data.frame)] -> o
-o %>%
+lapply(rdsFiles, readRDS) %>%
   rbindlist(fill = TRUE) %>% as.data.frame() %>%
   group_by(barc1, barc2) %>%
   summarise(N_both = sum(n_both)/2) %>% # overlaps called twice

@@ -91,7 +91,7 @@ if(FALSE){
 
 # Parse .bam file
 GA <- readGAlignments(bamFile, param = ScanBamParam(
-    flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = FALSE),
+    flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = TRUE),
     tag = c(tag), mapqFilter = 0, what="isize"))
 
 # Set up TSS file for scoring
