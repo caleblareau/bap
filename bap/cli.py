@@ -238,7 +238,6 @@ def main(mode, input, output, ncores, reference_genome,
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 			
 		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+kg+' --config cfp="' + y_s + '" -T'
-		print(snakecmd_chr)
 		os.system(snakecmd_chr)
 
 		#-----------------------------------

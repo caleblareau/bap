@@ -48,8 +48,10 @@ nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
 nBCv <- nBC$UniqueFragCount; names(nBCv) <- nBC$BeadBarcode
 
 # Implicate overlapping fragments
-lapply(rdsFiles, readRDS) %>%
-  rbindlist() %>% as.data.frame() %>%
+lapply(rdsFiles, readRDS) -> o
+o[sapply(o, is.data.frame)] -> o
+o %>%
+  rbindlist(fill = TRUE) %>% as.data.frame() %>%
   group_by(barc1, barc2) %>%
   summarise(N_both = sum(n_both)/2) %>% # overlaps called twice
   filter(N_both > 1) %>% mutate(N_barc1 = nBCv[barc1], N_barc2 = nBCv[barc2]) %>% 

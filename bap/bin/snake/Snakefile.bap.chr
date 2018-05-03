@@ -48,7 +48,12 @@ rule process_one_chromosome:
 	run:
 		# Process one chromosome file
 		r_call1 = " ".join([R+"script", fragOverlaps_R, input.bam, barcode_tag, barcodeQuantFile])
-		os.system(r_call1)
+		rdsOut = input.bam.replace(".bam", "_overlapCount.rds").replace("/filt_split/", "/frag_overlap/")
+		try:
+			os.system(r_call1)
+		except:
+			print("Failed with " + input.bam)
+			os.system("touch " + rdsOut)
 
 # Collate everything
 rule determine_barcode_merges:
@@ -62,6 +67,7 @@ rule determine_barcode_merges:
 		rdsdir = outdir + "/temp/frag_overlap"
 		r_call2 = " ".join([R+"script", determineDoubles_R, rdsdir, barcodeQuantFile, output.outcsv, minimum_jaccard_fragments, name, one_to_one])
 		os.system(r_call2)
+		
 
 # Translate bead barcodes to droplet barcodes
 rule reannotate_droplets:

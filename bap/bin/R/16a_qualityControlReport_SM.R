@@ -91,7 +91,7 @@ if(FALSE){
 
 # Parse .bam file
 GA <- readGAlignments(bamFile, param = ScanBamParam(
-    flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = TRUE),
+    flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = FALSE),
     tag = c(tag), mapqFilter = 0, what="isize"))
 
 # Set up TSS file for scoring
@@ -119,8 +119,8 @@ df$human <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "h")
 rm(ov); rm(GA); rm(promoter)
 colnames(df) <- c("isize", "DropBarcode", "TSS", "mouse", "human")
 sbdf <- df %>% group_by(DropBarcode) %>% summarise(tssPproportion = round(mean(TSS), 3),
-                                                   meanInsertSize = round(mean(isize)),
-                                                   medianInsertSize = round(median(isize)),
+                                                   meanInsertSize = round(mean(abs(isize))),
+                                                   medianInsertSize = round(median(abs(isize))),
                                                    nHumanReads = sum(human),
                                                    nMouseReads = sum(mouse)) %>% data.frame()
 rm(df)

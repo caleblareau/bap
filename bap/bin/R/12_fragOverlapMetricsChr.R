@@ -43,48 +43,12 @@ if(FALSE){
 }
 
 
-suppressMessages(suppressWarnings(library(Rsamtools)))
-suppressMessages(suppressWarnings(library(GenomicAlignments)))
-suppressMessages(suppressWarnings(library(GenomicRanges)))
-suppressMessages(suppressWarnings(library(data.table)))
-suppressMessages(suppressWarnings(library(dplyr)))
-
-# This function / script for a given .bam file saves a .rds file
-# For each pair of barcodes given how many times they share an identical fragment in this 
-# given chromosome
-
-# TO DO:
-# parameterize mapq and properpair
-
-if(file_path_sans_ext(basename(args[1])) == "R"){
-  i <- 2
-} else { # Rscript
-  i <- 0
-}
-bamfile <- args[i+1]
-barcodeTag <- args[i+2]
-barcodeQuantFile <- args[i+3]
-
-# Don't execute-- strictly for testing
-if(FALSE){
-  base <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests"
-  bamfile <- paste0(base, "/", "bap_out/temp/filt_split/test.small.chr3.bam")
-  barcodeTag <- "CB"
-  rdsOut <- paste0(base, "/", "bap_out/temp/frag_overlap/test.small.barcodequants.csv")
-  barcodeQuantFile <- paste0(base, "/", "bap_out/final/test.small.barcodequants.csv")
-  
-  x <- c(as.character(1:22), "X")
-  bamfiles <- paste0(base, "/", "bap_out/temp/filt_split/test.small.chr",x,".bam")
-  lapply(bamfiles, findDoubles_df, barcodeTag)
-  
-}
-
 # Establish the barcode counts normally
 bq <- data.frame(fread(barcodeQuantFile, header = TRUE, sep = ","))
 keepBarcodesGlobal <- as.character(bq[,1])
 rm(bq)
 
-findDoubles_df <- function(bamfile, barcodeTag, mapqFilter = 10, properPair = TRUE){
+findDoubles_df <- function(bamfile, barcodeTag, mapqFilter = 30, properPair = FALSE){
   
   rdsOut <- gsub(".bam", "_overlapCount.rds", gsub("/filt_split/", "/frag_overlap/", bamfile))
   
