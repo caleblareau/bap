@@ -26,7 +26,7 @@ estimateLibrarySize <- function(nTotal, nUnique){
   m = 1
   M = 100
   
-  nDuplicates <- nTotal - nUnique
+  nDuplicates <- (nTotal - nUnique) + 1 # charity to handle only unique reads observed
   
   # Checks
   stopifnot(nTotal > 0)
