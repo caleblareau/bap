@@ -125,7 +125,7 @@ class bapProject():
 		# Verify R and all of its packages are here
 		#------------------------------------------
 		R = get_software_path('R', r_path)
-		check_R_packages(['Rsamtools', 'GenomicAlignments', 'GenomicRanges', 'BiocParallel', 'dplyr', 'SummarizedExperiment'], R)
+		#check_R_packages(['Rsamtools', 'GenomicAlignments', 'GenomicRanges', 'dplyr'], R)
 		self.R = R
 
 		#------------------------

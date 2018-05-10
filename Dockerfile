@@ -1,29 +1,26 @@
-############################################################
-# Dockerfile to build bap-- IN PROGRESS
-############################################################
+#########################
+# Dockerfile to build bap
+#########################
 
-FROM r-base:3.4.4
+From r-base:3.5.0
 
-MAINTAINER Caleb Lareau; caleblareau@g.harvard.edu
-
-RUN apt-get update && apt-get install -y python3 
-RUN cp /usr/bin/python3 /usr/bin/python
+MAINTAINER Caleb Lareau; clareau@broadinstitute.org
+ENV SHELL bash
 
 ### Installing necessary R packages
-RUN Rscript -e 'install.packages("devtools", repos = "http://cran.us.r-project.org"); \
-				devtools::install_github("caleblareau/BuenColors")'
-	
-### Installing bowtie2
-ENV VERSION 2.3.0
-ENV NAME bowtie2
-ENV URL "https://github.com/BenLangmead/bowtie2/archive/v${VERSION}.tar.gz"
+RUN Rscript -e 'install.packages(c("data.table", "dplyr", "ggplot2"), repos = "http://cran.us.r-project.org"); \
+				source("https://bioconductor.org/biocLite.R");\
+				biocLite("GenomicAlignments"); \
+				biocLite("GenomicRanges"); \
+				biocLite("Rsamtools"); \ 
+				biocLite("BiocParallel")'
+				
+RUN apt-get update && apt-get install -y python3-pip
+RUN cp /usr/bin/python3 /usr/bin/python
 
-RUN wget -q -O - $URL | tar -zxv && \
-    cd ${NAME}-${VERSION} && \
-    make -j 4 && \
-    cd .. && \
-    cp ./${NAME}-${VERSION}/${NAME} /usr/local/bin/ && \
-    cp ./${NAME}-${VERSION}/${NAME}-* /usr/local/bin/ && \
-    strip /usr/local/bin/*; true && \
-	rm -rf ./${NAME}-${VERSION}/
+COPY . /bap
+WORKDIR /bap
 
+RUN pip3 install .
+
+RUN bap bam -i data/test.small.bam -z -bt CB -ji 0.002 
