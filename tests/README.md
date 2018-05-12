@@ -2,6 +2,12 @@
 
 In development, these commands are what is assumed to have been run
 
+
+```
+python ../bap/bin/python/11_quantBarcode_Filt.py --input data/small_hg19.bam --bedtools-genome ../bap/anno/bedtools/chrom_hg19.sizes --barcode-tag XB -n h -o data
+```
+
+
 **bam** mode
 
 ```

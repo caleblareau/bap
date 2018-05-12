@@ -1,7 +1,7 @@
-library(data.table)
-library(dplyr)
-library(ggplot2)
-library(tools)
+suppressMessages(suppressWarnings(library(data.table)))
+suppressMessages(suppressWarnings(library(dplyr)))
+suppressMessages(suppressWarnings(library(tools)))
+
 "%ni%" <- Negate("%in%")
 
 options(scipen=999)

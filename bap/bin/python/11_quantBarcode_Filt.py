@@ -32,13 +32,18 @@ name = options.name
 out = options.output
 
 minmapq = float(options.mapq)
-
 barcodeTag = options.barcode_tag
 minFrag = int(options.min_fragments)
 bedtoolsGenomeFile = options.bedtools_genome
 minChromosomeSize = int(options.min_chromosome_size)
 cpu = int(options.ncores)
 
+def listDictToCounter(lst):
+	dct = Counter()
+	for d in lst:
+		for k, v in d.items():
+			dct[k] += v 
+	return(dct)
 
 def getBarcode(intags):
 	'''
@@ -53,9 +58,13 @@ def getBarcode(intags):
 # Function for extracting barcodes corresponding to unique reads
 #---------------------------------------------------------------
 def getUniqueBarcodes(chrom):
-	barcodes = ['NA'] 
+	
+	# Use dictionary logic
+	barcodes = dict()
+	barcodes_all = dict()
+	
+	# Keep track of the base pair for indexing unique reads
 	barcode_bp = ['NA']
-	barcodes_all = ['NA']
 	bp = 0
 
 	bam = pysam.AlignmentFile(bamname,'rb')
@@ -64,18 +73,18 @@ def getUniqueBarcodes(chrom):
 	for read in Itr:
 		if(read.mapping_quality > minmapq):
 			read_barcode = getBarcode(read.tags)
-			barcodes_all.append(read_barcode)
+			barcodes_all[read_barcode] = barcodes_all.get(read_barcode, 0) + 1
 	
 			# New base pair -- no duplicates
 			if(read.reference_start != bp):
 				bp = read.reference_start
 				barcode_bp = [read_barcode]
-				barcodes.append(read_barcode)
+				barcodes[read_barcode] = barcodes.get(read_barcode, 0) + 1
 	
 			# Same base pair -- verify that it's not existing barcodes
 			else:
 				if( not read_barcode in barcode_bp):
-					barcodes.append(read_barcode)
+					barcodes[read_barcode] = barcodes.get(read_barcode, 0) + 1
 					barcode_bp.append(read_barcode)
 	return(barcodes, barcodes_all)
 
@@ -84,7 +93,10 @@ def getUniqueBarcodes(chrom):
 # Function for writing unique reads for barcodes that pass
 #---------------------------------------------------------
 def writeUniquePassingReads(chrom):
-	barcodes = ['NA'] 
+	
+	# the bc variable is in the global environment
+	
+	# Keep track of the base pair for indexing unique reads
 	barcode_bp = ['NA']
 	bp = 0
 	idx = chrs.index(chrom)
@@ -96,8 +108,9 @@ def writeUniquePassingReads(chrom):
 	for read in Itr:
 		if(read.mapping_quality > minmapq):
 			read_barcode = getBarcode(read.tags)
+			
 			# New base pair -- no duplicates; write out and update
-			if(read.reference_start != bp):
+			if(read.reference_start != bp and read_barcode in bc):
 				bp = read.reference_start
 				barcode_bp = [read_barcode]
 				file.write(read)
@@ -105,7 +118,7 @@ def writeUniquePassingReads(chrom):
 				# Same base pair -- verify that it's not existing barcodes
 			else:
 				# Still at the same base pair; verify that we haven't seen this barcode before
-				if( not read_barcode in barcode_bp):
+				if( not read_barcode in barcode_bp and read_barcode in bc):
 					barcode_bp.append(read_barcode)
 					file.write(read)
 	bam.close()
@@ -131,26 +144,25 @@ for v in bamchrfiles:
 	bamchrrouter.write(v+"\n")
 bamchrrouter.close() 
 
-# Quantify the barcodes
-results = []
+	
+# Quantify the barcodes into a list of dictionaries
 pool = Pool(processes=cpu)
-list_barcodes, barcodes_all = zip(*pool.map(getUniqueBarcodes, chrs))
+unique_barcodes, all_barcodes = zip(*pool.map(getUniqueBarcodes, chrs))
 pool.close()
+
+unique_barcodes = listDictToCounter(unique_barcodes)
+all_barcodes = listDictToCounter(all_barcodes)
 
 # Quantify read numbers for short chromosomes ==> mitochondria
 pool = Pool(processes=cpu)
 unique_bc_short, all_bc_short = zip(*pool.map(getUniqueBarcodes, chrsOther))
 pool.close()
-all_bc_short = [item for sublist in all_bc_short for item in sublist]
-all_bc_short = Counter(all_bc_short)
+unique_bc_short = listDictToCounter(unique_bc_short)
+all_bc_short = listDictToCounter(all_bc_short)
 
-
-# Flatten list and determine count / barcodes passing filter
-list_barcodes = [item for sublist in list_barcodes for item in sublist]
-barcodes_all = [item for sublist in barcodes_all for item in sublist]
-barcodes = Counter(list_barcodes)
-barcodes_all = Counter(barcodes_all)
-barcodes = {x : barcodes[x] for x in barcodes if barcodes[x] >= minFrag and x != "NA"}
+# Flatten list and determine barcodes passing filter
+barcodes = {x : unique_barcodes[x] for x in unique_barcodes if unique_barcodes[x] >= minFrag and x != "NA"}
+global bc
 bc = list(barcodes.keys())
 
 #-------
@@ -169,7 +181,7 @@ def multi_file_manager(files, mode='rt'):
 	yield files
 	for file in files:
 		file.close()
-		
+	
 # Final loop to write out passing reads
 with multi_file_manager(bamchrfiles) as fopen:
 	pool = Pool(processes=cpu)
@@ -184,6 +196,6 @@ for k, v in barcodes.items():
 		mito = 0
 	else:
 		mito = all_bc_short.get(k)
-	bcfile.write(k +","+ str(v)+"," + str(barcodes_all.get(k)) + "," + str(mito) + "\n")
+	bcfile.write(k +","+ str(v)+"," + str(all_barcodes.get(k)) + "," + str(mito) + "\n")
 bcfile.close() 
 

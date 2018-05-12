@@ -10,6 +10,15 @@ data files for downstream analyses for SureCell single-cell ATAC-seq data.
 
 [Descriptions about QC metrics](documentation/aboutQC.md)
 
+## Docker
+
+Notes for CAL:
+```
+docker build -t caleblareau/bap bap
+
+docker exec -it caleblareau/bap bash
+```
+
 ## Install
 
 **Recommended:**
