@@ -17,6 +17,7 @@ drop_tag = config["drop_tag"]
 minimum_barcode_fragments = str(config["minimum_barcode_fragments"])
 minimum_jaccard_fragments = str(config["minimum_jaccard_fragments"])
 one_to_one = str(config["one_to_one"])
+blacklistRegionsFile = str(config["blacklistFile"])
 
 # Determine .bam files to execute for fragment overlap analysis
 infile1 = outdir + "/.internal/samples/" + "/" + name + ".chrbam.txt"
@@ -47,7 +48,7 @@ rule process_one_chromosome:
 		1
 	run:
 		# Process one chromosome file
-		r_call1 = " ".join([R+"script", fragOverlaps_R, input.bam, barcode_tag, barcodeQuantFile])
+		r_call1 = " ".join([R+"script", fragOverlaps_R, input.bam, barcode_tag, barcodeQuantFile, blacklistRegionsFile])
 		rdsOut = input.bam.replace(".bam", "_overlapCount.rds").replace("/filt_split/", "/frag_overlap/")
 		try:
 			os.system("touch " + rdsOut)

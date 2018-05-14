@@ -226,6 +226,7 @@ def main(mode, input, output, ncores, reference_genome,
 		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
 			
 		filt_split_cmd = line1 + line2 + line3 + line4
+		print(filt_split_cmd)
 		os.system(filt_split_cmd)
 		
 		#-------------------------------------------

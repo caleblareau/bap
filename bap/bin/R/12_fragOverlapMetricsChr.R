@@ -1,3 +1,4 @@
+options(warn=-1)
 
 suppressMessages(suppressWarnings(library(Rsamtools)))
 suppressMessages(suppressWarnings(library(GenomicAlignments)))
@@ -5,6 +6,8 @@ suppressMessages(suppressWarnings(library(GenomicRanges)))
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(tools)))
+
+"%ni%" <- Negate("%in%")
 
 # This function / script for a given .bam file saves a .rds file
 # For each pair of barcodes given how many times they share an identical fragment in this 
@@ -23,25 +26,20 @@ if(file_path_sans_ext(basename(args[1])) == "R"){
 bamfile <- args[i+1]
 barcodeTag <- args[i+2]
 barcodeQuantFile <- args[i+3]
+blacklistRegionsFile <- args[i+4]
 
 # Don't execute-- strictly for testing
 if(FALSE){
   base <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests"
-  bamfile <- paste0(base, "/", "bap_out/temp/filt_split/N711-Exp31-Sample9.ready2.bam.allele.chr6.bam")
+  bamfile <- paste0(base, "/", "bap_out/temp/filt_split/test.small.chr21.bam")
   barcodeTag <- "CB"
-  rdsOut <- paste0(base, "/", "bap_out/temp/frag_overlap/test.small.chr3_overlapCount.rds")
   barcodeQuantFile <- paste0(base, "/", "bap_out/final/test.small.barcodequants.csv")
+  blacklistRegionsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19.full.blacklist.bed"
 }
 
-# More involed Testing
-if(FALSE){
-  base <- "/Users/lareauc/Desktop/GM_parse_biorad/"
-  bamfile <- paste0(base, "/", "bap_out/temp/filt_split/test.small.chr3.bam")
-  barcodeTag <- "CB"
-  rdsOut <- paste0(base, "/", "bap_out/temp/frag_overlap/test.small.barcodequants.csv")
-  barcodeQuantFile <- paste0(base, "/", "bap_out/final/test.small.barcodequants.csv")
-}
-
+# Import blacklist file
+bldf <- data.frame(fread(blacklistRegionsFile))
+blgr <- makeGRangesFromDataFrame(bldf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
 
 # Establish the barcode counts normally
 bq <- data.frame(fread(barcodeQuantFile, header = TRUE, sep = ","))
@@ -56,10 +54,18 @@ findDoubles_df <- function(bamfile, barcodeTag, mapqFilter = 0, properPair = TRU
   GA <- readGAlignments(bamfile, param = ScanBamParam(
     flag = scanBamFlag(isProperPair = properPair),
     tag = c(barcodeTag), mapqFilter = mapqFilter))
-  GAfilt <- GA[mcols(GA)[,barcodeTag] %in% keepBarcodesGlobal]
-  rm(GA)
-  barcode <- mcols(GAfilt)[,barcodeTag]
   
+  # Filter 1 for eligible barcodes
+  GAfilt1 <- GA[mcols(GA)[,barcodeTag] %in% keepBarcodesGlobal]
+  rm(GA)
+  
+  # Filter 2 for blacklist
+  ov_bl <- findOverlaps(GAfilt1, blgr)
+  GAfilt <- GAfilt1[1:length(GAfilt1) %ni% queryHits(ov_bl)]
+  rm(GAfilt1)
+  
+  # Pull out barcode for retained
+  barcode <- mcols(GAfilt)[,barcodeTag]
   
   # Find exact fragments
   ov <- findOverlaps(GRanges(GAfilt), GRanges(GAfilt), type = "equal")

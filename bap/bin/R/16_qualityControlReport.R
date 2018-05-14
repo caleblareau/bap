@@ -1,3 +1,5 @@
+options(warn=-1)
+
 suppressMessages(suppressWarnings(library(Rsamtools)))
 suppressMessages(suppressWarnings(library(GenomicAlignments)))
 suppressMessages(suppressWarnings(library(GenomicRanges)))

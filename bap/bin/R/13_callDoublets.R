@@ -1,3 +1,5 @@
+options(warn=-1)
+
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(tools)))
