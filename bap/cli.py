@@ -226,7 +226,6 @@ def main(mode, input, output, ncores, reference_genome,
 		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
 			
 		filt_split_cmd = line1 + line2 + line3 + line4
-		print(filt_split_cmd)
 		os.system(filt_split_cmd)
 		
 		#-------------------------------------------
@@ -255,7 +254,12 @@ def main(mode, input, output, ncores, reference_genome,
 
 		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile])
 		os.system(r_callQC)
-
+		
+		# add back original barcodes if one to one
+		if(one_to_one):
+			r_calloo = " ".join([p.R+"script", script_dir + "/bin/R/17_ooMerge.R", barcodeTranslateFile])
+			os.system(r_calloo)
+		
 		#-----------------------------------
 		# Step 5 - Process mitochondria
 		#-----------------------------------

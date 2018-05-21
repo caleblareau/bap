@@ -93,8 +93,8 @@ if(FALSE){
 
 # Parse .bam file
 GA <- readGAlignments(bamFile, param = ScanBamParam(
-    flag = scanBamFlag(isProperPair = TRUE),
-    tag = c(tag), mapqFilter = 0, what="isize"))
+  flag = scanBamFlag(isProperPair = TRUE),
+  tag = c(tag), mapqFilter = 0, what="isize"))
 
 # Set up TSS file for scoring
 df <- data.frame(fread(tssFile))
@@ -133,8 +133,9 @@ msss <- mss %>% group_by(DropBarcode) %>% summarise(uniqueNuclearFrags = sum(Uni
                                                     totalNuclearFrags = sum(TotalNuclear),
                                                     totalMitoFrags = sum(TotalMito)) %>% data.frame()
 
-msss %>% mutate(duplicateProportion = estimateDuplicateRate(totalNuclearFrags, uniqueNuclearFrags),
-                librarySize = estimateLibrarySize(totalNuclearFrags, uniqueNuclearFrags)) -> msss
+msss$duplicateProportion <- estimateDuplicateRate(msss$totalNuclearFrags, msss$uniqueNuclearFrags)
+msss$librarySize <- sapply(1:dim(msss)[1], function(i){
+  estimateLibrarySize(msss[i,"totalNuclearFrags"],msss[i,"uniqueNuclearFrags"])})
 qcStats <- merge(sbdf, msss)
 
 write.table(qcStats,
