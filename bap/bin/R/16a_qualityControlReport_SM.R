@@ -35,7 +35,7 @@ estimateLibrarySize <- function(nTotal, nUnique){
   stopifnot(nDuplicates >0)
   stopifnot(nUnique > 0)
   
-  if (nUnique >= nTotal | (f(m * nUnique, nUnique, nTotal) < 0)) {
+  if (nUnique > nTotal | (f(m * nUnique, nUnique, nTotal) < 0)) {
     stop("Error: invalid inputs")
   }
   
