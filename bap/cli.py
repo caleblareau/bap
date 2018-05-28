@@ -258,7 +258,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 			oneToOneGo = "yes"
 		else:
 			oneToOneGo = "no"
-		
+			
+		click.echo(gettime() + "generating QC report + summarized experiment file...")
 		# Full system call to R script
 		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile, peakFileGo, speciesMixGo, oneToOneGo])
 		os.system(r_callQC)

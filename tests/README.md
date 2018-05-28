@@ -5,14 +5,14 @@ In development, these commands are what is assumed to have been run
 
 **bam** mode
 
-### vanilla hg19
+### vanilla hg19 with peaks
 ```
-bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em
+bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em -pf data/test.small.peaks.bed 
 ```
 
 ### testing species mixing
 ```
- bap bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0  -bf 100 -cf 100
+ bap bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 100 -cf 100
 ```
 
 

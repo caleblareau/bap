@@ -78,7 +78,7 @@ bamFile <- args[i+1] # directory of .rds files
 barcodeTranslateFile <- args[i+2] # file path to the number of barcodes for each observed barcode
 barcodeQuantsFile <- args[i+3] # filepath to write the implicated barcode pairs
 tssFile <- args[i+4]
-tag <- args[i+5]
+dropbarcodeTag <- args[i+5]
 blacklistFile <- args[i+6]
 peakFile <- args[i+7]
 speciesMix <- args[i+8]
@@ -90,23 +90,22 @@ if(FALSE){
   barcodeTranslateFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodeTranslate.tsv"
   barcodeQuantsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodequants.csv"
   tssFile <-  "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/TSS/hg19.refGene.TSS.bed"
-  tag <- "DB"
+  dropbarcodeTag <- "DB"
   blacklistFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19.full.blacklist.bed"
-  peakFile <- ""
+  peakFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/data/test.small.peaks.bed"
   speciesMix <- "no"
   oneone <- "yes"
 }
 
 # Parse .bam file
 GA <- readGAlignments(bamFile, param = ScanBamParam(
-  flag = scanBamFlag(isMinusStrand = FALSE, isProperPair = TRUE),
-  tag = c(tag), mapqFilter = 0, what="isize"))
+  flag = scanBamFlag(isProperPair = TRUE),
+  tag = c(dropbarcodeTag), mapqFilter = 0, what="isize"))
 
 # Set up TSS file for scoring
 tssdf <- data.frame(fread(tssFile))
 tssdf$V2 <- tssdf$V2 - 2000
 tssdf$V3 <- tssdf$V3 + 2000
-
 
 # Deal with TSS enrichment %
 promoter <- makeGRangesFromDataFrame(tssdf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
@@ -114,13 +113,7 @@ ovTSS <- findOverlaps(promoter, GA)
 df <- data.frame(mcols(GA))
 
 df$TSS <- as.numeric(1:dim(df)[1] %in% subjectHits(ovTSS))
-
-# Make summarized experiment if we have a peak file
-if(peakFile != "none"){
-  # make summarized experiemnt  
-  suppressMessages(suppressWarnings(library(SummarizedExperiment)))
-  
-}
+rm(ovTSS); rm(promoter)
 
 # Deal with FRIP if we have a peak file
 if(peakFile != "none"){
@@ -129,14 +122,11 @@ if(peakFile != "none"){
   peaks <- makeGRangesFromDataFrame(peakdf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
   ovPEAK <- findOverlaps(peaks, GA)
   df$Peak <- as.numeric(1:dim(df)[1] %in% subjectHits(ovPEAK))
-  
-  # Now also make a summarized experiement ## TO DO
-  
+  rm(peakdf)
 } else{
   df$Peak <- 0
 }
 
-rm(ovTSS); rm(GA); rm(promoter)
 
 if(speciesMix == "no"){
   colnames(df) <- c("isize", "DropBarcode", "TSS", "Peak")
@@ -168,14 +158,32 @@ msss$librarySize <- sapply(1:dim(msss)[1], function(i){
   estimateLibrarySize(msss[i,"totalNuclearFrags"],msss[i,"uniqueNuclearFrags"])})
 qcStats <- merge(sbdf, msss)
 
-# Convert barcodes back if we need to (specified with the one to one option)
+# add barcodes back if we need to (specified with the one to one option)
 if(oneone == "yes"){
   translateDF <- read.table(barcodeTranslateFile, header = TRUE, stringsAsFactors = FALSE)
   qcStatsDF <- qcStats
   tvec <- translateDF[,1]; names(tvec) <- translateDF[,2]
   qcStats <- qcStatsDF
-  qcStats$DropBarcode <- tvec[as.character(qcStats$DropBarcode)] 
+  qcStats$OriginalBarcode <- tvec[as.character(qcStats$DropBarcode)] 
 }
+
+if(peakFile != "none"){
+  # recall ovPEAK from above 
+
+  id <- factor(mcols(GA)[,dropbarcodeTag], levels = as.character(qcStats$DropBarcode))
+  countdf <- data.frame(peak = queryHits(ovPEAK), sample = as.numeric(id)[subjectHits(ovPEAK)]) %>% group_by(peak,sample) %>% summarise(count = n()) %>% data.matrix()
+  rm(ovPEAK)
+  
+  m <- Matrix::sparseMatrix(i = c(countdf[,1], length(peaks)), j =c(countdf[,2], 1), x = c(countdf[,3],0))
+  SE <- SummarizedExperiment(
+    rowRanges = peaks, 
+    assays = list(counts = m),
+    colData = qcStats
+  )
+  saveRDS(SE, gsub(".barcodequants.csv$", ".SE.rds", barcodeQuantsFile))
+}
+
+rm(GA)
 
 write.table(qcStats,
             file = gsub(".barcodequants.csv$", ".QCstats.csv", barcodeQuantsFile),
