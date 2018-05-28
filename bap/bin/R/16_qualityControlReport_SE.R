@@ -80,6 +80,9 @@ barcodeQuantsFile <- args[i+3] # filepath to write the implicated barcode pairs
 tssFile <- args[i+4]
 tag <- args[i+5]
 blacklistFile <- args[i+6]
+peakFile <- args[i+7]
+speciesMix <- args[i+8]
+oneone <- args[i+9]
 
 # For devel only
 if(FALSE){
@@ -89,6 +92,9 @@ if(FALSE){
   tssFile <-  "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/TSS/hg19.refGene.TSS.bed"
   tag <- "DB"
   blacklistFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19.full.blacklist.bed"
+  peakFile <- ""
+  speciesMix <- "no"
+  oneone <- "yes"
 }
 
 # Parse .bam file
@@ -97,24 +103,61 @@ GA <- readGAlignments(bamFile, param = ScanBamParam(
   tag = c(tag), mapqFilter = 0, what="isize"))
 
 # Set up TSS file for scoring
-df <- data.frame(fread(tssFile))
-df$V2 <- df$V2 - 2000
-df$V3 <- df$V3 + 2000
+tssdf <- data.frame(fread(tssFile))
+tssdf$V2 <- tssdf$V2 - 2000
+tssdf$V3 <- tssdf$V3 + 2000
 
 
 # Deal with TSS enrichment %
-promoter <- makeGRangesFromDataFrame(df, seqnames.field = "V1", start.field = "V2", end.field = "V3")
-ov <- findOverlaps(promoter, GA)
+promoter <- makeGRangesFromDataFrame(tssdf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
+ovTSS <- findOverlaps(promoter, GA)
 df <- data.frame(mcols(GA))
-df$TSS <- as.numeric(1:dim(df)[1] %in% subjectHits(ov))
-rm(ov); rm(GA); rm(promoter)
-colnames(df) <- c("isize", "DropBarcode", "TSS")
-sbdf <- df %>% group_by(DropBarcode) %>% summarise(tssPproportion = round(mean(TSS), 3),
-                                                   meanInsertSize = round(mean(abs(isize))),
-                                                   medianInsertSize = round(median(abs(isize)))) %>% data.frame()
+
+df$TSS <- as.numeric(1:dim(df)[1] %in% subjectHits(ovTSS))
+
+# Make summarized experiment if we have a peak file
+if(peakFile != "none"){
+  # make summarized experiemnt  
+  suppressMessages(suppressWarnings(library(SummarizedExperiment)))
+  
+}
+
+# Deal with FRIP if we have a peak file
+if(peakFile != "none"){
+  peakdf <- data.frame(fread(peakFile))[,c(1,2,3)]
+  colnames(peakdf) <- c("V1", "V2", "V3")
+  peaks <- makeGRangesFromDataFrame(peakdf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
+  ovPEAK <- findOverlaps(peaks, GA)
+  df$Peak <- as.numeric(1:dim(df)[1] %in% subjectHits(ovPEAK))
+  
+  # Now also make a summarized experiement ## TO DO
+  
+} else{
+  df$Peak <- 0
+}
+
+rm(ovTSS); rm(GA); rm(promoter)
+
+if(speciesMix == "no"){
+  colnames(df) <- c("isize", "DropBarcode", "TSS", "Peak")
+  sbdf <- df %>% group_by(DropBarcode) %>% summarise(FRIP = round(mean(Peak), 3),
+                                                     tssPproportion = round(mean(TSS), 3),
+                                                     meanInsertSize = round(mean(abs(isize))),
+                                                     medianInsertSize = round(median(abs(isize)))) %>% data.frame()
+} else {
+  df$mouse <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "m")
+  df$human <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "h")
+  colnames(df) <- c("isize", "DropBarcode", "TSS", "Peak", "mouse", "human")
+  sbdf <- df %>% group_by(DropBarcode) %>% summarise(FRIP = round(mean(Peak), 3),
+                                                     tssPproportion = round(mean(TSS), 3),
+                                                     meanInsertSize = round(mean(abs(isize))),
+                                                     medianInsertSize = round(median(abs(isize))),
+                                                     nHumanReads = sum(human),
+                                                     nMouseReads = sum(mouse)) %>% data.frame()
+}
 rm(df)
 
-# Import old barcode stats
+# Import old barcode stats and merge with what has been computed
 mss <- data.frame(merge(fread(barcodeTranslateFile), fread(barcodeQuantsFile), by.x = "BeadBarcode", by.y = "Barcode"))
 msss <- mss %>% group_by(DropBarcode) %>% summarise(uniqueNuclearFrags = sum(UniqueNuclear), 
                                                     totalNuclearFrags = sum(TotalNuclear),
@@ -124,6 +167,15 @@ msss$duplicateProportion <- estimateDuplicateRate(msss$totalNuclearFrags, msss$u
 msss$librarySize <- sapply(1:dim(msss)[1], function(i){
   estimateLibrarySize(msss[i,"totalNuclearFrags"],msss[i,"uniqueNuclearFrags"])})
 qcStats <- merge(sbdf, msss)
+
+# Convert barcodes back if we need to (specified with the one to one option)
+if(oneone == "yes"){
+  translateDF <- read.table(barcodeTranslateFile, header = TRUE, stringsAsFactors = FALSE)
+  qcStatsDF <- qcStats
+  tvec <- translateDF[,1]; names(tvec) <- translateDF[,2]
+  qcStats <- qcStatsDF
+  qcStats$DropBarcode <- tvec[as.character(qcStats$DropBarcode)] 
+}
 
 write.table(qcStats,
             file = gsub(".barcodequants.csv$", ".QCstats.csv", barcodeQuantsFile),

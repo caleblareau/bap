@@ -24,13 +24,14 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--input', '-i', help='Input for bap; varies by which mode is specified; see documentation')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; see documentation.')
+@click.option('--name', '-n', default="default", help='Name for all of the output files (default: uses the .bam prefix)')
 
 @click.option('--ncores', '-c', default = "detect", help='Number of cores to run the main job in parallel.')
 @click.option('--reference-genome', '-r', default = "hg19", help='Support for built-in genome; choices are hg19, mm9, hg38, mm10, hg19_mm10_c and hg19-mm10 (species mix)')
 
 @click.option('--cluster', default = "",  help='Message to send to Snakemake to execute jobs on cluster interface; see documentation.')
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
-@click.option('--keep-going',is_flag=True, help='Force bap to run until end even if a chromosome acts funky. ')
+@click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
@@ -49,17 +50,16 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
 @click.option('--barcode-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode; valid for bam mode.')
-@click.option('--bam-name', '-bn', default="default", help='Name for the sam')
 
 @click.option('--bwa-path', default = "", help='Path to bwa; by default, assumes that bwa is in PATH; only needed for "c1fastq" mode.')
 @click.option('--bwa-index', '-bi', default = "", help='Path to the bwa (.fa) index; should be specified as if you were calling bwa (with file index prefix); only needed for "c1fastq" mode.')
 
 
-def main(mode, input, output, ncores, reference_genome,
-	cluster, jobs, keep_going, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
+def main(mode, input, output, name, ncores, reference_genome,
+	cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
 	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
-	drop_tag, barcode_tag, bam_name,
+	drop_tag, barcode_tag,
 	bwa_path, bwa_index):
 	
 	"""
@@ -83,12 +83,6 @@ def main(mode, input, output, ncores, reference_genome,
 		ncores = str(available_cpu_count())
 	else:
 		ncores = str(ncores)
-	
-	# Snakemake force keep going
-	if(keep_going):
-		kg = " --keep-going "
-	else:
-		kg = ""
 	
 	# Parameterize optional snakemake configuration
 	snakeclust = ""
@@ -147,7 +141,7 @@ def main(mode, input, output, ncores, reference_genome,
 			yaml.dump(dict(d), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 		
 		# Trim, align, annotate, and merge via snakemake
-		snakecmd_c1fastq = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bapc1fastq.c1fastq --cores '+ncores+kg+' --config cfp="' + y_s + '" -T'
+		snakecmd_c1fastq = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bapc1fastq.c1fastq --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_c1fastq)
 		
 		if keep_temp_files:
@@ -172,11 +166,11 @@ def main(mode, input, output, ncores, reference_genome,
 		sys.exit(gettime() + 'Specify one of these genomes or provide your own files (see documentation).')
 		
 	# Verify dependencies and set up an object to do all the dirty work
-	p = bapProject(script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
-		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
+	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
+		cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
-		drop_tag, barcode_tag, bam_name,
+		drop_tag, barcode_tag,
 		bwa_path, bwa_index)
 	
 	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
@@ -221,7 +215,7 @@ def main(mode, input, output, ncores, reference_genome,
 		# Step 1- Filter and split input .bam file by chromosome
 		#-------------------------------------------------------
 		line1 = 'python ' +script_dir+'/bin/python/11_quantBarcode_Filt.py --input '+p.bamfile
-		line2 = ' --name ' + p.bam_name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
+		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.barcode_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
 		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
 			
@@ -237,39 +231,48 @@ def main(mode, input, output, ncores, reference_genome,
 		with open(y_s, 'w') as yaml_file:
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 			
-		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+kg+' --config cfp="' + y_s + '" -T'
+		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_chr)
 
 		#-----------------------------------
 		# Step 4 - QC stats / outside Snakemake since not-essential
 		#-----------------------------------
-		barcodeTranslateFile = p.output + "/final/" + p.bam_name + ".barcodeTranslate.tsv"
-		barcodeQuantFile =  p.output + "/final/" + p.bam_name + ".barcodequants.csv"
-		finalBamFile = p.output + "/final/" + p.bam_name + ".bap.bam"
+		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
+		barcodeQuantFile =  p.output + "/final/" + p.name + ".barcodequants.csv"
+		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
+		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
+		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE.R"
+		
+		# Determine user flags for proper QC stuff		
+		if(p.peakFile == ""):
+			peakFileGo = "none"
+		else:
+			peakFileGo = p.peakFile
 		
 		if(speciesMix):
-			qc_R = script_dir + "/bin/R/16a_qualityControlReport_SM.R"
+			speciesMixGo = "yes"
 		else:
-			qc_R = script_dir + "/bin/R/16_qualityControlReport.R"
-
-		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile])
-		os.system(r_callQC)
-		
-		# add back original barcodes if one to one
+			speciesMixGo = "no"
+			
 		if(one_to_one):
-			r_calloo = " ".join([p.R+"script", script_dir + "/bin/R/17_ooMerge.R", barcodeTranslateFile])
-			os.system(r_calloo)
+			oneToOneGo = "yes"
+		else:
+			oneToOneGo = "no"
 		
+		# Full system call to R script
+		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile, peakFileGo, speciesMixGo, oneToOneGo])
+		os.system(r_callQC)
+
 		#-----------------------------------
 		# Step 5 - Process mitochondria
 		#-----------------------------------
 		if(extract_mito):
 			click.echo(gettime() + "Creating a new .bam file for mitochondria.")
 			
-			dict_file = fin+"/"+p.bam_name+".barcodeTranslate.tsv"
+			dict_file = fin+"/"+p.name+".barcodeTranslate.tsv"
 			
 			line1 = 'python ' +script_dir+'/bin/python/15_processMito.py --input '+p.bamfile
-			line2 = ' --output ' + mito + "/" + p.bam_name + ".mito.bam" + " --mitochr " + p.mitochr 
+			line2 = ' --output ' + mito + "/" + p.name + ".mito.bam" + " --mitochr " + p.mitochr 
 			line3 = ' --bead-barcode ' + p.barcode_tag + ' --drop-barcode ' + p.drop_tag + " --dict-file " + dict_file
 			mito_cmd = line1 + line2 + line3
 			

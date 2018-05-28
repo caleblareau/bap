@@ -55,11 +55,11 @@ def mitoChr(reference_genome, mito_chromosome):
 			return("hg19_chrM")
 
 class bapProject():
-	def __init__(self, script_dir, supported_genomes, mode, input, output, ncores, reference_genome,
-		cluster, jobs, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
+	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
+		cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
-		drop_tag, barcode_tag, bam_name,
+		drop_tag, barcode_tag,
 		bowtie2_path, bowtie2_index):
 		
 				
@@ -93,11 +93,11 @@ class bapProject():
 			self.bamfile = input
 			self.bwa = "NA"
 			self.bwa_index = "bwa_index"
-			self.bam_name = bam_name
+			self.name = name
 			
-			if(bam_name == "default"):
+			if(name == "default"):
 				filename, file_extension = os.path.splitext(self.bamfile)
-				self.bam_name = os.path.basename(filename)
+				self.name = os.path.basename(filename)
 		
 		#----------------------------------
 		# fastq processing specific options -- needs improvement
@@ -105,7 +105,7 @@ class bapProject():
 		if(mode == "fastq"):	
 			
 			self.bamfile = "NA"
-			self.bam_name = "NA"
+			self.name = "NA"
 			
 			# Need to align with bowtie2
 			self.bowtie2 = get_software_path('bowtie2', bowtie2_path)
@@ -168,7 +168,15 @@ class bapProject():
 			if(os.path.isfile(tss_file)):
 				self.tssFile = tss_file
 			else: 
-				sys.exit("Could not find the transcription start sites file: %s" % tss_file)		
+				sys.exit("Could not find the transcription start sites file: %s" % tss_file)
+		
+		if(peak_file != ""):	
+			if(os.path.isfile(peak_file)):
+				self.peakFile = peak_file
+			else: 
+				sys.exit("Could not find the transcription start sites file: %s" % peak_file)
+		else:
+			self.peakFile = ""
 		
 		self.mitochr =  mitoChr(reference_genome, mito_chromosome)
 		
@@ -182,9 +190,12 @@ class bapProject():
 		yield 'mode', self.mode
 		yield 'output', self.output
 		yield 'bamfile', self.bamfile
+		yield 'name', self.name
 
 		yield 'cluster', self.cluster
 		yield 'jobs', self.jobs
+		yield 'peakFile', self.peakFile
+		
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
 		yield 'minimum_cell_fragments', self.minimum_cell_fragments
 		yield 'minimum_jaccard_fragments', self.minimum_jaccard_fragments
@@ -201,7 +212,6 @@ class bapProject():
 		
 		yield 'drop_tag', self.drop_tag
 		yield 'barcode_tag', self.barcode_tag
-		yield 'bam_name', self.bam_name
 		
 		yield 'bwa', self.bwa
 		yield 'bwa_index', self.bwa_index
