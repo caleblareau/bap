@@ -26,6 +26,15 @@ def make_folder(folder):
 	if not os.path.exists(folder):
 		os.makedirs(folder)
 
+def file_len(fname):
+	"""
+	Function to count number of lines in a file
+	"""
+	with open(fname) as f:
+		for i, l in enumerate(f):
+			pass
+	return i + 1
+
 def verify_file(filename):
 	"""
 	Ensure that file can both be read and exists

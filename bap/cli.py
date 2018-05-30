@@ -222,6 +222,13 @@ def main(mode, input, output, name, ncores, reference_genome,
 		filt_split_cmd = line1 + line2 + line3 + line4
 		os.system(filt_split_cmd)
 		
+		# Verify that we got output and fail if not
+		val = file_len(p.output + "/final/" + p.name + ".barcodequants.csv") -1
+		click.echo(gettime() + "Found " + str(val) + " abundant barcodes passing filter.")
+		
+		if(val < 2):
+			sys.exit(gettime() + "Found insufficient # of barcodes for analyis; check reference genome or lower --minimum-barcode-fragments")
+		
 		#-------------------------------------------
 		# Step 2 / 3- Process fragments by Snakemake
 		#-------------------------------------------

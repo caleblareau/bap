@@ -8,7 +8,7 @@ dependencies = ['click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pys
 
 setup(
     name='bap',
-    version='0.3.0',
+    version='0.3.1',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'bap = bap.cli:main',
+            'annotateAlleles = bap.annoall:main'
         ],
     },
     classifiers=[
