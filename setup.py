@@ -23,7 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'bap = bap.cli:main',
-            'annotateAlleles = bap.annoall:main'
+            'annotateAlleles = bap.snpAnnotate.cli_anno:main'
         ],
     },
     classifiers=[
