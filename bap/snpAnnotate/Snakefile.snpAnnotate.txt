@@ -67,7 +67,6 @@ rule process_one_chromosome:
 		stat = outdir + '/temp/03_fastq_permuted/' + chr + "_stats.txt"
 		out_wl = outdir + '/temp/04_whitelist' 
 		pycall2 = "python " + script_dir + "/python/decideReads.py --bam1 " + outbam1 + " --bam2 " + outbam2 + " -s " + stat + " -o " + out_wl
-		print(pycall2)
 		os.system(pycall2)
 
 
@@ -86,5 +85,4 @@ rule final_merge:
 		statdir = outdir + '/temp/03_fastq_permuted'
 		aaSS_R = script_dir + "/R/02_mungeQC.R"
 		r_call1 = " ".join(["Rscript", aaSS_R, output.final_sumstats, statdir])
-		print(r_call1)
 		os.system(r_call1)
