@@ -21,7 +21,8 @@ bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em -pf data/test.small.peaks
 *phasing*
 
 ```
-annotateAlleles -i allele/mESC_test.bam -z --bwa-index /Volumes/dat/genomes/hg19_bwa/hg19.fa -s allele/CAST_129S_testSNPtable.tsv.gz 
+annotateAlleles -i allele/mESC_test.bam -z --bwa-index /Volumes/dat/genomes/mm10_bwa/mm10.fa -s allele/CAST_129S_testSNPtable.tsv.gz 
+
 ```
 
 ```

@@ -101,10 +101,10 @@ def main(input, snp_table, output,
   			t.write("%s\n" % item)
 	
 	# Split bams by chromosome and sort by name
-	line1 = 'python ' +script_dir+'/splitNameBam.py --input '+p.bamfile + " --ncores " + str(ncores) 
-	line2 = ' --chrfile ' + of + "/.internal/chrs.txt" + ' --out ' + of
-	filt_split_cmd = line1 + line2
+	filt_split_cmd = 'python ' +script_dir+'/python/splitNameBam.py --input '+p.bamfile + " --ncores " + str(ncores) + ' --chrfile ' + of + "/.internal/chrs.txt" + ' --out ' + of
 	os.system(filt_split_cmd)
+		
+	# Gear up for Snakemake call to take us home
 		
 	if keep_temp_files:
 		click.echo(gettime() + "Temporary files not deleted since --keep-temp-files was specified.")
