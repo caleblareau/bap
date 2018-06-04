@@ -12,7 +12,9 @@ from ruamel import yaml
 from ..bapHelp import *
 
 class aaProject():
-	def __init__(self, script_dir, input, output, name, ncores,
+	def __init__(self, script_dir, input, snp_table, output,
+		name, haplotype_tag,
+		ncores, keep_temp_files,
 		bwa_path, bwa_index):
 		
 				
@@ -22,7 +24,9 @@ class aaProject():
 		self.script_dir = script_dir
 		self.output = output
 		self.name = name			
-		self.bamfile = input			
+		self.bamfile = input
+		self.ncores = ncores
+		self.haplotype_tag = haplotype_tag		
 
 		# Handle bwa coordination
 		self.bwa = get_software_path('bwa', bwa_path)
@@ -42,11 +46,11 @@ class aaProject():
 	def __iter__(self):
 		
 		yield 'script_dir', self.script_dir
-		yield 'mode', self.mode
 		yield 'output', self.output
 		yield 'bamfile', self.bamfile
 		yield 'name', self.name
-
+		yield 'ncores', self.ncores
+		yield 'haplotype_tag', self.haplotype_tag
 		
 		yield 'bwa', self.bwa
 		yield 'bwa_index', self.bwa_index

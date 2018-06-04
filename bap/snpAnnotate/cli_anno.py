@@ -64,14 +64,16 @@ def main(input, snp_table, output,
 				bam_chrs.append(t[0])
 	
 	# Make the project
-	p = aaProject(script_dir, input, output, name, ncores,
+	p = aaProject(script_dir, input, snp_table, output,
+		name, haplotype_tag,
+		ncores, keep_temp_files,
 		bwa_path, bwa_index)
 	
 	# Make output folders
-	of = output; fin = of + "/final"; temp = of + "/temp"
+	of = output; fin = of + "/final"; temp = of + "/temp"; logs = of + "/logs"
 	temp_split = temp + "/01_split"; temp_namesort = temp + "/02_namesort"
-	temp_fastq_permuted = temp + "/03_fastq_permuted"; temp_fastq_permuted = temp + "/03_fastq_permuted"
-	folders = [of, fin, temp, of + "/.internal", 
+	temp_fastq_permuted = temp + "/03_fastq_permuted"; temp_whitelist = temp + "/04_whitelist"
+	folders = [of, fin, temp, of + "/.internal", logs, logs + "/bwa", 
 			temp_split, temp_namesort, temp_fastq_permuted, temp_fastq_permuted,
 			of + "/.internal/parseltongue", of + "/.internal/samples"]
 	mkfolderout = [make_folder(x) for x in folders]
@@ -105,7 +107,14 @@ def main(input, snp_table, output,
 	os.system(filt_split_cmd)
 		
 	# Gear up for Snakemake call to take us home
-		
+	y_s = of + "/.internal/parseltongue/aa.object.yaml"
+	with open(y_s, 'w') as yaml_file:
+		yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
+			
+	snakecmd_chr = 'snakemake --snakefile '+script_dir+'/Snakefile.snpAnnotate.txt --cores '+str(ncores)+' --config cfp="' + y_s + '" -T'
+	print(snakecmd_chr)
+	os.system(snakecmd_chr)
+	
 	if keep_temp_files:
 		click.echo(gettime() + "Temporary files not deleted since --keep-temp-files was specified.")
 	else:

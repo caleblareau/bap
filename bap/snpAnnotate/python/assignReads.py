@@ -117,11 +117,11 @@ def WASP_PE(gpos, genotype, snps, tagval, read, readno, pos_write):
     return(o)
 
 # Write to permuted fastq files
-permuted_hap1_r1 = gzip.open(out + '_hap1.realign_1.fastq.gz', 'wb')
-permuted_hap1_r2 = gzip.open(out + '_hap1.realign_2.fastq.gz', 'wb')
+permuted_hap1_r1 = gzip.open(out + '/' + chrn + '_hap1.realign_1.fastq.gz', 'wb')
+permuted_hap1_r2 = gzip.open(out + '/' + chrn + '_hap1.realign_2.fastq.gz', 'wb')
 
-permuted_hap2_r1 = gzip.open(out + '_hap2.realign_1.fastq.gz', 'wb')
-permuted_hap2_r2 = gzip.open(out + '_hap2.realign_2.fastq.gz', 'wb')
+permuted_hap2_r1 = gzip.open(out + '/' + chrn + '_hap2.realign_1.fastq.gz', 'wb')
+permuted_hap2_r2 = gzip.open(out + '/' + chrn + '_hap2.realign_2.fastq.gz', 'wb')
 
 bam = pysam.AlignmentFile(bamname, "rb")
 Itr = bam.fetch(until_eof=True)
@@ -182,9 +182,10 @@ while(Itr):
 		permuted_hap2_r2.close()
 		break
 
-print("Haplotype1_" + str(n_hap1))
-print("Haplotype2_" + str(n_hap2))
-print("Discordant_" + str(n_discordant))
-print("Unassigned_" + str(n_unassigned))
-
+handle_stat = open(out + '/' + chrn + "_stats.txt", 'w')
+handle_stat.write(chrn + "_Haplotype1_" + str(n_hap1) + "\n")
+handle_stat.write(chrn + "_Haplotype2_" + str(n_hap2) + "\n")
+handle_stat.write(chrn + "_Discordant_" + str(n_discordant) + "\n")
+handle_stat.write(chrn + "_Unassigned_" + str(n_unassigned) + "\n")
+handle_stat.close()
 
