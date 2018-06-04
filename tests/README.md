@@ -25,11 +25,6 @@ annotateAlleles -i allele/mESC_test.bam -z --bwa-index /Volumes/dat/genomes/mm10
 
 ```
 
-```
-python /Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/bin/python/markAllelicStatusCL.py -i data/test.small.bam -s data/t.vcf -t HP -r -o ann.bam
-bowtie2 -x /Volumes/dat/genomes/hg19_bwt2/hg19 -U ann.realign.fastq.gz 
-```
-
 *c1fastq*
 ```
 bap c1fastq --input c1fastqinput.csv -bi /Volumes/dat/genomes/hg19_bwa/hg19.fa -z

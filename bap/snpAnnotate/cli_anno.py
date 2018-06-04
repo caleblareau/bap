@@ -74,7 +74,7 @@ def main(input, snp_table, output,
 	temp_split = temp + "/01_split"; temp_namesort = temp + "/02_namesort"
 	temp_fastq_permuted = temp + "/03_fastq_permuted"; temp_whitelist = temp + "/04_whitelist"
 	folders = [of, fin, temp, of + "/.internal", logs, logs + "/bwa", 
-			temp_split, temp_namesort, temp_fastq_permuted, temp_fastq_permuted,
+			temp_split, temp_namesort, temp_fastq_permuted, temp_whitelist,
 			of + "/.internal/parseltongue", of + "/.internal/samples"]
 	mkfolderout = [make_folder(x) for x in folders]
 	
@@ -106,13 +106,12 @@ def main(input, snp_table, output,
 	filt_split_cmd = 'python ' +script_dir+'/python/splitNameBam.py --input '+p.bamfile + " --ncores " + str(ncores) + ' --chrfile ' + of + "/.internal/chrs.txt" + ' --out ' + of
 	os.system(filt_split_cmd)
 		
-	# Gear up for Snakemake call to take us home
+	# Let Snakemake process the chromosome files
 	y_s = of + "/.internal/parseltongue/aa.object.yaml"
 	with open(y_s, 'w') as yaml_file:
 		yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 			
 	snakecmd_chr = 'snakemake --snakefile '+script_dir+'/Snakefile.snpAnnotate.txt --cores '+str(ncores)+' --config cfp="' + y_s + '" -T'
-	print(snakecmd_chr)
 	os.system(snakecmd_chr)
 	
 	if keep_temp_files:

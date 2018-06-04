@@ -22,17 +22,22 @@ with open(infile1) as f:
 
 chrs = [x.strip() for x in chrs] 
 chrStats = [outdir + '/temp/03_fastq_permuted/' + x + "_stats.txt" for x in chrs] 
+whitelists1 = [outdir + '/temp/04_whitelist/whitelist_hap1_' + x + ".txt" for x in chrs] 
+whitelists2 = [outdir + '/temp/04_whitelist/whitelist_hap2_' + x + ".txt" for x in chrs] 
 
 rule all:
 	input:
-		outdir + "/final/"+name+".qcStats.txt"
+		wl1 = outdir + "/final/"+name+".whitelist1.txt",
+		wl2 = outdir + "/final/"+name+".whitelist2.txt"
 
 rule process_one_chromosome:
 	input:
 		snp = outdir + "/temp/01_split/SNPs_" + "{chr}" + ".tsv",
 		bam = outdir + "/temp/02_namesort/nameSort." + "{chr}" + ".bam",
 	output:
-		outQuant = outdir + '/temp/03_fastq_permuted/' + "{chr}" + "_stats.txt"
+		outQuant = outdir + '/temp/03_fastq_permuted/' + "{chr}" + "_stats.txt",
+		whitelist1 = outdir + '/temp/04_whitelist/whitelist_hap1_' + "{chr}" + ".txt",
+		whitelist2 = outdir + '/temp/04_whitelist/whitelist_hap2_' + "{chr}" + ".txt"
 	threads:
 		1
 	log:
@@ -57,14 +62,29 @@ rule process_one_chromosome:
 		outbam2 = outdir + "/temp/03_fastq_permuted/"+ chr + "WASP_hap2.bam"		
 		bw_call2 = bwa + " mem " + bwa_index + " " + fq_21 + fq_22 + " 2> "+log.bwalog+" | samtools view -bS -  -o " + outbam2
 		os.system(bw_call2)
+		
+		# Filter reads that don't map well based on permutation
+		stat = outdir + '/temp/03_fastq_permuted/' + chr + "_stats.txt"
+		out_wl = outdir + '/temp/04_whitelist' 
+		pycall2 = "python " + script_dir + "/python/decideReads.py --bam1 " + outbam1 + " --bam2 " + outbam2 + " -s " + stat + " -o " + out_wl
+		print(pycall2)
+		os.system(pycall2)
 
 
 # Final merge of everything
 rule final_merge:
 	input:
-		chrStats = chrStats
+		wls1 = whitelists1,
+		wls2 = whitelists2
 	output:
-		finaltxt = outdir + "/final/"+name+".qcStats.txt"
+		final_wl1 = outdir + "/final/"+name+".whitelist1.txt",
+		final_wl2 = outdir + "/final/"+name+".whitelist2.txt",
+		final_sumstats = outdir + "/final/"+name+".sumstats.tsv"
 	run:
-		os.system("cat " + " ".join(input.chrStats) + " > " + output.finaltxt )
-		
+		os.system("cat " + " ".join(input.wls1) + " > " + output.final_wl1 )
+		os.system("cat " + " ".join(input.wls2) + " > " + output.final_wl2 )
+		statdir = outdir + '/temp/03_fastq_permuted'
+		aaSS_R = script_dir + "/R/02_mungeQC.R"
+		r_call1 = " ".join(["Rscript", aaSS_R, output.final_sumstats, statdir])
+		print(r_call1)
+		os.system(r_call1)
