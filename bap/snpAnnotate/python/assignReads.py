@@ -52,7 +52,7 @@ def getBaseAt(read, pos):
 
 
 
-def getAllelicStatus(gpos, genotype, snps):
+def getAllelicStatus(gpos, genotype, quality, snps):
     """
     For a given set of genomic position and assoctiated genotype, compare to a snp file and return a code status
     0 : unassigned - no snp information extracted from the read
@@ -60,9 +60,6 @@ def getAllelicStatus(gpos, genotype, snps):
     2 : genotype from ALT genome is found
     3 : conflicting information extracted from the read
 
-    gpos = genomic position to look at [list]
-    genotype = read genotype [list]
-    snp = snp information extracted from VCF file
     """
 
     code = None
@@ -73,9 +70,9 @@ def getAllelicStatus(gpos, genotype, snps):
     for i in range(len(genotype)):
         if gpos[i] != None:
             if (str(chrn), int(gpos[i]), '1') in snps.keys() and (str(chrn), int(gpos[i]), '2') in snps.keys():
-                if snps[(str(chrn), int(gpos[i]), '1')] == genotype[i]:
+                if snps[(str(chrn), int(gpos[i]), '1')] == genotype[i] and quality[i] > 10:
                     g1_count+=1
-                elif snps[(str(chrn), int(gpos[i]), '2')] == genotype[i]:
+                elif snps[(str(chrn), int(gpos[i]), '2')] == genotype[i] and quality[i] > 10:
                     g2_count+=1
 
 
@@ -93,13 +90,13 @@ def getAllelicStatus(gpos, genotype, snps):
 def replace_str_index(text,index=0,replacement=''):
     return '%s%s%s'%(text[:index],replacement,text[index+1:])
 
-def WASP_PE(gpos, genotype, snps, tagval, read, readno):
+def WASP_PE(gpos, genotype, snps, tagval, read, readno, pos_write):
     """
     Do the WASP-style allele swap
     """
     
     name = read.query_name
-    name = chrn + ":" + str(gpos[0]) + "_-_" + name + ' ' + str(readno)
+    name = chrn + ":" + pos_write + "_-_" + name + ' ' + str(readno)
 
     # Read attributes
     r = read.query_sequence
@@ -153,8 +150,8 @@ while(Itr):
 		bases2 = getBaseAt(read2,range(0,len(genomePos2)-1))
 	
 		# Tag each read
-		tagval1 = getAllelicStatus(genomePos1, bases1, snps)
-		tagval2 = getAllelicStatus(genomePos2, bases2, snps)
+		tagval1 = getAllelicStatus(genomePos1, bases1, read1.query_qualities, snps)
+		tagval2 = getAllelicStatus(genomePos2, bases2, read2.query_qualities, snps)
 	
 		# Find discordance either between reads or within them
 		if(tagval1 == 3 or tagval2 == 3 or (tagval1 + tagval2) == 3):
@@ -165,14 +162,16 @@ while(Itr):
 			n_unassigned += 1
 	
 		elif(tagval1 == 1 or tagval2 == 1):
+			pos_write = str(min(genomePos1[read1.query_alignment_start], genomePos2[read2.query_alignment_start])) + ":" + str(max(genomePos1[read1.query_alignment_start], genomePos2[read2.query_alignment_start]))
 			n_hap1 += 1                                      # First int is for haplotype; second is for read number
-			permuted_hap1_r1.write(str.encode(WASP_PE(genomePos1, bases1, snps, 1, read1, 1))) 
-			permuted_hap1_r2.write(str.encode(WASP_PE(genomePos2, bases2, snps, 1, read2, 2))) 
+			permuted_hap1_r1.write(str.encode(WASP_PE(genomePos1, bases1, snps, 1, read1, 1, pos_write))) 
+			permuted_hap1_r2.write(str.encode(WASP_PE(genomePos2, bases2, snps, 1, read2, 2, pos_write))) 
 	
 		elif(tagval1 == 2 or tagval2 == 2):
-			n_hap2 += 1                                      # First int is for haplotype; second is for read number
-			permuted_hap2_r1.write(str.encode(WASP_PE(genomePos1, bases1, snps, 2, read1, 1))) 
-			permuted_hap2_r2.write(str.encode(WASP_PE(genomePos2, bases2, snps, 2, read2, 2))) 
+			pos_write = str(min(genomePos1[read1.query_alignment_start], genomePos2[read2.query_alignment_start])) + ":" + str(max(genomePos1[read1.query_alignment_start], genomePos2[read2.query_alignment_start])) 
+			n_hap2 += 1                                     # First int is for haplotype; second is for read number
+			permuted_hap2_r1.write(str.encode(WASP_PE(genomePos1, bases1, snps, 2, read1, 1, pos_write))) 
+			permuted_hap2_r2.write(str.encode(WASP_PE(genomePos2, bases2, snps, 2, read2, 2, pos_write))) 
 		else:
 			n_unassigned += 1
 	except StopIteration:
