@@ -38,7 +38,7 @@ def processBam(chr):
 	temp1 = temp_split + "/splitBam." + chr + ".bam"
 	temp2 = temp_namesort + "/nameSort." + chr + ".bam"
 	
-	split_cmd = "samtools view -b " + bamname + " > " + temp1
+	split_cmd = "samtools view -b " + bamname + " " + chr + " > " + temp1
 	os.system(split_cmd)
 	pysam.index(temp1)
 	
