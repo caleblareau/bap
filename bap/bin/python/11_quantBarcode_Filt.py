@@ -58,6 +58,10 @@ def getBarcode(intags):
 # Function for extracting barcodes corresponding to unique reads
 #---------------------------------------------------------------
 def getUniqueBarcodes(chrom):
+
+	# Note that the de-duplication logic here is such that
+	# we don't care about the specific read being counted
+	# as a singleton since we are only counting them.
 	
 	# Use dictionary logic
 	barcodes = dict()
@@ -96,8 +100,14 @@ def writeUniquePassingReads(chrom):
 	
 	# the bc variable is in the global environment
 	
+	# Note that the de-duplication logic here is such that
+	# we DO care about whether the specific frag being reported
+	# is consistent to ensure proper pairing downstream. The way
+	# that this is achieved is by keeping a dictionary of reads per base pair index
+	# and only writing the one that sort returns as the first
+	
 	# Keep track of the base pair for indexing unique reads
-	barcode_bp = ['NA']
+	barcode_bp_dict = dict()
 	bp = 0
 	idx = chrs.index(chrom)
 	file = fopen[idx]
@@ -106,21 +116,43 @@ def writeUniquePassingReads(chrom):
 	bam = pysam.AlignmentFile(bamname,'rb')
 	Itr = bam.fetch(str(chrom),multiple_iterators=True)
 	for read in Itr:
+	
+		# only consider reads with sufficient mapping quality
 		if(read.mapping_quality > minmapq):
 			read_barcode = getBarcode(read.tags)
 			
-			# New base pair -- no duplicates; write out and update
-			if(read.reference_start != bp and read_barcode in bc):
-				bp = read.reference_start
-				barcode_bp = [read_barcode]
-				file.write(read)
+			# New base pair -- no duplicates; write out the dictionary and update
+			if(read.reference_start != bp):
 				
-				# Same base pair -- verify that it's not existing barcodes
+				# Write out old base pair if we have things to write
+				if(len(barcode_bp_dict) > 0):
+					for key, value in barcode_bp_dict.items():
+						file.write(value)
+				
+				# Now update to the new base pair... in part by wiping the dictionary
+				barcode_bp_dict = dict()
+				bp = read.reference_start
+				barcode_bp_dict[read_barcode] = read
+				
+				# Else: same base pair -- do one of two things
+				# 1) if we've seen the barcode before, then keep only the first sorted value
+				# 2) if we haven't seen the barcode before, then append it
 			else:
 				# Still at the same base pair; verify that we haven't seen this barcode before
-				if( not read_barcode in barcode_bp and read_barcode in bc):
-					barcode_bp.append(read_barcode)
-					file.write(read)
+				if(read_barcode in barcode_bp_dict.keys()):
+					old_read = barcode_bp_dict.get(read_barcode)
+					old_name = old_read.query_name
+					new_name = read.query_name
+					
+					# Keep newer read if it's a lesser read than the old one
+					if(new_name < old_name):
+						barcode_bp_dict[read_barcode] = read
+					# else keep the old read-- no code needed
+					
+				# New barcode-- append the read directly
+				else:
+					barcode_bp_dict[read_barcode] = read
+				
 	bam.close()
 	return(chrom)
 

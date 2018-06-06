@@ -176,10 +176,12 @@ if(peakFile != "none"){
   id <- factor(mcols(GA)[,dropbarcodeTag], levels = as.character(qcStats$DropBarcode))
   countdf <- data.frame(peak = queryHits(ovPEAK), sample = as.numeric(id)[subjectHits(ovPEAK)], read = names(GA)[subjectHits(ovPEAK)]) %>%
     distinct() %>%  # by filtering on distinct read / peak / sample trios, ensure that PE reads that overlap peak aren't double counted
+    select(-one_of("read")) %>% 
     group_by(peak,sample) %>% summarise(count = n()) %>% data.matrix()
   rm(ovPEAK)
   
   m <- Matrix::sparseMatrix(i = c(countdf[,1], length(peaks)), j =c(countdf[,2], 1), x = c(countdf[,3],0))
+  colnames(m) <- levels(id)
   SE <- SummarizedExperiment(
     rowRanges = peaks, 
     assays = list(counts = m),

@@ -42,8 +42,9 @@ bam = pysam.AlignmentFile(bamname, "rb")
 out = pysam.AlignmentFile(outname, "wb", template = bam)
 
 # Loop over bam and selectively write to bam de-duplicating droplet barcodes 
-barcode_bp = ['NA']
+# Retain the same style as before 
 bp = 0
+barcode_bp_dict = dict()
 
 try:
 	for read in bam:
@@ -53,18 +54,40 @@ try:
 		# Handle droplet barcodes that we want to consider writing out
 		if(drop_bc != "NA"):
 	
-			# New base pair -- no duplicates
+			# New base pair -- no duplicates; write out the dictionary and update
 			if(read.reference_start != bp):
-				bp = read.reference_start
-				barcode_bp = [drop_bc]
-				read.tags = read.tags + [(db, drop_bc)]
-				out.write(read)
 				
+				# Append the new tag to the read
+				read.tags = read.tags + [(db, drop_bc)]
+				
+				# Write out old base pair if we have things to write
+				if(len(barcode_bp_dict) > 0):
+					for key, value in barcode_bp_dict.items():
+						file.write(value)
+				
+				# Now update to the new base pair... in part by wiping the dictionary
+				barcode_bp_dict = dict()
+				bp = read.reference_start
+				barcode_bp_dict[drop_bc] = read
+				
+				# Else: same base pair -- do one of two things
+				# 1) if we've seen the barcode before, then keep only the first sorted value
+				# 2) if we haven't seen the barcode before, then append it
 			else:
-				if( not drop_bc in barcode_bp):
-					barcode_bp.append(drop_bc)
-					read.tags = read.tags + [(db, drop_bc)]
-					out.write(read)
+				# Still at the same base pair; verify that we haven't seen this barcode before
+				if(drop_bc in barcode_bp_dict.keys()):
+					old_read = barcode_bp_dict.get(drop_bc)
+					old_name = old_read.query_name
+					new_name = read.query_name
+					
+					# Keep newer read if it's a lesser read than the old one
+					if(new_name < old_name):
+						barcode_bp_dict[drop_bc] = read
+					# else keep the old read-- no code needed
+					
+				# New barcode-- append the read directly
+				else:
+					barcode_bp_dict[drop_bc] = read
 
 except OSError: # Truncated bam file from previous iteration handle
 	print('Finished parsing bam')
