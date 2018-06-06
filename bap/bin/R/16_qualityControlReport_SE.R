@@ -97,8 +97,11 @@ if(FALSE){
   oneone <- "yes"
 }
 
+# We only need the read names if we have a valid peak file
+import.names <- peakFile != "none"
+
 # Parse .bam file
-GA <- readGAlignments(bamFile, param = ScanBamParam(
+GA <- readGAlignments(bamFile, use.names = import.names, param = ScanBamParam(
   flag = scanBamFlag(isProperPair = TRUE),
   tag = c(dropbarcodeTag), mapqFilter = 0, what="isize"))
 
@@ -171,7 +174,9 @@ if(peakFile != "none"){
   # recall ovPEAK from above 
 
   id <- factor(mcols(GA)[,dropbarcodeTag], levels = as.character(qcStats$DropBarcode))
-  countdf <- data.frame(peak = queryHits(ovPEAK), sample = as.numeric(id)[subjectHits(ovPEAK)]) %>% group_by(peak,sample) %>% summarise(count = n()) %>% data.matrix()
+  countdf <- data.frame(peak = queryHits(ovPEAK), sample = as.numeric(id)[subjectHits(ovPEAK)], read = names(GA)[subjectHits(ovPEAK)]) %>%
+    distinct() %>%  # by filtering on distinct read / peak / sample trios, ensure that PE reads that overlap peak aren't double counted
+    group_by(peak,sample) %>% summarise(count = n()) %>% data.matrix()
   rm(ovPEAK)
   
   m <- Matrix::sparseMatrix(i = c(countdf[,1], length(peaks)), j =c(countdf[,2], 1), x = c(countdf[,3],0))
