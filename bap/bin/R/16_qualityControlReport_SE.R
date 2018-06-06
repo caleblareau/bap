@@ -178,7 +178,7 @@ if(peakFile != "none"){
     distinct() %>%  # by filtering on distinct read / peak / sample trios, ensure that PE reads that overlap peak aren't double counted
     select(-one_of("read")) %>% 
     group_by(peak,sample) %>% summarise(count = n()) %>% data.matrix()
-  rm(ovPEAK)
+  #rm(ovPEAK)
   
   m <- Matrix::sparseMatrix(i = c(countdf[,1], length(peaks)), j =c(countdf[,2], 1), x = c(countdf[,3],0))
   colnames(m) <- levels(id)

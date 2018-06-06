@@ -53,17 +53,17 @@ try:
 	
 		# Handle droplet barcodes that we want to consider writing out
 		if(drop_bc != "NA"):
-	
+			
+			# Append the new tag to the read
+			read.tags = read.tags + [(db, drop_bc)]
+			
 			# New base pair -- no duplicates; write out the dictionary and update
 			if(read.reference_start != bp):
-				
-				# Append the new tag to the read
-				read.tags = read.tags + [(db, drop_bc)]
 				
 				# Write out old base pair if we have things to write
 				if(len(barcode_bp_dict) > 0):
 					for key, value in barcode_bp_dict.items():
-						file.write(value)
+						out.write(value)
 				
 				# Now update to the new base pair... in part by wiping the dictionary
 				barcode_bp_dict = dict()
@@ -73,6 +73,7 @@ try:
 				# Else: same base pair -- do one of two things
 				# 1) if we've seen the barcode before, then keep only the first sorted value
 				# 2) if we haven't seen the barcode before, then append it
+				
 			else:
 				# Still at the same base pair; verify that we haven't seen this barcode before
 				if(drop_bc in barcode_bp_dict.keys()):
