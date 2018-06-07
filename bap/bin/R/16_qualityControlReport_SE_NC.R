@@ -136,6 +136,7 @@ if(speciesMix == "no"){
   sbdf <- df %>% group_by(DropBarcode) %>% summarise(FRIP = round(mean(Peak), 3),
                                                      tssPproportion = round(mean(TSS), 3),
                                                      meanNC = mean(NC),
+                                                     medianNC = median(NC),
                                                      nNC1 = sum(NC > 1),
                                                      nNC3 = sum(NC > 3),
                                                      nNC5 = sum(NC > 5),
