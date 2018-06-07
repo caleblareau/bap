@@ -44,6 +44,7 @@ out = pysam.AlignmentFile(outname, "wb", template = bam)
 # Loop over bam and selectively write to bam de-duplicating droplet barcodes 
 # Retain the same style as before 
 bp = 0
+bp_count = 0
 barcode_bp_dict = dict()
 
 try:
@@ -63,12 +64,14 @@ try:
 				# Write out old base pair if we have things to write
 				if(len(barcode_bp_dict) > 0):
 					for key, value in barcode_bp_dict.items():
+						value.tags = value.tags + [("NC", bp_count)]
 						out.write(value)
 				
 				# Now update to the new base pair... in part by wiping the dictionary
 				barcode_bp_dict = dict()
 				bp = read.reference_start
 				barcode_bp_dict[drop_bc] = read
+				bp_count = 1
 				
 				# Else: same base pair -- do one of two things
 				# 1) if we've seen the barcode before, then keep only the first sorted value
@@ -76,6 +79,7 @@ try:
 				
 			else:
 				# Still at the same base pair; verify that we haven't seen this barcode before
+				bp_count += 1
 				if(drop_bc in barcode_bp_dict.keys()):
 					old_read = barcode_bp_dict.get(drop_bc)
 					old_name = old_read.query_name

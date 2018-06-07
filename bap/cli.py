@@ -248,7 +248,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		barcodeQuantFile =  p.output + "/final/" + p.name + ".barcodequants.csv"
 		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
 		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
-		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE.R"
+		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE_NC.R"
 		
 		# Determine user flags for proper QC stuff		
 		if(p.peakFile == ""):
