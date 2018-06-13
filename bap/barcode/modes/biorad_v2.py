@@ -206,7 +206,7 @@ with gzip.open(a, "rt") as f1:
 			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1])])
 			pool.close()
 			
-with open(o + "-debarcode" + '.sumstats.log', 'w') as logfile:
+with open(o + "-parse" + '.sumstats.log', 'w') as logfile:
 	# give summary statistics
 	logfile.write("\nParsing read pairs:\n" + a + "\n" + b + "\n")
 	logfile.write("\n"+str(npass)+" reads parsed with barcodes ("+str(round(npass/(npass+nfail)*100, 2))+"% success)\n")

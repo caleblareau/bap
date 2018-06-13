@@ -16,7 +16,9 @@ bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em -pf data/test.small.peaks
 ```
 
 
-# Testing the pieces
+
+
+### others
 
 *phasing*
 
