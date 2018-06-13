@@ -15,7 +15,11 @@ bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em -pf data/test.small.peaks
  bap bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 100 -cf 100
 ```
 
-
+## debarcoding
+```
+bap-barcode v1.0 -a fastq_br/biorad_v1_R1.fastq.gz -b fastq_br/biorad_v1_R2.fastq.gz --nmismatches 1
+bap-barcode v2.1 -a fastq_br/biorad_v2_R1.fastq.gz -b fastq_br/biorad_v2_R2.fastq.gz --nmismatches 1
+```
 
 
 ### others
