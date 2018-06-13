@@ -1,0 +1,57 @@
+import click
+import os
+import os.path
+import sys
+import shutil
+import yaml
+import random
+import string
+import itertools
+import time
+
+import csv
+import re
+from itertools import groupby
+from ..bapHelp import *
+from pkg_resources import get_distribution
+from subprocess import call, check_call
+
+@click.command()
+@click.version_option()
+
+@click.argument('mode', type=click.Choice(['v1', 'v2', 'v2-multi']))
+
+@click.option('--fastq1', '-a', help='Read 1 of the sequence; should contain the inline barcode in the sequence')
+@click.option('--fastq2', '-b', help='Read 2 of the sequence; should contain the inline barcode in the sequence')
+@click.option('--output', '-o', default="debarcode", help='Output prefix for processed fastq files. By default, a simple string in the execution directory.\n\n')
+
+@click.option('--ncores', '-c', default=2, help='Number of cores to be used in parallel de-barcoding')
+@click.option('--nreads', '-nr', default=5000000, help='Number of reads to be processed in a chunk (both for an output file unit and in parallel processing)')
+@click.option('--nmismatches', '-nm', default=1, help='Number of mismatches to be tolerated when doing a section of a barcode matching')
+
+
+def main(mode, fastq1, fastq2, output, ncores, nreads, nmismatches):
+	
+	"""
+	bap-barcode: De-barcode samples from BioRad bead single cell atac \n
+	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
+	
+	mode = ['v1', 'v2', 'v2-multi'] for bead design\n
+	"""
+	
+	__version__ = get_distribution('bap').version
+	script_dir = os.path.dirname(os.path.realpath(__file__))
+	click.echo(gettime() + "Starting de-barcoding from bap pipeline v%s" % __version__)
+	
+	# Handle mode and make the right system call
+	if(mode == "v1"):
+		cmd = 'python '+script_dir+'/barcode/modes/biorad_v1.py '
+		print(cmd)
+	elif(mode == "v2"):
+		cmd = 'python '+script_dir+'/barcode/modes/biorad_v2.py '
+		print(cmd)
+	else:
+		sys.exit(gettime() + "User-supplied mode %s not found!" % mode)
+		
+	#os.system(sys_call)
+		
