@@ -84,6 +84,7 @@ else:
 
 # Define global variables
 dumb = "N"*6 + "_" + "N"*6 + "_" + "N"*6
+dumb2 = "N"*18
 
 # Define barcodes
 barcodes = ["AAAGAA","AACAGC","AACGTG","AAGCCA","AAGTAT","AATTGG","ACAAGG","ACCCAA","ACCTTC",
@@ -114,14 +115,14 @@ def extract_barcode_v1(sequence1):
 		me_hit = find_near_matches(me, sequence1[55:95], max_l_dist=2)
 		
 		# Now grab the barcodes
-		bc1 = prove_barcode(sequence1[c1_hit[0][0]-6:c1_hit[0][0]], barcodes, n_mismatch)
-		bc2 = prove_barcode(sequence1[c1_hit[0][1]:c2_hit[0][0]+20], barcodes, n_mismatch)
-		bc3 = prove_barcode(sequence1[c2_hit[0][1]+20:nxt_hit[0][0]+47], barcodes, n_mismatch)
+		bc1, mm1 = prove_barcode(sequence1[c1_hit[0][0]-6:c1_hit[0][0]], barcodes, n_mismatch)
+		bc2, mm2 = prove_barcode(sequence1[c1_hit[0][1]:c2_hit[0][0]+20], barcodes, n_mismatch)
+		bc3, mm3 = prove_barcode(sequence1[c2_hit[0][1]+20:nxt_hit[0][0]+47], barcodes, n_mismatch)
 		seq = sequence1[me_hit[0][1]+55:]
 	
-		return(bc1 + "_" + bc2 + "_" + bc3, seq)
+		return(bc1 + "_" + bc2 + "_" + bc3, seq, str(mm1)+","+str(mm2)+","+str(mm3))
 	except:
-		return(dumb, sequence1)
+		return(dumb, sequence1, "0,0,0")
 	
 
 def debarcode_v1(duo):
@@ -134,6 +135,7 @@ def debarcode_v1(duo):
 	# parameters to return
 	fq1 = ""
 	fq2 = ""
+	mm_quant = ""
 
 	nbc1 = 0
 	nbc2 = 0
@@ -147,27 +149,30 @@ def debarcode_v1(duo):
 	title2 = listRead2[0]; sequence2 = listRead2[1]; quality2 = listRead2[2]
 	
 	# Return the barcode with underscores + the biological sequence learned	
-	barcode, sequence1 = extract_barcode_v1(sequence1)
+	barcode, sequence1, mm = extract_barcode_v1(sequence1)
 	quality1 = quality1[-1*len(sequence1):]
 	
 	three = barcode.split("_")
+	barcode = "".join(three)
+	
 	if("NNNNNN" in three and len(sequence1) > 10):
 
 		# Something went wrong
 		nfail = nfail + 1
-		if(barcode != dumb):
+		if(barcode != dumb2):
 			if("NNNNNN" == three[0]):
-				nbc1 = 1
+				nbc1 += 1
 			if("NNNNNN" == three[1]):
-				nbc2 = 1
+				nbc2 += 1
 			if("NNNNNN" == three[2]):
-				nbc3 = 1
+				nbc3 += 1
 
 	else:
 		npass = 1
 		fq1 = formatRead("".join(three) + "_" + title1, sequence1, quality1)
 		fq2 = formatRead("".join(three) + "_" + title2, sequence2, quality2)
-	return([[fq1, fq2], [nbc1, nbc2, nbc3, npass, nfail]])
+		mm_quant = mm_quant + barcode + "," + mm +"\n"
+	return([[fq1, fq2], [nbc1, nbc2, nbc3, npass, nfail], [mm_quant]])
 
 
 # Define variables to keep track of things that fail
@@ -198,6 +203,7 @@ with gzip.open(a, "rt") as f1:
 			# Aggregate output
 			fqs = list(map(''.join, zip(*[item.pop(0) for item in pm])))
 			counts = list(map(sum, zip(*[item.pop(0) for item in pm])))
+			mm_values = list(map(''.join, zip(*[item.pop(0) for item in pm])))
 			
 			# Increment for QC
 			nbc1 = nbc1 + counts[0]
@@ -209,9 +215,10 @@ with gzip.open(a, "rt") as f1:
 			# Export one chunk in parallel
 			filename1 = output +'_1.fastq.gz'
 			filename2 = output +'_2.fastq.gz'
+			filenameMM = output +'_mismatches.csv.gz'
 			
 			pool = Pool(processes=2)
-			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1])])
+			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1]), (filenameMM, mm_values)])
 			pool.close()
 			
 with open(o + "-parse" + '.sumstats.log', 'w') as logfile:

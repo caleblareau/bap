@@ -45,13 +45,13 @@ def prove_barcode(bc, valid_set, n_mismatch):
 	'''
 		
 	if(bc in valid_set):
-		return(bc)
+		return(bc, "0")
 	else:
 		eo = process.extractOne(bc, valid_set)
 		if(eo[1] >= (len(bc)-n_mismatch)/len(bc)): 
-			return(eo[0])
+			return(eo[0], "1")
 		else:
-			return("N"*len(bc))
+			return("N"*len(bc), "0")
 			
 def formatRead(title, sequence, quality):
 	"""

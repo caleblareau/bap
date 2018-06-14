@@ -84,6 +84,7 @@ else:
 
 # Define global variables
 dumb = "N"*7 + "_" + "N"*7 + "_" + "N"*7 
+dumb2 = "N"*21
 
 # Define barcodes
 barcodes = ["GGACGAC","GCAGTGT","GAGAGGT","GAACCGT","GGTTAGT","GCCTTTG","GATAGAC","GTGGTAG","GTAATAC","CGAGGTC","CATCAGT","CCAAGCT","CCTTAGG","CACGGAC","CAGGCGG","CCGAACC","CACTTCT","CTGGCAT","CGATTAC","TCGTTCT","TGCTACT","TTCCTCT","TACTTTC","TGAATCC","TAGTACC","TTATCAT","TGATTGT","TGGCAAC","TGTTTAG","AGTTTCT","ATGGTGT","ATTGCCT","ACTCAAT","AGACCAT","AGCGAAT","ACCTACC","AGATAGG","AAGGTTC","AGGCATG","GTGGCGC","GGTCGTA","GTGTCCA","GAGGACA","GTCCTTC","GAGCGTG","GATCACC","GTTGATG","CATACGC","CTGCGCC","CGTAGCC","CGCGGCG","CATCTTA","CCAGTCA","CGTTTGA","CCACTTG","CTAACTC","CGAGTGG","TCCTGGC","TGACCGC","TAAGGTA","TCGCGCA","TCATACA","TAAGAGG","TGGAAGG","TCCGCTC","TAACGCC","TGCGTTG","TCGGATG","AGCCGCC","ACACGCG","ACTACGA","AATGGCC","ATGTTCC","ACGTTGG","AGACTTC","ATATAAC","ATAGTTG","GCACAGC","GACAATA","GAATCAA","GCTCCAA","GCGTAGA","GGAAGTT","GGAGCCT","GAATATG","GGTTCAC","CTAGAGC","CGTGATA","CGCCTAA","CGATGCA","CTTGCGA","CCATAAT","CCTATGT","CGCGCTT","CCGCGAT","CGGCCAG","TTGAGGC","TTTCCTA","TCAGCAA","TCCTTAA","TGGACCA","TAGTGTT","TATACTT","TGTCGCT","TACGCAT","TTGTAAG","TGTAGTG","AGTAAGC","ATGAATA","AACGTAA","AATTCCA","AATGATT","AAGTTAT","ACAGCTT","AGCTGAG","ACAGTAC","GGCAGGC","GCGCACG","GAGCTAA","GGTAACA","GCTAATT","GTCGGTT","GGTGTTT","GCGACTC","CTTACCG","CTATTCG","CTAAGAA","CACGCCA","CGGAGGA","CTTGTCC","CTCATTT","CGGATCT","CAGAATT","CGCAATC","TGCGAGC","TTAAGCG","TCTTGTA","TACCGAA","TTCTGCA","TCCAGTT","TGGCCTT","TCGGCGT","TCTGAAC","TCGACAG","AAGCAGC","ATTCACG","AAGTGCG","ATAGGCA","ATTCGTT","ACGTATT","ACCGGCT","AATTGGT","ATTATTC","AACGGTG","GAGTTGC","GGCGGAA","GTTAGGA","GTGCATT","GCCTCGT","GCTTTAT","GTGTGTC","GGCGTCC","CTCTTGC","CGGCTGC","CGGTACG","CGTACAA","CACATGA","CCGGTTT","CGACACT","CCTCCTT","CATGTAT","CTTCATC","CAGAGAG","TATGTGC","TCAAGAC","TTGGTTA","TGGTGAA","TTACAGA","TGAGATT","TTTGGTC","TTGGACT","TTCGTAC","TGAGGAG","ACCATGC","AGAGACC","AGCAACG","ACGAGAA","AACCACA","AACTCTT","ATGAGCT","AGGACGT","AGGATAC"]
@@ -94,8 +95,6 @@ def extract_barcode_v2(sequence1):
 	'''
 	Function to extract barcodes
 	'''
-	# Parse out sequence features and split based on constant sequences	
-	bc1 = prove_barcode(sequence1[0:7], barcodes, n_mismatch)
 
 	# Parse out barcodes if we can ID the constants
 	try:
@@ -107,13 +106,14 @@ def extract_barcode_v2(sequence1):
 		me_hit = find_near_matches(me, sequence1[55:], max_l_dist=2)
 		
 		# Now grab the barcodes
-		bc2 = prove_barcode(sequence1[c1_hit[0][1]+7:c2_hit[0][0]+23], barcodes, n_mismatch)
-		bc3 = prove_barcode(sequence1[c2_hit[0][1]+23:nxt_hit[0][0]+33], barcodes, n_mismatch)
+		bc1, mm1 = prove_barcode(sequence1[0:7], barcodes, n_mismatch)
+		bc2, mm2 = prove_barcode(sequence1[c1_hit[0][1]+7:c2_hit[0][0]+23], barcodes, n_mismatch)
+		bc3, mm3 = prove_barcode(sequence1[c2_hit[0][1]+23:nxt_hit[0][0]+33], barcodes, n_mismatch)
 		seq = sequence1[me_hit[0][1]+55:]
 		
-		return(bc1 + "_" + bc2 + "_" + bc3, seq)
+		return(bc1 + "_" + bc2 + "_" + bc3, seq, str(mm1)+","+str(mm2)+","+str(mm3))
 	except:
-		return(dumb, sequence1)
+		return(dumb, sequence1, "0,0,0")
 	
 
 def debarcode_v2(duo):
@@ -126,6 +126,7 @@ def debarcode_v2(duo):
 	# parameters to return
 	fq1 = ""
 	fq2 = ""
+	mm_quant = ""
 
 	nbc1 = 0
 	nbc2 = 0
@@ -139,27 +140,31 @@ def debarcode_v2(duo):
 	title2 = listRead2[0]; sequence2 = listRead2[1]; quality2 = listRead2[2]
 	
 	# Return the barcode with underscores + the biological sequence learned	
-	barcode, sequence1 = extract_barcode_v2(sequence1)
+	barcode, sequence1, mm = extract_barcode_v2(sequence1)
 	quality1 = quality1[-1*len(sequence1):]
 	
 	three = barcode.split("_")
-	if("NNNNNNN" in three or "NNNNNN" in three and len(sequence1) > 10):
+	barcode = "".join(three)
+
+	if("NNNNNNN" in three and len(sequence1) > 10):
 
 		# Something went wrong
 		nfail = nfail + 1
-		if(barcode != dumb):
+		
+		if(barcode != dumb2):
 			if("NNNNNNN" == three[0]):
-				nbc1 = 1
+				nbc1 += 1
 			if("NNNNNNN" == three[1]):
-				nbc2 = 1
+				nbc2 += 1
 			if("NNNNNNN" == three[2]):
-				nbc3 = 1
+				nbc3 += 1
 
 	else:
 		npass = 1
-		fq1 = formatRead("".join(three) + "_" + title1, sequence1, quality1)
-		fq2 = formatRead("".join(three) + "_" + title2, sequence2, quality2)
-	return([[fq1, fq2], [nbc1, nbc2, nbc3, npass, nfail]])
+		fq1 = formatRead(barcode + "_" + title1, sequence1, quality1)
+		fq2 = formatRead(barcode + "_" + title2, sequence2, quality2)
+		mm_quant = mm_quant + barcode + "," + mm +"\n"
+	return([[fq1, fq2], [nbc1, nbc2, nbc3, npass, nfail], [mm_quant]])
 
 
 # Define variables to keep track of things that fail
@@ -190,6 +195,7 @@ with gzip.open(a, "rt") as f1:
 			# Aggregate output
 			fqs = list(map(''.join, zip(*[item.pop(0) for item in pm])))
 			counts = list(map(sum, zip(*[item.pop(0) for item in pm])))
+			mm_values = list(map(''.join, zip(*[item.pop(0) for item in pm])))
 			
 			# Increment for QC
 			nbc1 = nbc1 + counts[0]
@@ -198,12 +204,14 @@ with gzip.open(a, "rt") as f1:
 			npass = npass + counts[3]
 			nfail = nfail + counts[4]
 			
+			
 			# Export one chunk in parallel
 			filename1 = output +'_1.fastq.gz'
 			filename2 = output +'_2.fastq.gz'
+			filenameMM = output +'_mismatches.csv.gz'
 			
-			pool = Pool(processes=2)
-			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1])])
+			pool = Pool(processes=3)
+			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1]), (filenameMM, mm_values)])
 			pool.close()
 			
 with open(o + "-parse" + '.sumstats.log', 'w') as logfile:
