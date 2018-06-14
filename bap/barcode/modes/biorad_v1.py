@@ -155,7 +155,7 @@ def debarcode_v1(duo):
 	three = barcode.split("_")
 	barcode = "".join(three)
 	
-	if("NNNNNN" in three and len(sequence1) > 10):
+	if("NNNNNN" in three or len(sequence1) < 10):
 
 		# Something went wrong
 		nfail = nfail + 1
