@@ -169,8 +169,8 @@ def debarcode_v1(duo):
 
 	else:
 		npass = 1
-		fq1 = formatRead("".join(three) + "_" + title1, sequence1, quality1)
-		fq2 = formatRead("".join(three) + "_" + title2, sequence2, quality2)
+		fq1 = formatRead(barcode + "_" + title1, sequence1, quality1)
+		fq2 = formatRead(barcode + "_" + title2, sequence2, quality2)
 		mm_quant = mm_quant + barcode + "," + mm +"\n"
 	return([[fq1, fq2], [nbc1, nbc2, nbc3, npass, nfail], [mm_quant]])
 
