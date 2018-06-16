@@ -36,7 +36,7 @@ def main(mode, fastq1, fastq2, output, ncores, nreads, nmismatches):
 	bap-barcode: De-barcode samples from BioRad bead single cell atac \n
 	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
 	
-	mode = ['v1', 'v2', 'v2-multi'] for bead design\n
+	mode = ['v1.0', 'v2.0', 'v2.1', 'v2.1-multi'] for bead design\n
 	"""
 	
 	__version__ = get_distribution('bap').version
@@ -59,6 +59,10 @@ def main(mode, fastq1, fastq2, output, ncores, nreads, nmismatches):
 		later = " --nextera " + "TGGTAGAGAGGGTG" + " --me " + "AGATGTGTATAAGAGACAG"
 	elif(mode == "v2.1"):
 		cmd = 'python '+script_dir+'/modes/biorad_v2.py '
+		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
+		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
+	elif(mode == "v2.1-multi"):
+		cmd = 'python '+script_dir+'/modes/biorad_v2-multi.py '
 		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
 		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
 	else:

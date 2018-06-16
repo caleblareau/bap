@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Caleb Lareau, Broad Institute
-# Finished: 2 June 2018
+# Finished: 16 June 2018
 # This program will demultiplex barcoded Tn5-based
 # scATAC from v2.1 scheme
 
@@ -11,6 +11,8 @@ import re
 import regex
 import sys
 import gzip
+from barcodeHelp import * # local python script
+
 from optparse import OptionParser
 from multiprocessing import Pool, freeze_support
 from itertools import repeat
@@ -28,6 +30,7 @@ usage = "usage: %prog [options] [inputs] Software to process raw .fastq reads an
 
 opts.add_option("-a", "--fastq1", help="<Read1> Accepts fastq or fastq.gz")
 opts.add_option("-b", "--fastq2", help="<Read2> Accepts fastq or fastq.gz")
+
 opts.add_option("-n", "--nreads", default = 5000000, help="Number of reads in each split output file")
 opts.add_option("-c", "--ncores", default = 4, help="Number of cores for parallel processing.")
 
@@ -36,7 +39,9 @@ opts.add_option("-k", "--constant2", default="AGTCACTGAG", help="Barcode Constan
 opts.add_option("-l", "--nextera", default="TCGTCGGCAGCGTC", help="Nextera Adaptor Sequence")
 opts.add_option("-m", "--me", default="AGATGTGTATAAGAGACAG", help="ME Sequence")
 
-opts.add_option("-o", "--out", help="Output sample convention")
+opts.add_option("-x", "--nmismatches", default=1, help="Number of mismatches")
+opts.add_option("-o", "--output", help="Output sample convention")
+
 options, arguments = opts.parse_args()
 
 print(options)
@@ -49,8 +54,8 @@ if len(sys.argv)==1:
 ##### INPUTS #####
 a = options.fastq1
 b = options.fastq2
-outname = options.out
-o = options.out
+outname = options.output
+o = options.output
 
 cpu = int(options.ncores)
 n = int(options.nreads)
@@ -59,6 +64,7 @@ c1 = options.constant1
 c2 = options.constant2
 nxt = options.nextera
 me = options.me
+n_mismatch = int(options.nmismatches)
 
 # Infer the length from the adaptors
 c1_len = len(c1)
@@ -78,6 +84,7 @@ else:
 
 # Define global variables
 dumb = "N"*7 + "_" + "N"*7 + "_" + "N"*7 + "_" + "N"*6
+dumb2 = "N"*27
 
 # Define barcodes
 barcodes = ["GGACGAC","GCAGTGT","GAGAGGT","GAACCGT","GGTTAGT","GCCTTTG","GATAGAC","GTGGTAG","GTAATAC","CGAGGTC","CATCAGT","CCAAGCT","CCTTAGG","CACGGAC","CAGGCGG","CCGAACC","CACTTCT","CTGGCAT","CGATTAC","TCGTTCT","TGCTACT","TTCCTCT","TACTTTC","TGAATCC","TAGTACC","TTATCAT","TGATTGT","TGGCAAC","TGTTTAG","AGTTTCT","ATGGTGT","ATTGCCT","ACTCAAT","AGACCAT","AGCGAAT","ACCTACC","AGATAGG","AAGGTTC","AGGCATG","GTGGCGC","GGTCGTA","GTGTCCA","GAGGACA","GTCCTTC","GAGCGTG","GATCACC","GTTGATG","CATACGC","CTGCGCC","CGTAGCC","CGCGGCG","CATCTTA","CCAGTCA","CGTTTGA","CCACTTG","CTAACTC","CGAGTGG","TCCTGGC","TGACCGC","TAAGGTA","TCGCGCA","TCATACA","TAAGAGG","TGGAAGG","TCCGCTC","TAACGCC","TGCGTTG","TCGGATG","AGCCGCC","ACACGCG","ACTACGA","AATGGCC","ATGTTCC","ACGTTGG","AGACTTC","ATATAAC","ATAGTTG","GCACAGC","GACAATA","GAATCAA","GCTCCAA","GCGTAGA","GGAAGTT","GGAGCCT","GAATATG","GGTTCAC","CTAGAGC","CGTGATA","CGCCTAA","CGATGCA","CTTGCGA","CCATAAT","CCTATGT","CGCGCTT","CCGCGAT","CGGCCAG","TTGAGGC","TTTCCTA","TCAGCAA","TCCTTAA","TGGACCA","TAGTGTT","TATACTT","TGTCGCT","TACGCAT","TTGTAAG","TGTAGTG","AGTAAGC","ATGAATA","AACGTAA","AATTCCA","AATGATT","AAGTTAT","ACAGCTT","AGCTGAG","ACAGTAC","GGCAGGC","GCGCACG","GAGCTAA","GGTAACA","GCTAATT","GTCGGTT","GGTGTTT","GCGACTC","CTTACCG","CTATTCG","CTAAGAA","CACGCCA","CGGAGGA","CTTGTCC","CTCATTT","CGGATCT","CAGAATT","CGCAATC","TGCGAGC","TTAAGCG","TCTTGTA","TACCGAA","TTCTGCA","TCCAGTT","TGGCCTT","TCGGCGT","TCTGAAC","TCGACAG","AAGCAGC","ATTCACG","AAGTGCG","ATAGGCA","ATTCGTT","ACGTATT","ACCGGCT","AATTGGT","ATTATTC","AACGGTG","GAGTTGC","GGCGGAA","GTTAGGA","GTGCATT","GCCTCGT","GCTTTAT","GTGTGTC","GGCGTCC","CTCTTGC","CGGCTGC","CGGTACG","CGTACAA","CACATGA","CCGGTTT","CGACACT","CCTCCTT","CATGTAT","CTTCATC","CAGAGAG","TATGTGC","TCAAGAC","TTGGTTA","TGGTGAA","TTACAGA","TGAGATT","TTTGGTC","TTGGACT","TTCGTAC","TGAGGAG","ACCATGC","AGAGACC","AGCAACG","ACGAGAA","AACCACA","AACTCTT","ATGAGCT","AGGACGT","AGGATAC"]
@@ -85,47 +92,10 @@ tn5 = ["AAAGAA","AACAGC","AACGTG","AAGCCA","AAGTAT","AATTGG","ACAAGG","ACCCAA","
 
 #------------------------------
 
-def prove_barcode(bc):
-	'''
-	Function that takes a putative barcode and returns the nearest valid one
-	'''
-		
-	if(bc in barcodes):
-		return(bc)
-	else:
-		eo = process.extractOne(bc, barcodes)
-		if(eo[1] >= 71): # 71 comes from 5/7... the score is the score homology
-			return(eo[0])
-		else:
-			return("NNNNNNN")
-
-def prove_tn5(bc):
-	'''
-	Function that takes a putative barcode and returns the nearest valid one
-	'''
-		
-	if(bc in tn5):
-		return(bc)
-	else:
-		eo = process.extractOne(bc, tn5)
-		if(eo[1] >= 66): # 66 comes from 4/6... the score is the score homology
-			return(eo[0])
-		else:
-			return("NNNNNN")
-
-
-def formatRead(title, sequence, quality):
-	"""
-	Takes three components of fastq file and stiches them together in a string
-	"""
-	return("@%s\n%s\n+\n%s\n" % (title, sequence, quality))
-
 def extractbarcode_v2_tn5(sequence1):
 	'''
 	Function to extract barcodes
 	'''
-	# Parse out sequence features and split based on constant sequences	
-	bc1 = prove_barcode(sequence1[0:7])
 
 	# Parse out barcodes if we can ID the constants
 	try:
@@ -136,14 +106,15 @@ def extractbarcode_v2_tn5(sequence1):
 		me_hit = find_near_matches(me, sequence1[55:], max_l_dist=2)
 		
 		# Now grab the barcodes
-		bc2 = prove_barcode(sequence1[c1_hit[0][1]+7:c2_hit[0][0]+23])
-		bc3 = prove_barcode(sequence1[c2_hit[0][1]+23:nxt_hit[0][0]+33])
-		bc_tn5 = prove_tn5(sequence1[nxt_hit[0][1]+33:me_hit[0][0]+55])
+		bc1, mm1 = prove_barcode(sequence1[0:7], barcodes, n_mismatch)
+		bc2, mm2 = prove_barcode(sequence1[c1_hit[0][1]+7:c2_hit[0][0]+23], barcodes, n_mismatch)
+		bc3, mm3 = prove_barcode(sequence1[c2_hit[0][1]+23:nxt_hit[0][0]+33], barcodes, n_mismatch)
+		bc_tn5, mm4 = prove_barcode(sequence1[nxt_hit[0][1]+33:me_hit[0][0]+55], tn5, n_mismatch)
 		seq = sequence1[me_hit[0][1]+55:]
 		
-		return(bc1 + "_" + bc2 + "_" + bc3 + "_" + bc_tn5, seq)
+		return(bc1 + "_" + bc2 + "_" + bc3 + "_" + bc_tn5, seq, str(mm1)+","+str(mm2)+","+str(mm3)+","+str(mm4))
 	except:
-		return(dumb, sequence1)
+		return(dumb, sequence1, "0,0,0,0")
 	
 
 def debarcode_multiplexed(duo):
@@ -156,6 +127,7 @@ def debarcode_multiplexed(duo):
 	# parameters to return
 	fq1 = ""
 	fq2 = ""
+	mm_quant = ""
 
 	nbc1 = 0
 	nbc2 = 0
@@ -170,7 +142,7 @@ def debarcode_multiplexed(duo):
 	title2 = listRead2[0]; sequence2 = listRead2[1]; quality2 = listRead2[2]
 	
 	# Return the barcode with underscores + the biological sequence learned	
-	barcode, sequence1 = extractbarcode_tn5(sequence1)
+	barcode, sequence1, mm = extractbarcode_v2_tn5(sequence1)
 	quality1 = quality1[-1*len(sequence1):]
 	
 	four = barcode.split("_")
@@ -190,7 +162,8 @@ def debarcode_multiplexed(duo):
 		npass = 1
 		fq1 = formatRead("".join(four) + "_" + title1, sequence1, quality1)
 		fq2 = formatRead("".join(four) + "_" + title2, sequence2, quality2)
-	return([[fq1, fq2], [nbc1, nbc2, nbc3, ntn5, npass, nfail]])
+		mm_quant = mm_quant + "".join(four) + "," + mm +"\n"
+	return([[fq1, fq2], [nbc1, nbc2, nbc3, ntn5, npass, nfail], [mm_quant]])
 
 
 # Define variables to keep track of things that fail
@@ -198,6 +171,7 @@ nbc1 = 0
 nbc2 = 0
 nbc3 = 0
 ntn5 = 0
+
 npass = 0
 nfail = 0
 
@@ -211,7 +185,7 @@ with gzip.open(a, "rt") as f1:
 		# iterate over batches of length n
 		for i, batch1 in enumerate(it1):
 			batch2 = it2.__next__()
-			output = o +  "-parse" + str(i+1).zfill(3)
+			output = o +  "-c" + str(i+1).zfill(3)
 			
 			# parallel process the barcode processing and accounting of failures.
 			pool = Pool(processes=cpu)
@@ -221,6 +195,8 @@ with gzip.open(a, "rt") as f1:
 			# Aggregate output
 			fqs = list(map(''.join, zip(*[item.pop(0) for item in pm])))
 			counts = list(map(sum, zip(*[item.pop(0) for item in pm])))
+			mm_values = list(map(''.join, zip(*[item.pop(0) for item in pm])))
+			
 			nbc1 = nbc1 + counts[0]
 			nbc2 = nbc2 + counts[1]
 			nbc3 = nbc3 + counts[2]
@@ -232,9 +208,10 @@ with gzip.open(a, "rt") as f1:
 			# Export one chunk in parallel
 			filename1 = output +'_1.fastq.gz'
 			filename2 = output +'_2.fastq.gz'
+			filenameMM = output +'_mismatches.csv.gz'
 			
-			pool = Pool(processes=2)
-			toke = pool.starmap(chunkWriterGzip, [(filename1, fqs[0]), (filename2, fqs[1])])
+			pool = Pool(processes=3)
+			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1]), (filenameMM, mm_values)])
 			pool.close()
 			
 with open(o + "-debarcode" + '.sumstats.log', 'w') as logfile:
