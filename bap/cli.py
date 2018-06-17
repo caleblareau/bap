@@ -120,6 +120,21 @@ def main(mode, input, output, name, ncores, reference_genome,
 		if(not os.path.exists(input + ".bai")):
 			sys.exit("Index supplied .bam before proceeding")
 		
+		# Verify that the supplied reference genome and the bam have overlapping chromosomes
+		idxstats = pysam.idxstats(input)
+		chrs_bam = [x.split("\t")[0] for x in idxstats.split("\n")]
+		chrs_ref = []
+		with open(p.bedtoolsGenomeFile) as f:
+			for line in f:
+				chrs_ref.append(line.split("\t")[0])
+		
+		# Quant the overlaps and exit if no overlap
+		chrs_both = intersection(chrs_bam, chrs_ref)
+		if(len(chrs_both) > 0):
+			click.echo(gettime() + "Found " + str(len(chrs_both)) + " chromosomes for analysis (including mitochondria).")
+		else:
+			sys.exit("Found no overlapping chromosomes between bam and reference. Check reference genome specification with the --reference-genome flag.")
+					
 		# Make output folders
 		of = output; logs = of + "/logs"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
 		temp_filt_split = temp + "/filt_split"; temp_frag_overlap = temp + "/frag_overlap"
@@ -182,7 +197,6 @@ def main(mode, input, output, name, ncores, reference_genome,
 		nc_R_call = " ".join([p.R+"script", nc_R, p.output, str(keep_temp_files), barcodeQuantFile])
 		os.system(nc_R_call)
 
-		
 		#-----------------------------------
 		# Step 4 - QC stats / outside Snakemake since not-essential
 		#-----------------------------------

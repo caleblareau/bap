@@ -19,6 +19,10 @@ def string_hamming_distance(str1, str2):
 	'''
 	return sum(itertools.imap(operator.ne, str1, str2))
 
+def intersection(lst1, lst2):
+	lst3 = [value for value in lst1 if value in lst2]
+	return lst3
+
 def make_folder(folder):
 	"""
 	Function to only make a given folder if it does not already exist
