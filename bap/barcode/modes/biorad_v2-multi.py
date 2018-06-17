@@ -146,7 +146,7 @@ def debarcode_multiplexed(duo):
 	quality1 = quality1[-1*len(sequence1):]
 	
 	four = barcode.split("_")
-	if("NNNNNNN" in four or "NNNNNN" in four and len(sequence1) > 10):
+	if("NNNNNNN" in four or "NNNNNN" in four or len(sequence1) < 10):
 		# Something went wrong
 		nfail = nfail + 1
 		if(barcode != dumb):
