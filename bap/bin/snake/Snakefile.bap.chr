@@ -65,7 +65,7 @@ rule annotate_filt_nc:
 				print("Failed with " + input.rawbam)
 			
 			# Now annotate them
-			py_call = " ".join(["python", anno_filtNC_py, "--input", input.rawbam, "--output", output.outbam, "--nc-filt", nc_threshold, "--dict-file", tsvOut])
+			py_call = " ".join(["python", anno_filtNC_py, "--input", input.rawbam, "--output", output.outbam, "--nc-filt", nc_threshold, "--dict-file", tsvOut, "--bead-barcode", bead_tag])
 			os.system(py_call)
 
 rule infer_frag_overlap:

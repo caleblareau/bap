@@ -46,7 +46,7 @@ rdsFiles <- rdsFiles[sapply(lapply(rdsFiles,file.info), function(x) x$size) > 0]
 
 # Import the number of barcodes per bead
 nBC <- data.frame(fread(nbcin, header = TRUE)) %>% arrange(desc(UniqueNuclear)); colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount", "TotalMitoCount")
-nBC_keep <- nBC; nBC_keep$DropBarcode <- ""
+nBC_keep <- nBC; nBC_keep$DropBarcode <- ""; nBC_keep$OverlapReads <- ""
 nBCv <- nBC$UniqueFragCount; names(nBCv) <- nBC$BeadBarcode
 
 # Implicate overlapping fragments
@@ -70,11 +70,13 @@ idx <- 1
 while(dim(nBC)[1] > 0){
   barcode <- as.character(nBC[1,1])
   barcode_combine <- barcode
+  OverlapReads = 0
   
   # Find friends that are similarly implicated and append from Barcode 1
   friendsRow1 <- which(barcode ==  ovdf[,"barc1", drop = TRUE])
   if(length(friendsRow1) > 0){
     friends1 <- as.character(ovdf[friendsRow1,"barc2"])
+    OverlapReads = OverlapReads + ovdf[1:dim(ovdf)[1] %in% friendsRow1, "N_both"]
     ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow1,]
     barcode_combine <- c(barcode_combine, friends1)
   }
@@ -83,6 +85,7 @@ while(dim(nBC)[1] > 0){
   friendsRow2 <- which(barcode ==  ovdf[,"barc2", drop = TRUE])
   if(length(friendsRow2) > 0){
     friends2 <- as.character(ovdf[friendsRow2,"barc1"])
+    OverlapReads = OverlapReads + ovdf[1:dim(ovdf)[1] %in% friendsRow2, "N_both"]
     ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow2,]
     barcode_combine <- c(barcode_combine, friends2)
   }
@@ -95,14 +98,17 @@ while(dim(nBC)[1] > 0){
   # Make a drop barcode and save our progress
   dropBarcode <- paste0(name, "_BC", formatC(idx, width=guess, flag="0", digits = 20), "_N", sprintf("%02d", length(barcode_combine)))
   
+  # Annotate with new values
   nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "DropBarcode"] <- dropBarcode
+  nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "OverlapReads"] <- OverlapReads
+  
   idx <- idx + 1
   
   # Remove barcodes that we've dealt with
   nBC <- nBC[nBC$BeadBarcode %ni% barcode_combine,]
 }
 
-write.table(nBC_keep[,c("BeadBarcode", "DropBarcode")],
+write.table(nBC_keep[,c("BeadBarcode", "DropBarcode", "OverlapReads")],
             file = gsub(".implicatedBarcodes.csv$", ".barcodeTranslate.tsv", tblOut),
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 

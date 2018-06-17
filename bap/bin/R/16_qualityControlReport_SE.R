@@ -152,9 +152,15 @@ rm(df)
 
 # Import old barcode stats and merge with what has been computed
 mss <- data.frame(merge(fread(barcodeTranslateFile), fread(barcodeQuantsFile), by.x = "BeadBarcode", by.y = "Barcode"))
-msss <- mss %>% group_by(DropBarcode) %>% summarise(uniqueNuclearFrags = sum(UniqueNuclear), 
+
+# Also subtract out the total number of overlap reads (divided by 2 sincel double counting) to get proper estimate of # 
+# of unique nuclear reads. This technically will be a slight UNDERestimate in cases of 3 or more drops merging where
+# all 3 share the same read, but we assume that this is a weird edge case that infrequently happens and thus is not
+# of the utmost importance in handling here. 
+msss <- mss %>% group_by(DropBarcode) %>% summarise(uniqueNuclearFrags = (sum(UniqueNuclear) - (sum(OverlapReads)/2)), 
                                                     totalNuclearFrags = sum(TotalNuclear),
-                                                    totalMitoFrags = sum(TotalMito)) %>% data.frame()
+                                                    totalMitoFrags = sum(TotalMito),
+                                                    totalNCfilteredFrags = sum(TotalNC)) %>% data.frame()
 
 msss$duplicateProportion <- estimateDuplicateRate(msss$totalNuclearFrags, msss$uniqueNuclearFrags)
 msss$librarySize <- sapply(1:dim(msss)[1], function(i){
@@ -196,3 +202,6 @@ write.table(qcStats,
             file = gsub(".barcodequants.csv$", ".QCstats.csv", barcodeQuantsFile),
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
 
+# Reformat the Barcode Translate file to remove the spurious additional column that was needed
+write.table(data.frame(fread(barcodeTranslateFile))[c(1,2),],
+            file = barcodeTranslateFile, quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")

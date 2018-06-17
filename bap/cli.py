@@ -160,9 +160,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 		if(val < 2):
 			sys.exit(gettime() + "Found insufficient # of barcodes for analyis; check reference genome or lower --minimum-barcode-fragments")
 		
-		#-------------------------------------------
-		# Step 2 / 3- Process fragments by Snakemake
-		#-------------------------------------------
+		#----------------------------------------
+		# Step 2 - Process fragments by Snakemake
+		#----------------------------------------
 		
 		# Round trip the .yaml of user configuration
 		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
@@ -171,12 +171,22 @@ def main(mode, input, output, name, ncores, reference_genome,
 			
 		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '" -T'
 		os.system(snakecmd_chr)
+		
+		#-------------------------------------------------
+		# Step 3 - Handle aggregation of NC filtered reads
+		#-------------------------------------------------
+		nc_R = script_dir + "/bin/R/15_ncReadCleanup.R"
+		barcodeQuantFile =  p.output + "/final/" + p.name + ".barcodequants.csv"
+		
+		# Irrespective, modify the barcode quantification sumstats
+		nc_R_call = " ".join([p.R+"script", nc_R, p.output, str(keep_temp_files), barcodeQuantFile])
+		os.system(nc_R_call)
 
+		
 		#-----------------------------------
 		# Step 4 - QC stats / outside Snakemake since not-essential
 		#-----------------------------------
 		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
-		barcodeQuantFile =  p.output + "/final/" + p.name + ".barcodequants.csv"
 		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
 		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
 		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE.R"
@@ -210,7 +220,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 			
 			dict_file = fin+"/"+p.name+".barcodeTranslate.tsv"
 			
-			line1 = 'python ' +script_dir+'/bin/python/15_processMito.py --input '+p.bamfile
+			line1 = 'python ' +script_dir+'/bin/python/17_processMito.py --input '+p.bamfile
 			line2 = ' --output ' + mito + "/" + p.name + ".mito.bam" + " --mitochr " + p.mitochr 
 			line3 = ' --bead-barcode ' + p.bead_tag + ' --drop-barcode ' + p.drop_tag + " --dict-file " + dict_file
 			mito_cmd = line1 + line2 + line3
