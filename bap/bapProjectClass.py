@@ -56,13 +56,11 @@ def mitoChr(reference_genome, mito_chromosome):
 
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_fragments, one_to_one,
+		cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_index, nc_threshold, one_to_one,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
-		drop_tag, barcode_tag,
-		bowtie2_path, bowtie2_index):
+		drop_tag, bead_tag):
 		
-				
 		#----------------------------------
 		# Assign straightforward attributes
 		#----------------------------------
@@ -73,16 +71,17 @@ class bapProject():
 		self.jobs = jobs
 		self.mapq = mapq
 		
-		if(minimum_jaccard_fragments > 1):
-			sys.exit("Cannot specify jaccard fragments > 1; user specified : %s" % str(minimum_jaccard_fragments))
+		if(minimum_jaccard_index > 1):
+			sys.exit("Cannot specify jaccard index > 1; user specified : %s" % str(minimum_jaccard_index))
 		
 		self.minimum_barcode_fragments = minimum_barcode_fragments
 		self.minimum_cell_fragments = minimum_cell_fragments
-		self.minimum_jaccard_fragments = minimum_jaccard_fragments
+		self.nc_threshold = nc_threshold
+		self.minimum_jaccard_index = minimum_jaccard_index
 		self.one_to_one = one_to_one
 		self.extract_mito = extract_mito
 		self.drop_tag = drop_tag
-		self.barcode_tag = barcode_tag
+		self.bead_tag = bead_tag
 		
 		# Figure out operating system just for funzies; not presently used
 		self.os = "linux"
@@ -98,27 +97,7 @@ class bapProject():
 			if(name == "default"):
 				filename, file_extension = os.path.splitext(self.bamfile)
 				self.name = os.path.basename(filename)
-		
-		#----------------------------------
-		# fastq processing specific options -- needs improvement
-		#----------------------------------
-		if(mode == "fastq"):	
-			
-			self.bamfile = "NA"
-			self.name = "NA"
-			
-			# Need to align with bowtie2
-			self.bowtie2 = get_software_path('bowtie2', bowtie2_path)
-			
-			# verify bowtie2 index
-			bwt2idxfiles = os.popen("ls " + bowtie2_index + "*.bt2*").read().strip().split("\n")
-			if(len(bwt2idxfiles) < 6):
-				sys.exit("ERROR: cannot find bowtie2 index; specify with --bowtie2-index and make sure to add the prefix along with the folder path")
-			else:
-				self.bowtie2_index = bowtie2_index
-			
-			# Collect samples / fastq lists
-			# self.samples, self.fastq1, self.fastq2 = inferSampleVectors(input)
+
 
 				
 		#------------------------------------------
@@ -198,7 +177,8 @@ class bapProject():
 		
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
 		yield 'minimum_cell_fragments', self.minimum_cell_fragments
-		yield 'minimum_jaccard_fragments', self.minimum_jaccard_fragments
+		yield 'minimum_jaccard_index', self.minimum_jaccard_index
+		yield 'nc_threshold', self.nc_threshold
 		yield 'one_to_one', self.one_to_one
 		
 		yield 'extract_mito', self.extract_mito
@@ -211,9 +191,6 @@ class bapProject():
 		yield 'R', self.R
 		
 		yield 'drop_tag', self.drop_tag
-		yield 'barcode_tag', self.barcode_tag
-		
-		yield 'bwa', self.bwa
-		yield 'bwa_index', self.bwa_index
+		yield 'bead_tag', self.bead_tag
 		
 	

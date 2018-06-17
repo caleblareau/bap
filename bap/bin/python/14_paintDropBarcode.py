@@ -64,7 +64,7 @@ try:
 				# Write out old base pair if we have things to write
 				if(len(barcode_bp_dict) > 0):
 					for key, value in barcode_bp_dict.items():
-						value.tags = value.tags + [("NC", bp_count)]
+						#value.tags = value.tags + [("NC", bp_count)]
 						out.write(value)
 				
 				# Now update to the new base pair... in part by wiping the dictionary
