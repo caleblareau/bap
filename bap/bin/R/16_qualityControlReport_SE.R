@@ -134,7 +134,7 @@ if(peakFile != "none"){
 if(speciesMix == "no"){
   colnames(df) <- c("isize", "DropBarcode", "TSS", "Peak")
   sbdf <- df %>% group_by(DropBarcode) %>% summarise(FRIP = round(mean(Peak), 3),
-                                                     tssPproportion = round(mean(TSS), 3),
+                                                     tssProportion = round(mean(TSS), 3),
                                                      meanInsertSize = round(mean(abs(isize))),
                                                      medianInsertSize = round(median(abs(isize)))) %>% data.frame()
 } else {
@@ -142,7 +142,7 @@ if(speciesMix == "no"){
   df$human <- as.numeric(substr(as.character(seqnames(GA)),1,1) == "h")
   colnames(df) <- c("isize", "DropBarcode", "TSS", "Peak", "mouse", "human")
   sbdf <- df %>% group_by(DropBarcode) %>% summarise(FRIP = round(mean(Peak), 3),
-                                                     tssPproportion = round(mean(TSS), 3),
+                                                     tssProportion = round(mean(TSS), 3),
                                                      meanInsertSize = round(mean(abs(isize))),
                                                      medianInsertSize = round(median(abs(isize))),
                                                      nHumanReads = sum(human),
