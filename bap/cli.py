@@ -36,7 +36,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
 @click.option('--minimum-jaccard-index', '-ji', default = 0.025, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
-@click.option('--nc-threshold', '-nc', default = 100, help='Number of barcodes that a paired-end read must be observed for the read to be filtered.')
+@click.option('--nc-threshold', '-nc', default = 30, help='Number of barcodes that a paired-end read must be observed for the read to be filtered.')
 @click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (making this merging useless)')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')

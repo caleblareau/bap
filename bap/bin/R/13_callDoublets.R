@@ -31,6 +31,8 @@ name <- args[i+5] #name prefix for file naming convention
 one_to_one <- args[i+6] #arguement for keeping bead : drop conversion 1 to 1
 one_to_one <- one_to_one == "True" # Fix to R boolean
 
+# Replace the .gz convention
+tblOut <- gsub(".gz$", "", tblOut)
 
 # For devel only
 if(FALSE){
@@ -65,8 +67,10 @@ lapply(rdsFiles, readRDS) %>%
   arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
 
 # Export the implicated barcodes
+ovdf$merged <- ovdf$jaccard_frag > min_jaccard_frag
 write.table(ovdf, file = tblOut,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
+system(paste0("gzip ", tblOut))
 
 # Now filter based on the min_jaccard_frag
 ovdf %>% filter(jaccard_frag > min_jaccard_frag) %>% data.frame() -> ovdf

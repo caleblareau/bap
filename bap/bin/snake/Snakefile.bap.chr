@@ -90,7 +90,7 @@ rule determine_barcode_merges:
 	input:
 		rdsin = rdsin
 	output:
-		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv",
+		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
 		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv",
 	run: 	
 		# collate chr inference and make a single file

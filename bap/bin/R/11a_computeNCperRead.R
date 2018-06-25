@@ -40,6 +40,11 @@ rm(GA)
 df %>% filter(NS > 1) %>% group_by(read) %>% summarize(barcode = min(barcode), chr = min(chr), bp1 = min(bp), bp2 = max(bp)) %>%
   group_by(chr, bp1, bp2) %>% mutate(count = n()) -> odf
 
-write.table(odf[,c("read", "count")], file = tsvOut, sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
+# Append back the ones
+ones_df <- data.frame(read = unique(df$read[df$read %ni% odf$read]),
+                      count = 1)
+
+write.table(rbind(ones_df,  odf[,c("read", "count")]), file = tsvOut,
+            sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
 
                                     
