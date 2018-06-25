@@ -30,12 +30,14 @@ if(FALSE){
 tsvOut <- gsub(".bam", "_ncRead.tsv", bamfile)
 
 # Import Reads and make a data.frame
-GA <- readGAlignments(bamfile, param = ScanBamParam(tag = c(barcodeTag)), use.names = TRUE)
-df <- data.frame(read = names(GA), barcode = mcols(GA)[,barcodeTag], chr = as.character(seqnames(GA)), bp = start(GA), stringsAsFactors = FALSE)
+GA <- readGAlignments(bamfile, param = ScanBamParam(tag = c(barcodeTag, "NS")), use.names = TRUE)
+df <- data.frame(read = names(GA), barcode = mcols(GA)[,barcodeTag],
+                 NS = mcols(GA)[,"NS"],
+                 chr = as.character(seqnames(GA)), bp = start(GA), stringsAsFactors = FALSE) 
 rm(GA)
 
 # Do read pairing
-df %>% group_by(read) %>% summarize(barcode = min(barcode), chr = min(chr), bp1 = min(bp), bp2 = max(bp)) %>%
+df %>% filter(NS > 1) %>% group_by(read) %>% summarize(barcode = min(barcode), chr = min(chr), bp1 = min(bp), bp2 = max(bp)) %>%
   group_by(chr, bp1, bp2) %>% mutate(count = n()) -> odf
 
 write.table(odf[,c("read", "count")], file = tsvOut, sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
