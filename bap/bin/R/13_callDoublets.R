@@ -45,8 +45,14 @@ rdsFiles <- list.files(rdsDir, full.names = TRUE)
 rdsFiles <- rdsFiles[sapply(lapply(rdsFiles,file.info), function(x) x$size) > 0]
 
 # Import the number of barcodes per bead
-nBC <- data.frame(fread(nbcin, header = TRUE)) %>% arrange(desc(UniqueNuclear)); colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount", "TotalMitoCount")
-nBC_keep <- nBC; nBC_keep$DropBarcode <- ""; nBC_keep$OverlapReads <- ""
+nBC <- data.frame(fread(nbcin, header = TRUE)) %>% arrange(desc(UniqueNuclear));
+if(ncol(nBC) == 4){
+  colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount", "TotalMitoCount")
+} else {
+  colnames(nBC) <- c("BeadBarcode", "UniqueFragCount", "TotalFragCount", "TotalMitoCount", "TotalNC")
+}
+
+# Set up vector of unique fragment counts to annotate in the overlap df
 nBCv <- nBC$UniqueFragCount; names(nBCv) <- nBC$BeadBarcode
 
 # Implicate overlapping fragments
@@ -55,18 +61,23 @@ lapply(rdsFiles, readRDS) %>%
   group_by(barc1, barc2) %>%
   summarise(N_both = sum(n_both)/2) %>% # overlaps called twice
   filter(N_both > 1) %>% mutate(N_barc1 = nBCv[barc1], N_barc2 = nBCv[barc2]) %>% 
-  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% filter(jaccard_frag > min_jaccard_frag) %>% 
+  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
   arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
 
+# Export the implicated barcodes
 write.table(ovdf, file = tblOut,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
+
+# Now filter based on the min_jaccard_frag
+ovdf %>% filter(jaccard_frag > min_jaccard_frag) %>% data.frame() -> ovdf
 
 # Guess at how wide we need to make the barcodes to handle leading zeros
 guess <- ceiling(log10(dim(nBC)[1]))
 
-idx <- 1
+nBC_keep <- nBC; nBC_keep$DropBarcode <- ""; nBC_keep$OverlapReads <- ""
 
 # Loop through and eat up barcodes
+idx <- 1
 while(dim(nBC)[1] > 0){
   barcode <- as.character(nBC[1,1])
   barcode_combine <- barcode
@@ -76,7 +87,7 @@ while(dim(nBC)[1] > 0){
   friendsRow1 <- which(barcode ==  ovdf[,"barc1", drop = TRUE])
   if(length(friendsRow1) > 0){
     friends1 <- as.character(ovdf[friendsRow1,"barc2"])
-    OverlapReads = OverlapReads + ovdf[1:dim(ovdf)[1] %in% friendsRow1, "N_both"]
+    OverlapReads = OverlapReads + sum(ovdf[1:dim(ovdf)[1] %in% friendsRow1, "N_both"])
     ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow1,]
     barcode_combine <- c(barcode_combine, friends1)
   }
@@ -85,7 +96,7 @@ while(dim(nBC)[1] > 0){
   friendsRow2 <- which(barcode ==  ovdf[,"barc2", drop = TRUE])
   if(length(friendsRow2) > 0){
     friends2 <- as.character(ovdf[friendsRow2,"barc1"])
-    OverlapReads = OverlapReads + ovdf[1:dim(ovdf)[1] %in% friendsRow2, "N_both"]
+    OverlapReads = OverlapReads + sum(ovdf[1:dim(ovdf)[1] %in% friendsRow2, "N_both"])
     ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow2,]
     barcode_combine <- c(barcode_combine, friends2)
   }
@@ -101,7 +112,7 @@ while(dim(nBC)[1] > 0){
   # Annotate with new values
   nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "DropBarcode"] <- dropBarcode
   nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "OverlapReads"] <- OverlapReads
-  
+
   idx <- idx + 1
   
   # Remove barcodes that we've dealt with
