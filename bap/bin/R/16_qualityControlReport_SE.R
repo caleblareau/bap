@@ -203,5 +203,5 @@ write.table(qcStats,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
 
 # Reformat the Barcode Translate file to remove the spurious additional column that was needed
-write.table(data.frame(fread(barcodeTranslateFile))[c(1,2),],
+write.table(data.frame(fread(barcodeTranslateFile))[,c(1,2)],
             file = barcodeTranslateFile, quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
