@@ -64,6 +64,7 @@ lapply(rdsFiles, readRDS) %>%
   summarise(N_both = sum(n_both)/2) %>% # overlaps called twice
   filter(N_both > 1) %>% mutate(N_barc1 = nBCv[barc1], N_barc2 = nBCv[barc2]) %>% 
   mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
+  filter(jaccard_frag > 0) %>% 
   arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
 
 # Export the implicated barcodes
