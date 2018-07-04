@@ -18,8 +18,9 @@ opts.add_option("--name", "-n", help="Name of the set of .bam files to collate")
 opts.add_option("--output", "-o", help="Path to the output directory for these")
 
 opts.add_option("--mapq", default = 30, help="Minimum mapq for a read to be kept")
+opts.add_option("--barcode-whitelist", default = "none", help="Specify a whitelist of barcodes rather than determining them")
 
-opts.add_option("--barcode-tag", default = 'CB', help="Name of the first .bam file")
+opts.add_option("--barcode-tag", default = 'XB', help="Name of the first .bam file")
 opts.add_option("--min-fragments", default = 100, help="Minimum number of fragments for barcode consideration")
 opts.add_option("--bedtools-genome", help="Filepath to bedtools genome.")
 opts.add_option("--min_chromosome_size", default = 1000000, help="Minimum chromosome size (in bp) to be considered for fragment overlap analysis.")
@@ -32,11 +33,17 @@ name = options.name
 out = options.output
 
 minmapq = float(options.mapq)
+barcode_whitelist = options.barcode_whitelist
+
 barcodeTag = options.barcode_tag
 minFrag = int(options.min_fragments)
 bedtoolsGenomeFile = options.bedtools_genome
 minChromosomeSize = int(options.min_chromosome_size)
 cpu = int(options.ncores)
+
+def intersection(lst1, lst2):
+	lst3 = [value for value in lst1 if value in lst2]
+	return lst3
 
 def listDictToCounter(lst):
 	dct = Counter()
@@ -196,8 +203,22 @@ pool.close()
 unique_bc_short = listDictToCounter(unique_bc_short)
 all_bc_short = listDictToCounter(all_bc_short)
 
-# Flatten list and determine barcodes passing filter
-barcodes = {x : unique_barcodes[x] for x in unique_barcodes if unique_barcodes[x] >= minFrag and x != "NA"}
+# Determine how bead barcodes are nominated
+if(os.path.isfile(barcode_whitelist)):
+	knownBarcodes = True
+	preDeterminedBarcodes =[line.rstrip('\n') for line in open(barcode_whitelist)]
+elif(minFrag == 0):
+	knownBarcodes = False
+	# do the knee call
+else:
+	knownBarcodes = False
+
+
+# Flatten list and determine barcodes passing filter or whitelist
+if(knownBarcodes):
+	barcodes = {x : unique_barcodes[x] for x in unique_barcodes if x in preDeterminedBarcodes}
+else:
+	barcodes = {x : unique_barcodes[x] for x in unique_barcodes if unique_barcodes[x] >= minFrag and x != "NA"}
 global bc
 bc = list(barcodes.keys())
 

@@ -56,7 +56,9 @@ def mitoChr(reference_genome, mito_chromosome):
 
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_index, nc_threshold, one_to_one,
+		cluster, jobs, peak_file,
+		minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
+		minimum_jaccard_index, nc_threshold, one_to_one,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, bead_tag):
@@ -73,6 +75,16 @@ class bapProject():
 		
 		if(minimum_jaccard_index > 1):
 			sys.exit("Cannot specify jaccard index > 1; user specified : %s" % str(minimum_jaccard_index))
+		
+		# Handle potential whitelist
+		if(barcode_whitelist == ""):
+			barcode_whitelist = "none"
+		else:
+			if(os.path.isfile(barcode_whitelist)):
+				pass
+			else: 
+				sys.exit("Could not find the bead whitelist file: %s" % barcode_whitelist)
+		self.barcode_whitelist = barcode_whitelist
 		
 		self.minimum_barcode_fragments = minimum_barcode_fragments
 		self.minimum_cell_fragments = minimum_cell_fragments
@@ -98,8 +110,6 @@ class bapProject():
 				filename, file_extension = os.path.splitext(self.bamfile)
 				self.name = os.path.basename(filename)
 
-
-				
 		#------------------------------------------
 		# Verify R and all of its packages are here
 		#------------------------------------------
@@ -177,6 +187,8 @@ class bapProject():
 		
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
 		yield 'minimum_cell_fragments', self.minimum_cell_fragments
+		yield 'barcode_whitelist', self.barcode_whitelist
+
 		yield 'minimum_jaccard_index', self.minimum_jaccard_index
 		yield 'nc_threshold', self.nc_threshold
 		yield 'one_to_one', self.one_to_one

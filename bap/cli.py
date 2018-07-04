@@ -35,6 +35,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
+@click.option('--barcode-whitelist', '-wl', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold.')
+
 @click.option('--minimum-jaccard-index', '-ji', default = 0.025, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
 @click.option('--nc-threshold', '-nc', default = 6, help='Number of barcodes that a paired-end read must be observed for the read to be filtered.')
 @click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (making this merging useless)')
@@ -54,7 +56,9 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 
 def main(mode, input, output, name, ncores, reference_genome,
-	cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_index, nc_threshold, one_to_one,
+	cluster, jobs, peak_file,
+	minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
+	minimum_jaccard_index, nc_threshold, one_to_one,
 	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, bead_tag):
@@ -99,7 +103,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 		
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file, minimum_barcode_fragments, minimum_cell_fragments, minimum_jaccard_index, nc_threshold, one_to_one,
+		cluster, jobs, peak_file,
+		minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
+		minimum_jaccard_index, nc_threshold, one_to_one,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, bead_tag)
@@ -164,8 +170,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.bead_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
 		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
+		line5 = " --barcode-whitelist " + p.barcode_whitelist
 			
-		filt_split_cmd = line1 + line2 + line3 + line4
+		filt_split_cmd = line1 + line2 + line3 + line4 + line5
 		os.system(filt_split_cmd)
 		
 		# Verify that we got output and fail if not
