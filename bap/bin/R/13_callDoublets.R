@@ -11,24 +11,22 @@ options(scipen=999)
 # This function / script for processed chromosome files to produce consensus barcode doublets
 # as well as summary and QC metrics and visuals
 
-# TO DO:
-# actually call doublets -- make another additional text file
-# produce QC plot
-# make barcode key/value
+# I/O
+args <- commandArgs(trailingOnly = FALSE)
 
-args <- commandArgs(trailingOnly = TRUE)
-if(file_path_sans_ext(basename(args[1])) == "R"){
-  i <- 2
-} else { # Rscript
-  i <- 0
-}
+# Grab knee call functions from figuring out where this script lives and then changing the file name
+needle <- "--file="
+match <- grep(needle, args)
+source(normalizePath(gsub("13_callDoublets.R", "00_knee_CL.R", gsub(needle, "", args[match]))))
 
-rdsDir <- args[i+1] # directory of .rds files
-nbcin <- args[i+2] # file path to the number of barcodes for each observed barcode
-tblOut <- args[i+3] # filepath to write the implicated barcode pairs
-min_jaccard_frag <- as.numeric(args[i+4])
-name <- args[i+5] #name prefix for file naming convention
-one_to_one <- args[i+6] #arguement for keeping bead : drop conversion 1 to 1
+# Import parameters using logic from the end3
+nn <- length(args)
+rdsDir <- args[nn-5] # directory of .rds files
+nbcin <- args[nn-4] # file path to the number of barcodes for each observed barcode
+tblOut <- args[nn-3] # filepath to write the implicated barcode pairs
+min_jaccard_frag <- as.numeric(args[nn-2])
+name <- args[nn-1] #name prefix for file naming convention
+one_to_one <- args[nn] #arguement for keeping bead : drop conversion 1 to 1
 one_to_one <- one_to_one == "True" # Fix to R boolean
 
 # Replace the .gz convention
@@ -66,6 +64,16 @@ lapply(rdsFiles, readRDS) %>%
   mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
   filter(jaccard_frag > 0) %>% 
   arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
+
+# Call knee if we need to
+if(min_jaccard_frag == 0){
+  message("Computing jaccard index for bead merging via a knee call--")
+  min_jaccard_frag <- get_density_threshold_CL(ovdf$jaccard_frag, FALSE)
+}
+
+# Append to bap parameters
+write(paste0("jaccard_threshold,", as.character(min_jaccard_frag)),
+      gsub(".implicatedBarcodes.csv$", ".bapParams.csv", tblOut), append = TRUE)
 
 # Export the implicated barcodes
 ovdf$merged <- ovdf$jaccard_frag > min_jaccard_frag

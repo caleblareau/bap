@@ -211,7 +211,7 @@ paramsFile = open(out.replace("temp/filt_split", "final") + "/" + name + ".bapPa
 if(os.path.isfile(barcode_whitelist)):
 	knownBarcodes = True
 	preDeterminedBarcodes =[line.rstrip('\n') for line in open(barcode_whitelist)]
-	paramsFile.write("bead_knee,predetermined")
+	paramsFile.write("bead_threshold,predetermined\n")
 elif(minFrag == 0):
 	knownBarcodes = False
 	
@@ -224,15 +224,14 @@ elif(minFrag == 0):
 	
 	# Call Rscript 
 	R_call = "Rscript " + knee_call_R + " " + quants_file + " 1 " + "V1"
-	print(R_call)
 	print("Performing knee call for bead barcode fragments--")
 	os.system(R_call)
 	with open(quants_file + "_kneeValue.txt") as knee_open:
 		minFrag = float(knee_open.readline().strip())
-	paramsFile.write("bead_knee,"+str(minFrag))
+	paramsFile.write("bead_threshold,"+str(minFrag)+"\n")
 else:
 	knownBarcodes = False
-	paramsFile.write("bead_knee,"+str(minFrag))
+	paramsFile.write("bead_threshold,"+str(minFrag)+"\n")
 paramsFile.close()
 
 # Flatten list and determine barcodes passing filter or whitelist

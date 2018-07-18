@@ -76,6 +76,10 @@ class bapProject():
 		if(minimum_jaccard_index > 1):
 			sys.exit("Cannot specify jaccard index > 1; user specified : %s" % str(minimum_jaccard_index))
 		
+		if(minimum_jaccard_index < 0):
+			sys.exit("Cannot specify a nevative jaccard index; user specified : %s" % str(minimum_jaccard_index))
+		
+		
 		# Handle potential whitelist
 		if(barcode_whitelist == ""):
 			barcode_whitelist = "none"
