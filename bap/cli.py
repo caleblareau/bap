@@ -163,9 +163,6 @@ def main(mode, input, output, name, ncores, reference_genome,
 			with open(of + "/.internal" + "/samples" + "/README" , 'w') as outfile:
 				outfile.write("This folder creates samples to be interpreted by Snakemake; don't modify it.\n\n")
 		
-		# Set up a path to the knee calling script
-		knee_call_R = script_dir+'/bin/R/00_knee_CL.R'
-		
 		#-------------------------------------------------------
 		# Step 1- Filter and split input .bam file by chromosome
 		#-------------------------------------------------------		
@@ -173,7 +170,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.bead_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
 		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
-		line5 = " --barcode-whitelist " + p.barcode_whitelist + " --knee-call " + knee_call_R
+		line5 = " --barcode-whitelist " + p.barcode_whitelist + " --knee-call " + script_dir+'/bin/R/10b_knee_execute.R'
 			
 		filt_split_cmd = line1 + line2 + line3 + line4 + line5
 		os.system(filt_split_cmd)

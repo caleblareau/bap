@@ -224,6 +224,7 @@ elif(minFrag == 0):
 	
 	# Call Rscript 
 	R_call = "Rscript " + knee_call_R + " " + quants_file + " 1 " + "V1"
+	print(R_call)
 	print("Performing knee call for bead barcode fragments--")
 	os.system(R_call)
 	with open(quants_file + "_kneeValue.txt") as knee_open:

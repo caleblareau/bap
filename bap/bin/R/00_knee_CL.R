@@ -108,28 +108,3 @@ get_density_threshold_CL <- function(count_vector=NULL, logTransform = TRUE) {
   
   return(threshold)
 }
-
-
-# I/O
-args <- commandArgs(trailingOnly = TRUE)
-
-if(file_path_sans_ext(basename(args[1])) == "R"){
-  i <- 2
-} else { # Rscript
-  i <- 0
-}
-vals_file <- args[i+1]
-logTransform <- args[i+2]
-column_name <- args[i+3]
-
-# Import data
-vec_values <- as.numeric(fread(vals_file)[[as.character(column_name)]])
-
-# Call knee
-estimated_knee_threshold <- get_density_threshold_CL(vec_values, as.logical(as.numeric(as.character(logTransform))))
-
-# Write value to table
-write.table(data.frame(estimated_knee_threshold), row.names = FALSE, col.names = FALSE, 
-            quote = FALSE, sep = "", file = paste0(vals_file, "_kneeValue.txt"))
-
-
