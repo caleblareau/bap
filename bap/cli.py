@@ -33,7 +33,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
 @click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment')
 
-@click.option('--minimum-barcode-fragments', '-bf', default = 500, help='Minimum number of fragments to be thresholded for doublet merging.')
+@click.option('--minimum-barcode-fragments', '-bf', default = 0, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
 @click.option('--barcode-whitelist', '-wl', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold.')
 
@@ -163,6 +163,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 			with open(of + "/.internal" + "/samples" + "/README" , 'w') as outfile:
 				outfile.write("This folder creates samples to be interpreted by Snakemake; don't modify it.\n\n")
 		
+		# Set up a path to the knee calling script
+		knee_call_R = script_dir+'/bin/R/00_knee_CL.R'
+		
 		#-------------------------------------------------------
 		# Step 1- Filter and split input .bam file by chromosome
 		#-------------------------------------------------------		
@@ -170,7 +173,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.bead_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
 		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
-		line5 = " --barcode-whitelist " + p.barcode_whitelist
+		line5 = " --barcode-whitelist " + p.barcode_whitelist + " --knee-call " + knee_call_R
 			
 		filt_split_cmd = line1 + line2 + line3 + line4 + line5
 		os.system(filt_split_cmd)

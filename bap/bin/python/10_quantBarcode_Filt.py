@@ -25,6 +25,7 @@ opts.add_option("--min-fragments", default = 100, help="Minimum number of fragme
 opts.add_option("--bedtools-genome", help="Filepath to bedtools genome.")
 opts.add_option("--min_chromosome_size", default = 1000000, help="Minimum chromosome size (in bp) to be considered for fragment overlap analysis.")
 opts.add_option("--ncores", default = 4, help="Number of cores for parallel processing.")
+opts.add_option("--knee-call", default = "", help="File path to knee calling script")
 
 options, arguments = opts.parse_args()
 
@@ -40,6 +41,7 @@ minFrag = int(options.min_fragments)
 bedtoolsGenomeFile = options.bedtools_genome
 minChromosomeSize = int(options.min_chromosome_size)
 cpu = int(options.ncores)
+knee_call_R = options.knee_call
 
 def intersection(lst1, lst2):
 	lst3 = [value for value in lst1 if value in lst2]
@@ -203,16 +205,34 @@ pool.close()
 unique_bc_short = listDictToCounter(unique_bc_short)
 all_bc_short = listDictToCounter(all_bc_short)
 
-# Determine how bead barcodes are nominated
+# Determine how bead barcodes are nominated-- also shared this information in a final bapParams file
+paramsFile = open(out.replace("temp/filt_split", "final") + "/" + name + ".bapParams.csv", "w")
+
 if(os.path.isfile(barcode_whitelist)):
 	knownBarcodes = True
 	preDeterminedBarcodes =[line.rstrip('\n') for line in open(barcode_whitelist)]
+	paramsFile.write("bead_knee,predetermined")
 elif(minFrag == 0):
 	knownBarcodes = False
+	
 	# do the knee call
+	quants_file=out + "/" + name + "barcodeQuantSimple.txt"
+	quants_handler = open(quants_file, 'w')
+	for (k,v) in unique_barcodes.items():
+		quants_handler.write(str(v) + "\n")
+	quants_handler.close()
+	
+	# Call Rscript 
+	R_call = "Rscript " + knee_call_R + " " + quants_file + " 1 " + "V1"
+	print("Performing knee call for bead barcode fragments--")
+	os.system(R_call)
+	with open(quants_file + "_kneeValue.txt") as knee_open:
+		minFrag = float(knee_open.readline().strip())
+	paramsFile.write("bead_knee,"+str(minFrag))
 else:
 	knownBarcodes = False
-
+	paramsFile.write("bead_knee,"+str(minFrag))
+paramsFile.close()
 
 # Flatten list and determine barcodes passing filter or whitelist
 if(knownBarcodes):
