@@ -30,12 +30,7 @@ estimateLibrarySize <- function(nTotal, nUnique){
   
   nDuplicates <- (nTotal - nUnique) + 1 # charity to handle only unique reads observed
   
-  # Checks
-  stopifnot(nTotal > 0)
-  stopifnot(nDuplicates >0)
-  stopifnot(nUnique > 0)
-  
-  if (nUnique > nTotal | (f(m * nUnique, nUnique, nTotal) < 0)) {
+  if (nUnique > nTotal | (f(m * nUnique, nUnique, nTotal) < 0) | nUnique > 0 | nTotal > 0 | nDuplicates >0) {
     message("Library size returns 0 -- invalid inputs; check this cell more closely")
     return(0)
   }
