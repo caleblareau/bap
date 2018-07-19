@@ -30,7 +30,7 @@ estimateLibrarySize <- function(nTotal, nUnique){
   
   nDuplicates <- (nTotal - nUnique) + 1 # charity to handle only unique reads observed
   
-  if (nUnique > nTotal | (f(m * nUnique, nUnique, nTotal) < 0) | nUnique > 0 | nTotal > 0 | nDuplicates >0) {
+  if (nUnique > nTotal | (f(m * nUnique, nUnique, nTotal) < 0) | nUnique < 0 | nTotal < 0 | nDuplicates < 0) {
     message("Library size returns 0 -- invalid inputs; check this cell more closely")
     return(0)
   }
@@ -153,7 +153,7 @@ mss <- data.frame(merge(fread(barcodeTranslateFile), fread(barcodeQuantsFile), b
 # of unique nuclear reads. This technically will be a slight UNDERestimate in cases of 3 or more drops merging where
 # all 3 share the same read, but we assume that this is a weird edge case that infrequently happens and thus is not
 # of the utmost importance in handling here. 
-msss <- mss %>% group_by(DropBarcode) %>% summarise(uniqueNuclearFrags = (sum(UniqueNuclear) - (sum(OverlapReads)/2)), 
+msss <- mss %>% group_by(DropBarcode) %>% summarise(uniqueNuclearFrags = round(sum(UniqueNuclear) - (sum(OverlapReads)/2)), 
                                                     totalNuclearFrags = sum(TotalNuclear),
                                                     totalMitoFrags = sum(TotalMito),
                                                     totalNCfilteredFrags = sum(TotalNC)) %>% data.frame()
