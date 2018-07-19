@@ -83,15 +83,17 @@ get_density_threshold_CL <- function(count_vector=NULL, logTransform = TRUE) {
     message("Setting knee threshold to: ", threshold)
     
   } else {
+    
+    # Null local min-- take a best guess
     if(logTransform){
-      threshold <- 10^vector_density$x[local_min]
+      message("No reliable knee found-- setting threshold to 500")
+      threshold <- 500
     } else {
-      threshold <- vector_density$x[local_min]
+      message("No reliable knee found-- setting threshold to 0.005")
+      threshold <- 0.005
     }
     local_min <- 1
     local_mins <- 1
-    #message("No local minima could be found, allowing everything through")
-    
   }
   
   # Safe guard for Jaccard Index failure
