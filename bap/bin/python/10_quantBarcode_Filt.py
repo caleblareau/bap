@@ -216,14 +216,14 @@ elif(minFrag == 0):
 	knownBarcodes = False
 	
 	# do the knee call
-	quants_file=out + "/" + name + "barcodeQuantSimple.txt"
+	quants_file=out.replace("temp/filt_split", "final") + "/" + name + "barcodeQuantSimple.csv"
 	quants_handler = open(quants_file, 'w')
 	for (k,v) in unique_barcodes.items():
-		quants_handler.write(str(v) + "\n")
+		quants_handler.write(str(k) + "," + str(v) + "\n")
 	quants_handler.close()
 	
 	# Call Rscript 
-	R_call = "Rscript " + knee_call_R + " " + quants_file + " 1 " + "V1"
+	R_call = "Rscript " + knee_call_R + " " + quants_file + " 1 " + "V2"
 	print("Performing knee call for bead barcode fragments--")
 	os.system(R_call)
 	with open(quants_file + "_kneeValue.txt") as knee_open:
