@@ -36,7 +36,8 @@ estimateLibrarySize <- function(nTotal, nUnique){
   stopifnot(nUnique > 0)
   
   if (nUnique > nTotal | (f(m * nUnique, nUnique, nTotal) < 0)) {
-    stop("Error: invalid inputs")
+    message("Library size returns 0 -- invalid inputs; check this cell more closely")
+    return(0)
   }
   
   while (f(M * nUnique, nUnique, nTotal) > 0) {
