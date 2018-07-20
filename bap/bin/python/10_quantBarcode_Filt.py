@@ -219,7 +219,8 @@ elif(minFrag == 0):
 	quants_file=out.replace("temp/filt_split", "final") + "/" + name + "barcodeQuantSimple.csv"
 	quants_handler = open(quants_file, 'w')
 	for (k,v) in unique_barcodes.items():
-		quants_handler.write(str(k) + "," + str(v) + "\n")
+		if(k != "NA"):
+			quants_handler.write(str(k) + "," + str(v) + "\n")
 	quants_handler.close()
 	
 	# Call Rscript 
