@@ -231,8 +231,8 @@ elif(minFrag == 0):
 	with open(quants_file + "_kneeValue.txt") as knee_open:
 		minFrag = float(knee_open.readline().strip())
 		callFrag = float(knee_open.readline().strip())
-	paramsFile.write("bead_threshold,"+str(minFrag)+"\n")
 	paramsFile.write("bead_threshold_nosafety,"+str(callFrag)+"\n")
+	paramsFile.write("bead_threshold,"+str(minFrag)+"\n")
 else:
 	knownBarcodes = False
 	paramsFile.write("bead_threshold,"+str(minFrag)+"\n")
