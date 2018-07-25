@@ -217,7 +217,7 @@ elif(minFrag == 0):
 	knownBarcodes = False
 	
 	# do the knee call
-	quants_file=out.replace("temp/filt_split", "knee") + "/" + name + "barcodeQuantSimple.csv"
+	quants_file=out.replace("temp/filt_split", "knee") + "/" + name + ".barcodeQuantSimple.csv"
 	quants_handler = open(quants_file, 'w')
 	for (k,v) in unique_barcodes.items():
 		if(k != "NA"):

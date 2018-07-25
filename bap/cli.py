@@ -248,6 +248,17 @@ def main(mode, input, output, name, ncores, reference_genome,
 			
 			os.system(mito_cmd)
 		
+		#-----------------------------------
+		# Step 6 - Make knee plots
+		#-----------------------------------
+		bapParamsFile =  p.output + "/knee/" + p.name + ".bapParams.csv"
+		beadBarcodesFile = p.output + "/knee/" + p.name + ".barcodeQuantSimple.csv"
+		implicatedBarcodeFile = p.output + "/final/" + p.name + ".implicatedBarcodes.csv.gz"
+
+		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
+		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
+		os.system(r_callKneePlot)
+		
 		#-------------------------------------------------------
 		# Final-- remove intermediate files if necessary
 		#-------------------------------------------------------
