@@ -68,12 +68,22 @@ lapply(rdsFiles, readRDS) %>%
 # Call knee if we need to
 if(min_jaccard_frag == 0){
   message("Computing jaccard index for bead merging via a knee call--")
-  min_jaccard_frag <- get_density_threshold_CL(ovdf$jaccard_frag, FALSE)
+  two <- get_density_threshold_CL(ovdf$jaccard_frag, FALSE)
+  min_jaccard_frag <- two[1]
+  called_jaccard_frag <- two[2]
+  
+  # Write out what gets called
+  write(paste0("jaccard_threshold_nosafety,", as.character(called_jaccard_frag)),
+      gsub("/final/", "/knee/", gsub(".implicatedBarcodes.csv$", ".bapParams.csv", tblOut)), append = TRUE)
+  
+  # Make a plot
+  
+  
 }
 
 # Append to bap parameters
 write(paste0("jaccard_threshold,", as.character(min_jaccard_frag)),
-      gsub(".implicatedBarcodes.csv$", ".bapParams.csv", tblOut), append = TRUE)
+      gsub("/final/", "/knee/", gsub(".implicatedBarcodes.csv$", ".bapParams.csv", tblOut)), append = TRUE)
 
 # Export the implicated barcodes
 ovdf$merged <- ovdf$jaccard_frag > min_jaccard_frag

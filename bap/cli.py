@@ -143,11 +143,11 @@ def main(mode, input, output, name, ncores, reference_genome,
 					
 		# Make output folders
 		of = output; logs = of + "/logs"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
-		temp_filt_split = temp + "/filt_split"; temp_frag_overlap = temp + "/frag_overlap"
+		temp_filt_split = temp + "/filt_split"; temp_frag_overlap = temp + "/frag_overlap"; knee = of + "/knee"
 		temp_drop_barcode = temp + "/drop_barcode"
 		
 		folders = [of, logs, fin, mito, temp,
-			temp_filt_split, temp_frag_overlap,temp_drop_barcode, 
+			temp_filt_split, temp_frag_overlap,temp_drop_barcode, knee,
 			of + "/.internal/parseltongue", of + "/.internal/samples"]
 	
 		mkfolderout = [make_folder(x) for x in folders]

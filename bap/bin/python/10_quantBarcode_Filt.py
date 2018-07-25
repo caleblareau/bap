@@ -206,17 +206,18 @@ unique_bc_short = listDictToCounter(unique_bc_short)
 all_bc_short = listDictToCounter(all_bc_short)
 
 # Determine how bead barcodes are nominated-- also shared this information in a final bapParams file
-paramsFile = open(out.replace("temp/filt_split", "final") + "/" + name + ".bapParams.csv", "w")
+paramsFile = open(out.replace("temp/filt_split", "knee") + "/" + name + ".bapParams.csv", "w")
 
 if(os.path.isfile(barcode_whitelist)):
 	knownBarcodes = True
 	preDeterminedBarcodes =[line.rstrip('\n') for line in open(barcode_whitelist)]
 	paramsFile.write("bead_threshold,predetermined\n")
+	
 elif(minFrag == 0):
 	knownBarcodes = False
 	
 	# do the knee call
-	quants_file=out.replace("temp/filt_split", "final") + "/" + name + "barcodeQuantSimple.csv"
+	quants_file=out.replace("temp/filt_split", "knee") + "/" + name + "barcodeQuantSimple.csv"
 	quants_handler = open(quants_file, 'w')
 	for (k,v) in unique_barcodes.items():
 		if(k != "NA"):
@@ -229,7 +230,9 @@ elif(minFrag == 0):
 	os.system(R_call)
 	with open(quants_file + "_kneeValue.txt") as knee_open:
 		minFrag = float(knee_open.readline().strip())
+		callFrag = float(knee_open.readline().strip())
 	paramsFile.write("bead_threshold,"+str(minFrag)+"\n")
+	paramsFile.write("bead_threshold_nosafety,"+str(callFrag)+"\n")
 else:
 	knownBarcodes = False
 	paramsFile.write("bead_threshold,"+str(minFrag)+"\n")

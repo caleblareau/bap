@@ -96,17 +96,22 @@ get_density_threshold_CL <- function(count_vector=NULL, logTransform = TRUE) {
     local_mins <- 1
   }
   
+  safety <- 0
+  
   # Safe guard for Jaccard Index failure
   if(!logTransform & (threshold > 0.5 | threshold < 0.000001)){
     message("No reliable knee found-- setting threshold to 0.005")
-    threshold <- 0.005
+    safety <- 0.005
   } 
   
   # Safe guard for knee counts failure
     if(logTransform & (threshold > 100000 | threshold < 100)){
     message("No reliable knee found-- setting threshold to 500")
-    threshold <- 500
+    safety <- 500
   } 
   
-  return(threshold)
+  # Safety is with the guard rails; threshold is what the knee calls
+  safety <- ifelse(safety > 0, safety, threshold)
+  
+  return(c(safety, threshold))
 }
