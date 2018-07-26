@@ -88,12 +88,15 @@ if(file.exists(beadBarcodesFile)){
   # Additional QC plots
   #--------------------------
   
+  big_c <- ceiling(max(log10(barcode_counts_mut$count)))
+  
   # Density Plot
   barcode_counts_mut %>%
     filter(count > 50) %>% 
     ggplot() +
     geom_density(aes(x = log10(count+1))) +
     ylab("Density") +
+    scale_x_continuous(limits = c(0,big_c)) +
     xlab("Count per barcode log10") +
     geom_vline(xintercept = log10(x_intercept_bead), colour= "dodgerblue4") ->
     density_plot

@@ -37,7 +37,7 @@ get_local_minima_CL <- function(x) {
 }
 
 # Complicated function converted by CL
-get_density_threshold_CL <- function(count_vector=NULL, logTransform = TRUE) {
+get_density_threshold_CL <- function(count_vector=NULL, type, logTransform = TRUE) {
   
   # Initialize using some reasonable value and filter anything below
   threshold <- min(get_mode(count_vector)) * 0.001
@@ -99,13 +99,13 @@ get_density_threshold_CL <- function(count_vector=NULL, logTransform = TRUE) {
   safety <- 0
   
   # Safe guard for Jaccard Index failure
-  if(!logTransform & (threshold > 0.5 | threshold < 0.000001)){
+  if(type == "jaccard" & (threshold > 0.5 | threshold < 0.000001)){
     message("No reliable knee found-- setting threshold to 0.005")
     safety <- 0.005
   } 
   
   # Safe guard for knee counts failure
-    if(logTransform & (threshold > 100000 | threshold < 100)){
+    if(type == "bead" & (threshold > 100000 | threshold < 100)){
     message("No reliable knee found-- setting threshold to 500")
     safety <- 500
   } 

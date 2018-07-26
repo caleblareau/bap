@@ -23,7 +23,7 @@ source(normalizePath(gsub("10b_knee_execute.R", "00_knee_CL.R", gsub(needle, "",
 vec_values <- as.numeric(fread(vals_file)[[as.character(column_name)]])
 
 # Call knee
-estimated_knee_threshold <- get_density_threshold_CL(vec_values, as.logical(as.numeric(as.character(logTransform))))
+estimated_knee_threshold <- get_density_threshold_CL(vec_values, "bead", as.logical(as.numeric(as.character(logTransform))))
 
 # Write value to table
 write.table(data.frame(estimated_knee_threshold), row.names = FALSE, col.names = FALSE, 

@@ -254,7 +254,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 		bapParamsFile =  p.output + "/knee/" + p.name + ".bapParams.csv"
 		beadBarcodesFile = p.output + "/knee/" + p.name + ".barcodeQuantSimple.csv"
 		implicatedBarcodeFile = p.output + "/final/" + p.name + ".implicatedBarcodes.csv.gz"
-
+		
+		click.echo(gettime() + "generating knee plots associated with beads.")
 		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
 		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
 		os.system(r_callKneePlot)
