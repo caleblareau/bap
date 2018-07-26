@@ -90,6 +90,7 @@ if(file.exists(beadBarcodesFile)){
   
   # Density Plot
   barcode_counts_mut %>%
+    filter(count > 50) %>% 
     ggplot() +
     geom_density(aes(x = log10(count+1))) +
     ylab("Density") +

@@ -86,11 +86,11 @@ get_density_threshold_CL <- function(count_vector=NULL, logTransform = TRUE) {
     
     # Null local min-- take a best guess
     if(logTransform){
-      message("No reliable knee found-- setting threshold to 500")
-      threshold <- 500
+      message("No reliable knee found-- setting threshold to 0")
+      threshold <- 0
     } else {
-      message("No reliable knee found-- setting threshold to 0.005")
-      threshold <- 0.005
+      message("No reliable knee found-- setting threshold to 0")
+      threshold <- 0
     }
     local_min <- 1
     local_mins <- 1

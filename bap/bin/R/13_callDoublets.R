@@ -68,7 +68,7 @@ lapply(rdsFiles, readRDS) %>%
 # Call knee if we need to
 if(min_jaccard_frag == 0){
   message("Computing jaccard index for bead merging via a knee call--")
-  two <- get_density_threshold_CL(ovdf$jaccard_frag, FALSE)
+  two <- get_density_threshold_CL(head(ovdf$jaccard_frag, 1000000), FALSE)
   min_jaccard_frag <- two[1]
   called_jaccard_frag <- two[2]
   
