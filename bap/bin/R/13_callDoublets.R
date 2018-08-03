@@ -11,6 +11,10 @@ options(scipen=999)
 # This function / script for processed chromosome files to produce consensus barcode doublets
 # as well as summary and QC metrics and visuals
 
+substrRight <- function(x, n = 6){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
 # I/O
 args <- commandArgs(trailingOnly = FALSE)
 
@@ -21,13 +25,17 @@ source(normalizePath(gsub("13_callDoublets.R", "00_knee_CL.R", gsub(needle, "", 
 
 # Import parameters using logic from the end3
 nn <- length(args)
-rdsDir <- args[nn-5] # directory of .rds files
-nbcin <- args[nn-4] # file path to the number of barcodes for each observed barcode
-tblOut <- args[nn-3] # filepath to write the implicated barcode pairs
-min_jaccard_frag <- as.numeric(args[nn-2])
-name <- args[nn-1] #name prefix for file naming convention
-one_to_one <- args[nn] #arguement for keeping bead : drop conversion 1 to 1
-one_to_one <- one_to_one == "True" # Fix to R boolean
+rdsDir <- args[nn-6] # directory of .rds files
+nbcin <- args[nn-5] # file path to the number of barcodes for each observed barcode
+tblOut <- args[nn-4] # filepath to write the implicated barcode pairs
+min_jaccard_frag <- as.numeric(args[nn-3])
+name <- args[nn-2] #name prefix for file naming convention
+one_to_one <- args[nn-1] #arguement for keeping bead : drop conversion 1 to 1
+barcoded_tn5 <- args[nn]
+
+# Fix to R boolean
+one_to_one <- one_to_one == "True" 
+barcoded_tn5 <- barcoded_tn5 == "True" 
 
 # Replace the .gz convention
 tblOut <- gsub(".gz$", "", tblOut)
@@ -40,6 +48,7 @@ if(FALSE){
   name <- "test.small"
   min_jaccard_frag <- 0.005
   one_to_one <- FALSE
+  barcoded_tn5 <- TRUE
 }
 rdsFiles <- list.files(rdsDir, full.names = TRUE)
 rdsFiles <- rdsFiles[sapply(lapply(rdsFiles,file.info), function(x) x$size) > 0]
@@ -56,14 +65,30 @@ if(ncol(nBC) == 4){
 nBCv <- nBC$UniqueFragCount; names(nBCv) <- nBC$BeadBarcode
 
 # Implicate overlapping fragments
-lapply(rdsFiles, readRDS) %>%
-  rbindlist(fill = TRUE) %>% as.data.frame() %>%
-  group_by(barc1, barc2) %>%
-  summarise(N_both = sum(n_both)/2) %>% # overlaps called twice
-  filter(N_both > 1) %>% mutate(N_barc1 = nBCv[barc1], N_barc2 = nBCv[barc2]) %>% 
-  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
-  filter(jaccard_frag > 0) %>% 
-  arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
+if(!barcoded_tn5){
+  lapply(rdsFiles, readRDS) %>%
+    rbindlist(fill = TRUE) %>% as.data.frame() %>%
+    group_by(barc1, barc2) %>%
+    summarise(N_both = sum(n_both)/2) %>% # overlaps called twice
+    filter(N_both > 1) %>% mutate(N_barc1 = nBCv[barc1], N_barc2 = nBCv[barc2]) %>% 
+    mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
+    filter(jaccard_frag > 0) %>% 
+    arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
+
+# Only consider merging when the Tn5 is the same
+} else {
+  lapply(rdsFiles, readRDS) %>%
+    rbindlist(fill = TRUE) %>% as.data.frame() %>%
+    mutate(tn5_1 = substrRight(barc1),
+           tn5_2 = substrRight(barc2)) %>%
+    filter(tn5_1 == tn5_2) %>% 
+    group_by(barc1, barc2) %>%
+    summarise(N_both = sum(n_both)/2) %>% # overlaps called twice
+    filter(N_both > 1) %>% mutate(N_barc1 = nBCv[barc1], N_barc2 = nBCv[barc2]) %>% 
+    mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
+    filter(jaccard_frag > 0) %>% 
+    arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
+}
 
 # Call knee if we need to
 if(min_jaccard_frag == 0){
@@ -74,7 +99,7 @@ if(min_jaccard_frag == 0){
   
   # Write out what gets called
   write(paste0("jaccard_threshold_nosafety,", as.character(called_jaccard_frag)),
-      gsub("/final/", "/knee/", gsub(".implicatedBarcodes.csv$", ".bapParams.csv", tblOut)), append = TRUE)
+        gsub("/final/", "/knee/", gsub(".implicatedBarcodes.csv$", ".bapParams.csv", tblOut)), append = TRUE)
   
   # Make a plot
   
@@ -130,12 +155,18 @@ while(dim(nBC)[1] > 0){
   }
   
   # Make a drop barcode and save our progress
-  dropBarcode <- paste0(name, "_BC", formatC(idx, width=guess, flag="0", digits = 20), "_N", sprintf("%02d", length(barcode_combine)))
-  
+  if(!barcoded_tn5){
+    dropBarcode <- paste0(name, "_BC", formatC(idx, width=guess, flag="0", digits = 20), "_N", sprintf("%02d", length(barcode_combine)))
+  } else {
+    dropBarcode <- paste0(name, "_Tn5-", substrRight(barcode_combine), 
+                          "_BC", formatC(idx, width=guess, flag="0", digits = 20),
+                          "_N", sprintf("%02d", length(barcode_combine)))
+  }
+    
   # Annotate with new values
   nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "DropBarcode"] <- dropBarcode
   nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "OverlapReads"] <- OverlapReads
-
+  
   idx <- idx + 1
   
   # Remove barcodes that we've dealt with

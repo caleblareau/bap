@@ -40,6 +40,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--minimum-jaccard-index', '-ji', default = 0.0, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
 @click.option('--nc-threshold', '-nc', default = 6, help='Number of barcodes that a paired-end read must be observed for the read to be filtered.')
 @click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (making this merging useless)')
+@click.option('--barcoded-tn5',  is_flag=True, help='Process data knowing that the barcodes were generated with a barcoded Tn5')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
@@ -58,7 +59,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 def main(mode, input, output, name, ncores, reference_genome,
 	cluster, jobs, peak_file,
 	minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
-	minimum_jaccard_index, nc_threshold, one_to_one,
+	minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, bead_tag):
@@ -105,7 +106,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
-		minimum_jaccard_index, nc_threshold, one_to_one,
+		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, bead_tag)
