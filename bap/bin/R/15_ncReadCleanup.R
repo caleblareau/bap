@@ -29,6 +29,9 @@ if(FALSE){
 possible_ncRead <- list.files(paste0(out_directory, "/temp/", "filt_split"), full.names = TRUE, pattern = "*_ncRead.tsv$")
 if(length(possible_ncRead) > 0){
   
+  # Filter out files that have zero size
+  possible_ncRead <- possible_ncRead[file.info(possible_ncRead)$size > 0]
+  
   lapply(possible_ncRead, function(file){
     data.frame(table(fread(file)[[2]]))
   }) %>% rbindlist() %>% data.frame() -> count_ncDF
@@ -56,6 +59,9 @@ quants$TotalNC <- 0
 
 possible_ncBarcode <- list.files(paste0(out_directory, "/temp/", "filt_split"), full.names = TRUE, pattern = "*_ncBarcode.tsv$")
 if(length(possible_ncBarcode) > 0){
+  
+  # Filter out files that have zero size
+  possible_ncBarcode <- possible_ncBarcode[file.info(possible_ncBarcode)$size > 0]
   
   # Import across all 
   lapply(possible_ncBarcode, function(file){
