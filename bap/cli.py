@@ -192,7 +192,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		with open(y_s, 'w') as yaml_file:
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 			
-		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '" -T'
+		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap.chr --cores '+ncores+' --config cfp="' + y_s + '"'
 		os.system(snakecmd_chr)
 		
 		#-------------------------------------------------
