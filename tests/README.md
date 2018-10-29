@@ -25,6 +25,11 @@ bap-barcode v2.1-multi -a fastq_br/biorad_v2-multi_R1.fastq.gz -b fastq_br/biora
 bwa mem /Volumes/dat/genomes/hg19_bwa/hg19.fa debarcode-c001_1.fastq.gz debarcode-c001_2.fastq.gz | samtools view -bS - |  samtools sort -@ 4 - -o debarcode.bam
 ```
 
+## debarcoding 10X data
+```
+bap-barcode 10X-v1 -a fastq_10X/test-10X_R1.fastq.gz -b fastq_10X/test-10X_R3.fastq.gz -i fastq_10X/test-10X_R2.fastq.gz -o testbap-10x
+```
+
 
 ### others
 

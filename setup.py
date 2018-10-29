@@ -1,14 +1,14 @@
 """
-BAP: Bead-based scATAC-seq data Processing
+bap: Bead-based scATAC-seq data Processing
 """
 from setuptools import find_packages, setup
 from distutils.core import setup, Extension
 
-dependencies = ['click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
+dependencies = ['python-Levenshtein','biopython','fuzzysearch','fuzzywuzzy','click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
 
 setup(
     name='bap',
-    version='0.5.1',
+    version='0.5.3',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',

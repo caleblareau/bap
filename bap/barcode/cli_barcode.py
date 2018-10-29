@@ -19,10 +19,12 @@ from subprocess import call, check_call
 @click.command()
 @click.version_option()
 
-@click.argument('mode', type=click.Choice(['v1.0', 'v2.0', 'v2.1', 'v2.1-multi']))
+@click.argument('mode', type=click.Choice(['v1.0', 'v2.0', 'v2.1', 'v2.1-multi', '10X-v1']))
 
-@click.option('--fastq1', '-a', help='Read 1 of the sequence; should contain the inline barcode in the sequence')
-@click.option('--fastq2', '-b', help='Read 2 of the sequence; should contain the inline barcode in the sequence')
+@click.option('--fastq1', '-a', help='Read 1 of the biological sequence; should contain the inline barcode in the sequence for use with BioRad parsing.')
+@click.option('--fastq2', '-b', help='Read 2 of the biological sequence.')
+@click.option('--fastqI', '-i', default = "", help='Fastq associated with the index read that is the cell barcode-- only needed for 10X parsing.')
+
 @click.option('--output', '-o', default="debarcode", help='Output prefix for processed fastq files. By default, a simple string in the execution directory.\n\n')
 
 @click.option('--ncores', '-c', default=2, help='Number of cores to be used in parallel de-barcoding')
@@ -30,13 +32,13 @@ from subprocess import call, check_call
 @click.option('--nmismatches', '-nm', default=1, help='Number of mismatches to be tolerated when doing a section of a barcode matching')
 
 
-def main(mode, fastq1, fastq2, output, ncores, nreads, nmismatches):
+def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches):
 	
 	"""
 	bap-barcode: De-barcode samples from BioRad bead single cell atac \n
 	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
 	
-	mode = ['v1.0', 'v2.0', 'v2.1', 'v2.1-multi'] for bead design\n
+	mode = ['v1.0', 'v2.0', 'v2.1', 'v2.1-multi', '10X-v1'] for bead design\n
 	"""
 	
 	__version__ = get_distribution('bap').version
@@ -65,6 +67,10 @@ def main(mode, fastq1, fastq2, output, ncores, nreads, nmismatches):
 		cmd = 'python '+script_dir+'/modes/biorad_v2-multi.py '
 		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
 		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
+	elif(mode == "10X-v1"):
+		cmd = 'python '+script_dir+'/modes/tenX_v1.py '
+		earlier = " --barcodesFile " + script_dir+'/modes/10Xdata/737K-cratac-v1.txt.gz'
+		later = " --fastqI " + fastqi
 	else:
 		sys.exit(gettime() + "User-supplied mode %s not found!" % mode)
 	

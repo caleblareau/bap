@@ -38,6 +38,15 @@ def chunk_writer_gzip(filename, what):
 				out_write.writelines(what)
 	return(filename)			
 
+def prove_barcode_simple(bc, valid_set):
+	'''
+	Function that takes a putative barcode and returns the nearest valid one
+	'''
+		
+	if(bc in valid_set):
+		return(bc)
+	else:
+		return("NA")
 
 def prove_barcode(bc, valid_set, n_mismatch):
 	'''
