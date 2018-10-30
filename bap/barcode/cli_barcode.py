@@ -30,9 +30,10 @@ from subprocess import call, check_call
 @click.option('--ncores', '-c', default=2, help='Number of cores to be used in parallel de-barcoding')
 @click.option('--nreads', '-nr', default=5000000, help='Number of reads to be processed in a chunk (both for an output file unit and in parallel processing)')
 @click.option('--nmismatches', '-nm', default=1, help='Number of mismatches to be tolerated when doing a section of a barcode matching')
+@click.option('--reverse-complement', '-rc', is_flag=True,  help='Perform the reverse complement of the barcodes - useful for 10X processing')
 
 
-def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches):
+def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches, reverse_complement):
 	
 	"""
 	bap-barcode: De-barcode samples from BioRad bead single cell atac \n
@@ -68,9 +69,13 @@ def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches):
 		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
 		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
 	elif(mode == "10X-v1"):
+		if(reverse_complement):
+			rc = " --reverse-complement 1 "
+		else:
+			rc = " --reverse-complement 0 "
 		cmd = 'python '+script_dir+'/modes/tenX_v1.py '
 		earlier = " --barcodesFile " + script_dir+'/modes/10Xdata/737K-cratac-v1.txt.gz'
-		later = " --fastqI " + fastqi
+		later = " --fastqI " + fastqi + rc
 	else:
 		sys.exit(gettime() + "User-supplied mode %s not found!" % mode)
 	

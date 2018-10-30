@@ -19,6 +19,7 @@ from itertools import repeat
 
 from Bio import SeqIO
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
+from Bio.Seq import Seq
 
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -37,6 +38,8 @@ opts.add_option("-n", "--nreads", default = 5000000, help="Number of reads in ea
 opts.add_option("-c", "--ncores", default = 4, help="Number of cores for parallel processing.")
 
 opts.add_option("-x", "--nmismatches", default=1, help="Number of mismatches")
+opts.add_option("-r", "--reverse-complement", default=0, help="Perform a reverse complement of the barcodes when assigning")
+
 opts.add_option("-o", "--output", help="Output sample convention")
 
 options, arguments = opts.parse_args()
@@ -58,6 +61,7 @@ bf = options.barcodesFile
 cpu = int(options.ncores)
 n = int(options.nreads)
 n_mismatch = int(options.nmismatches)
+rc = int(options.reverse_complement)
 
 # Parse input files
 extension = a.split('.')[-1]
@@ -76,9 +80,13 @@ dumb = "N"*16
 with gzip.open(bf, "rt") as my_file:
 	barcodesR = my_file.readlines()
 barcodes = [barcode.rstrip() for barcode in barcodesR]
+
+# Do the reveres complement of the barcodes if necessary
+if(rc == 1):
+	bc = [str(Seq(dna).reverse_complement()) for dna in barcodes]
+	barcodes = bc
 print("Found and imported " + str(len(barcodes)) + " barcodes!")	
 barcodes = set(barcodes)
-#print(barcodes[1:10])
 bcPartFile = bf.replace(".txt.gz", ".parts.txt")
 
 part1 = []; part2 = []
