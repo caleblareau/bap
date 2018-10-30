@@ -33,17 +33,7 @@ bap-barcode 10X-v1 -a fastq_10X/test-10X_R1.fastq.gz -b fastq_10X/test-10X_R3.fa
 
 ### others
 
-*phasing*
-
-```
-annotateAlleles -i allele/mESC_test.bam -z --bwa-index /Volumes/dat/genomes/mm10_bwa/mm10.fa -s allele/CAST_129S_testSNPtable.tsv.gz 
-
-```
-
-*c1fastq*
-```
-bap c1fastq --input c1fastqinput.csv -bi /Volumes/dat/genomes/hg19_bwa/hg19.fa -z
-```
+This is for running individual pieces of the pipeline
 
 *step 11*
 ```

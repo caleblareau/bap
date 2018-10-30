@@ -23,7 +23,8 @@ setup(
     entry_points={
         'console_scripts': [
             'bap = bap.cli:main',
-            'bap-barcode = bap.barcode.cli_barcode:main'
+            'bap-barcode = bap.barcode.cli_barcode:main',
+            'bap-reanno = bap.cli_reanno:main'
         ],
     },
     classifiers=[
