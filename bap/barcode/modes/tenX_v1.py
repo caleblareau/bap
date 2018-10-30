@@ -76,8 +76,9 @@ dumb = "N"*16
 with gzip.open(bf, "rt") as my_file:
 	barcodesR = my_file.readlines()
 barcodes = [barcode.rstrip() for barcode in barcodesR]
-print("Found and imported " + str(len(barcodes)) + " barcodes")	
-
+print("Found and imported " + str(len(barcodes)) + " barcodes!")	
+barcodes = set(barcodes)
+#print(barcodes[1:10])
 bcPartFile = bf.replace(".txt.gz", ".parts.txt")
 
 part1 = []; part2 = []
@@ -116,7 +117,7 @@ def debarcode_10X(trio):
 	index_sequence = indexRead[1]
 	try:
 		bc0 = prove_barcode_simple(index_sequence, barcodes)
-		if(bc0 == "NA"):
+		if(bc0 == "NA" and n_mismatch > 0):
 			bc1, mm1 = prove_barcode(index_sequence[0:8], part1, n_mismatch)
 			bc2, mm2 = prove_barcode(index_sequence[9:15], part2, n_mismatch)
 			bc0 = prove_barcode_simple(bc1+bc2, barcodes)
@@ -129,6 +130,10 @@ def debarcode_10X(trio):
 				fq2 = formatRead(bc0 + "_" + title2, sequence2, quality2)
 				return([[fq1, fq2], [1, 0], [bc0+","+mm1+","+mm2+","+mm3]]) # pass, fail in the middle
 				
+		# Useful for fast pass
+		elif(bc0 == "NA" and n_mismatch == 0):
+			return([["", ""], [0, 1], [bc0+",0,0"]]) # pass, fail in the middle
+
 		else:
 			# Perfect match!
 			fq1 = formatRead(bc0 + "_" + title1, sequence1, quality1)
