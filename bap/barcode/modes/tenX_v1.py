@@ -95,9 +95,6 @@ with open(bcPartFile, "r") as bcpf:
 		
 #------------------------------
 
-print(part1)
-print(part2)
-
 def debarcode_10X(trio):
 	"""
 	Function that is called in parallel
