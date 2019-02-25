@@ -42,9 +42,9 @@ tblOut <- gsub(".gz$", "", tblOut)
 
 # For devel only
 if(FALSE){
-  rdsDir <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/temp/frag_overlap"
-  nbcin <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodequants.csv"
-  tblOut <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.implicatedBarcodes.csv"
+  rdsDir <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/temp/frag_overlap"
+  nbcin <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.barcodequants.csv"
+  tblOut <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/test.small.implicatedBarcodes.csv"
   name <- "test.small"
   min_jaccard_frag <- 0.005
   one_to_one <- FALSE
