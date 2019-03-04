@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# mgatk documentation build configuration file
+# bap documentation build configuration file
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -46,8 +46,8 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = u'mgatk'
-copyright = u'Caleb Lareau, Jacob Ulirsch'
+project = u'bap'
+copyright = u'Caleb Lareau'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -185,7 +185,7 @@ html_sidebars = {
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'mgatk-docs'
+htmlhelp_basename = 'bap-docs'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -204,8 +204,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'mgatk.tex', u'mgatk Documentation',
-   u'Caleb Lareau, Jacob Ulirsch', 'manual'),
+  ('index', 'bap.tex', u'bap Documentation',
+   u'Caleb Lareau', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -234,8 +234,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'mgatk', u'mgatk Documentation',
-     [u'Caleb Lareau, Jacob Ulirsch'], 1)
+    ('index', 'bap', u'bap Documentation',
+     [u'Caleb Lareau'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -248,8 +248,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'mgatk', u'mgatk Documentation',
-   u'Caleb Lareau, Jacob Ulirsch', 'mgatk', 'mitochondrial genome analysis toolkit',
+  ('index', 'bap', u'bap Documentation',
+   u'Caleb Lareau', 'bap', 'bead-based scATAC-seq prepreprocessing',
    'Miscellaneous'),
 ]
 
@@ -269,10 +269,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'mgatk'
-epub_author = u'Caleb Lareau, Jacob Ulirsch'
-epub_publisher = u'Caleb Lareau, Jacob Ulirsch'
-epub_copyright = u'Caleb Lareau, Jacob Ulirsch'
+epub_title = u'bap'
+epub_author = u'Caleb Lareau'
+epub_publisher = u'Caleb Lareau'
+epub_copyright = u'Caleb Lareau'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

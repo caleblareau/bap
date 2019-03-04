@@ -1,8 +1,8 @@
 ===================================================================================
 bap2: bead-based scATAC-seq processing
 ===================================================================================
-.. image:: https://badge.fury.io/py/proatac.svg
-    :target: https://badge.fury.io/py/proatac
+.. image:: https://badge.fury.io/py/bap.svg
+    :target: https://badge.fury.io/py/bap
  
 .. image:: https://travis-ci.org/caleblareau/bap.svg?branch=master
     :target: https://travis-ci.org/caleblareau/bap
@@ -24,26 +24,6 @@ About
 Installation
 ================
 .. toctree:: content/Installation
-
-================
-Dependencies
-================
-.. toctree:: content/Dependencies
-
-================
-Trimming
-================
-.. toctree:: content/Trimming
-
-================
-Alignment
-================
-.. toctree:: content/Trimming
-
-================
-Annotating peaks
-================
-.. toctree:: content/Annotation
 
 ================
 FAQ
