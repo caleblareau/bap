@@ -275,7 +275,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 				shutil.rmtree(byefolder + "/mito")
 			
 			click.echo(gettime() + "Intermediate files successfully removed.")
-		
+	
+	if(mode == "10x"):
+		click.echo(gettime() + "Under development!")
 			
 	# If we get to this stage in the processing, then everything worked
 	if (mode == "check"):

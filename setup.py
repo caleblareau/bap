@@ -8,7 +8,7 @@ dependencies = ['python-Levenshtein','biopython','fuzzysearch','fuzzywuzzy','cli
 
 setup(
     name='bap',
-    version='0.5.5a',
+    version='0.5.5z',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
@@ -22,7 +22,7 @@ setup(
     install_requires=dependencies,
     entry_points={
         'console_scripts': [
-            'bap = bap.cli:main',
+            'bap = bap.cli_old_dontEdit:main',
             'bap-barcode = bap.barcode.cli_barcode:main',
             'bap2 = bap.cli_bap2:main',
             'bap-reanno = bap.cli_reanno:main'

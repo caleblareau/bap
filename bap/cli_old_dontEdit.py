@@ -66,7 +66,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 	
 	"""
 	bap: Bead-based scATAC-seq data Processing \n
-	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
+	NOTE: this version is for legacy purposes ONLY 
+	For real analyses, use bap2 --help \n
 	
 	mode = ['bam', 'check', 'support']\n
 	"""
