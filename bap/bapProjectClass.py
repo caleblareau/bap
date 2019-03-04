@@ -49,6 +49,8 @@ def mitoChr(reference_genome, mito_chromosome):
 	else:
 		if(reference_genome in ["hg19", "mm10", "hg38", "mm10"]):
 			return("chrM")
+		elif(reference_genome in ["GRCh37", "GRCh38", "GRCm37", "GRCm38"]):
+			return("MT")
 		elif(reference_genome == "hg19_mm10_c"):
 			return("humanM")
 		else:
@@ -57,7 +59,7 @@ def mitoChr(reference_genome, mito_chromosome):
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
-		minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
+		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
@@ -91,7 +93,6 @@ class bapProject():
 		self.barcode_whitelist = barcode_whitelist
 		
 		self.minimum_barcode_fragments = minimum_barcode_fragments
-		self.minimum_cell_fragments = minimum_cell_fragments
 		self.nc_threshold = nc_threshold
 		self.minimum_jaccard_index = minimum_jaccard_index
 		self.one_to_one = one_to_one
@@ -172,7 +173,7 @@ class bapProject():
 		else:
 			self.peakFile = ""
 		
-		self.mitochr =  mitoChr(reference_genome, mito_chromosome)
+		self.mitochr = mitoChr(reference_genome, mito_chromosome)
 		
 		
 	#--------------------------------------------------------------------------------
@@ -191,7 +192,6 @@ class bapProject():
 		yield 'peakFile', self.peakFile
 		
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
-		yield 'minimum_cell_fragments', self.minimum_cell_fragments
 		yield 'barcode_whitelist', self.barcode_whitelist
 
 		yield 'minimum_jaccard_index', self.minimum_jaccard_index

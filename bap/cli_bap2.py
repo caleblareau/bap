@@ -34,7 +34,6 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 0, help='Minimum number of fragments to be thresholded for doublet merging.')
-@click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
 @click.option('--barcode-whitelist', '-w', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold; a required argument for `10X` mode.')
 
 @click.option('--minimum-jaccard-index', '-ji', default = 0.0, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
@@ -58,7 +57,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 def main(mode, input, output, name, ncores, reference_genome,
 	cluster, jobs, peak_file,
-	minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
+	minimum_barcode_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
@@ -105,7 +104,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
-		minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
+		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
@@ -143,11 +142,11 @@ def main(mode, input, output, name, ncores, reference_genome,
 			sys.exit("Found no overlapping chromosomes between bam and reference. Check reference genome specification with the --reference-genome flag.")
 					
 		# Make output folders
-		of = output; logs = of + "/logs"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
+		of = output; logs = of + "/logs"; logs_bedpe = logs+"/frag"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
 		temp_filt_split = temp + "/filt_split"; temp_frag_overlap = temp + "/frag_overlap"; knee = of + "/knee"
 		temp_drop_barcode = temp + "/drop_barcode"
 		
-		folders = [of, logs, fin, mito, temp,
+		folders = [of, logs, logs_bedpe, fin, mito, temp,
 			temp_filt_split, temp_frag_overlap,temp_drop_barcode, knee,
 			of + "/.internal/parseltongue", of + "/.internal/samples"]
 	
@@ -167,22 +166,14 @@ def main(mode, input, output, name, ncores, reference_genome,
 		#-------------------------------------------------------
 		# Step 1- Filter and split input .bam file by chromosome
 		#-------------------------------------------------------		
-		line1 = 'python ' +script_dir+'/bin/python/10_quantBarcode_Filt.py --input '+p.bamfile
+		line1 = 'python ' +script_dir+'/bin/python/20_names_split_filt.py --input '+p.bamfile
 		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
-		line3 = p.bead_tag + ' --min-fragments ' + str(p.minimum_barcode_fragments)
-		line4 = " --bedtools-genome " +p.bedtoolsGenomeFile + " --ncores " + str(ncores) + " --mapq " + str(mapq)
-		line5 = " --barcode-whitelist " + p.barcode_whitelist + " --knee-call " + script_dir+'/bin/R/10b_knee_execute.R'
+		line3 = p.bead_tag + " --bedtools-reference-genome " + p.bedtoolsGenomeFile 
+		line4 = " --mito-chr " +p.mitochr + " --ncores " + str(ncores) + " --mapq " + str(mapq)
 			
-		filt_split_cmd = line1 + line2 + line3 + line4 + line5
+		filt_split_cmd = line1 + line2 + line3 + line4 
 		os.system(filt_split_cmd)
-		
-		# Verify that we got output and fail if not
-		val = file_len(p.output + "/final/" + p.name + ".barcodequants.csv") -1
-		click.echo(gettime() + "Found " + str(val) + " abundant barcodes passing filter.")
-		
-		if(val < 2):
-			sys.exit(gettime() + "Found insufficient # of barcodes for analyis; check reference genome or lower --minimum-barcode-fragments")
-		
+
 		#----------------------------------------
 		# Step 2 - Process fragments by Snakemake
 		#----------------------------------------
@@ -193,7 +184,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
 			
 		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '"'
+		print(snakecmd_chr)
 		os.system(snakecmd_chr)
+		sys.exit("try1")
 		
 		#-------------------------------------------------
 		# Step 3 - Handle aggregation of NC filtered reads
