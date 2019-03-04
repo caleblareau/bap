@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'bap = bap.cli:main',
             'bap-barcode = bap.barcode.cli_barcode:main',
+            'bap2 = bap.cli_bap2:main',
             'bap-reanno = bap.cli_reanno:main'
         ],
     },

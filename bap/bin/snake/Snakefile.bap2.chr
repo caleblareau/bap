@@ -1,0 +1,128 @@
+import os
+import subprocess
+import shutil
+import re
+import pysam
+
+from os.path import join
+
+configfile: config["cfp"]     
+outdir = config["output"]
+script_dir = config["script_dir"]          
+R = config["R"] 
+name = config["name"] 
+output = config["output"] 
+bead_tag = config["bead_tag"] 
+drop_tag = config["drop_tag"] 
+minimum_barcode_fragments = str(config["minimum_barcode_fragments"])
+minimum_jaccard_index = str(config["minimum_jaccard_index"])
+nc_threshold = str(config["nc_threshold"])
+
+one_to_one = str(config["one_to_one"])
+barcoded_tn5 = str(config["barcoded_tn5"])
+
+blacklistRegionsFile = str(config["blacklistFile"])
+
+# Determine .bam files to execute for fragment overlap analysis
+infile1 = outdir + "/.internal/samples/" + "/" + name + ".chrbam.txt"
+barcodeQuantFile =  outdir + "/final/" + name + ".barcodequants.csv"
+
+with open(infile1) as f:
+    SAMPLES = f.readlines()
+
+SAMPLES = [x.strip() for x in SAMPLES] 
+rdsin = [re.sub(".raw.bam$", "_overlapCount.rds", x.replace("/filt_split/", "/frag_overlap/")) for x in SAMPLES]
+simple = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES]
+chrOut = [x.replace("/filt_split/", "/drop_barcode/") for x in SAMPLES]
+
+computeNC_R = script_dir + "/bin/R/11a_computeNCperRead.R"
+anno_filtNC_py = script_dir + "/bin/python/11b_annoFiltNC.py"
+fragOverlaps_R = script_dir + "/bin/R/12_fragOverlapMetricsChr.R"
+determineDoubles_R = script_dir + "/bin/R/13_callDoublets.R"
+paintDropBarcode_py = script_dir + "/bin/python/14_paintDropBarcode.py"
+
+rule all:
+	input:
+		outdir + "/final/"+name+".bap.bam.bai"
+
+rule annotate_filt_nc:
+	input:
+		rawbam = output + "/temp/filt_split/" + "{name}" + ".raw.bam"
+	output:
+		outbam = output + "/temp/filt_split/" + "{name}" + ".bam"
+	threads:
+		1
+	run:
+		if(int(nc_threshold) == 0):
+			os.system("cp " + input.rawbam + " " + output.outbam)
+		else:		
+			# Get the counts for one chromosome
+			r_call1 = " ".join([R+"script", computeNC_R, input.rawbam, bead_tag])
+			tsvOut = input.rawbam.replace(".bam", "_ncRead.tsv")
+		
+			try:
+				os.system("touch " + tsvOut)
+				os.system(r_call1)
+			except:
+				print("Failed with " + input.rawbam)
+			
+			# Now annotate them
+			py_call = " ".join(["python", anno_filtNC_py, "--input", input.rawbam, "--output", output.outbam, "--nc-filt", nc_threshold, "--dict-file", tsvOut, "--bead-barcode", bead_tag])
+			os.system(py_call)
+
+rule infer_frag_overlap:
+	input:
+		bam = output + "/temp/filt_split/" + "{name}" + ".bam"
+	output:
+		outrds =  output + "/temp/frag_overlap/" + "{name}" + "_overlapCount.rds"
+	threads:
+		1
+	run:
+		# Process one chromosome file
+		r_call1 = " ".join([R+"script", fragOverlaps_R, input.bam, bead_tag, barcodeQuantFile, blacklistRegionsFile])
+		rdsOut = input.bam.replace(".bam", "_overlapCount.rds").replace("/filt_split/", "/frag_overlap/")
+		try:
+			os.system("touch " + rdsOut)
+			os.system(r_call1)
+		except:
+			print("Failed with " + input.bam)
+
+# Collate everything
+rule determine_barcode_merges:
+	input:
+		rdsin = rdsin
+	output:
+		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
+		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv",
+	run: 	
+		# collate chr inference and make a single file
+		rdsdir = outdir + "/temp/frag_overlap"
+		r_call2 = " ".join([R+"script", determineDoubles_R, rdsdir, barcodeQuantFile, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5])
+		os.system(r_call2)
+		
+
+# Translate bead barcodes to droplet barcodes
+rule reannotate_droplets:
+	input:
+		dictionary = outdir + "/final/"+name+".barcodeTranslate.tsv",
+		bam = output + "/temp/filt_split/" + "{name}" + ".bam"
+	output:
+		outbam = output + "/temp/drop_barcode/" + "{name}" + ".bam",
+		outbambai = output + "/temp/drop_barcode/" + "{name}" + ".bam.bai"
+	run: 	
+		# Reannotate each individual chromosome file
+		py_call = " ".join(["python", paintDropBarcode_py, "--input", input.bam, "--output", output.outbam, "--bead-barcode", bead_tag, "--drop-barcode", drop_tag, "--dict-file", input.dictionary])
+		os.system(py_call)
+		pysam.index(output.outbam)
+
+# Final merge of everything
+rule final_merge:
+	input:
+		chrOut = chrOut
+	output:
+		finalbam = outdir + "/final/"+name+".bap.bam",
+		finalbambai = outdir + "/final/"+name+".bap.bam.bai"
+	run:
+		merge_parameters = [output.finalbam] + input.chrOut
+		pysam.merge(*merge_parameters)
+		pysam.index(output.finalbam)
