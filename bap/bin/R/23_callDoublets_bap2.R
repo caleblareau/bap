@@ -160,7 +160,7 @@ while(dim(nBC)[1] > 0){
   nBC <- nBC[nBC$BeadBarcode %ni% barcode_combine,]
 }
 
-write.table(nBC_keep[,c("BeadBarcode", "DropBarcode", "OverlapReads")],
+write.table(nBC_keep[,c("BeadBarcode", "DropBarcode")],
             file = gsub(".implicatedBarcodes.csv$", ".barcodeTranslate.tsv", tblOut),
-            quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
+            quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
 
