@@ -2,6 +2,15 @@
 
 In development, these commands are what is assumed to have been run
 
+## NEW - bap2
+
+```
+ bap2 bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 10
+```
+
+
+## OLD - BAP 1
+
 
 **bam** mode
 
