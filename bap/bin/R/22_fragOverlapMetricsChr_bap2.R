@@ -1,6 +1,5 @@
 options(warn=-1)
 
-suppressMessages(suppressWarnings(library(Rsamtools)))
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(tools)))
@@ -34,30 +33,36 @@ if(FALSE){
   out_nc_count_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/temp/frag_overlap/jaccardPairsForIGV.chr12_ncCount.tsv"
 }
 
+if(FALSE){
+  nc_threshold <- 6
+  base <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/"
+  anno_bedpe_file <- paste0(base, "/", "N729_Exp110_sample8_combined_S1.chrX.frag.bedpe.annotated.tsv.gz")
+  hq_beads_file <- paste0("/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/final/N729_Exp110_sample8_combined_S1.HQbeads.tsv")
+  out_nc_count_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/N729_Exp110_sample8_combined_S1.chrX_ncCount.tsv"
+}
+
 
 # Import fragments
 frags <- fread(cmd = paste0("zcat < ", anno_bedpe_file), col.names = c("chr", "start", "end", "read_name", "bead_barcode"))
 HQbeads <- fread(hq_beads_file, col.names = "beads")[[1]]
 
 # Filter 1 for eligible barcodes
-frags_filt1 <- frags %>% filter(bead_barcode %in% HQbeads)
-rm(frags)
+frags_filt1 <- frags[bead_barcode %in% HQbeads] 
 
 # Quantify NC + export
-nc_value <- frags_filt1 %>%
-  group_by(chr, start, end) %>% mutate(n_distinct_barcodes = n_distinct(bead_barcode))
-
-write.table(nc_value %>% group_by(n_distinct_barcodes) %>% summarise(count = n()), 
+frags_filt1[, `:=` (n_distinct_barcodes = .N), by = list(start, end)]
+write.table(frags_filt1 %>% group_by(n_distinct_barcodes) %>% summarise(count = n()), 
             file = out_nc_count_file, row.names = FALSE, col.names = FALSE, sep = "\t", quote = FALSE)
-rm(frags_filt1)
 
-# Filter out high NC values + first pass PCR duplicate removal at the bead level.
+# Filter out high NC values + first pass PCR duplicate removal at the bead level
+nc_value <- frags_filt1[n_distinct_barcodes <= nc_threshold] 
+frags_filt2 <- nc_value[, .(PCRdupCount = .N), by = list(chr, start, end, bead_barcode)]
+
 frags_filt2 <- nc_value %>%
-  filter(n_distinct_barcodes <= nc_threshold) %>%
   group_by(chr, start, end, bead_barcode) %>% summarize(PCRdupCount = n()); rm(nc_value)
 
 # Pull out barcode for retained
-barcodes <- frags_filt2 %>% pull(bead_barcode) %>% as.character()
+barcodes <- frags_filt2[["bead_barcode"]]
 GAfilt <- makeGRangesFromDataFrame(frags_filt2)
 
 # Find exact fragments
@@ -70,23 +75,22 @@ nKept <- as.numeric(XBtable); names(nKept) <- whichKeep
 rm(XBtable)
 
 # Make a dataframe of all combinations that have fragments overlapping
-hugeDF <-
-  data.frame(
-    bc1 = barcodes[queryHits(ov)[ queryHits(ov) !=  subjectHits(ov)]],
-    bc2 = barcodes[subjectHits(ov)[ queryHits(ov) !=  subjectHits(ov)]],
-    stringsAsFactors = FALSE
-  )
+bc1 = barcodes[queryHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
+bc2 = barcodes[subjectHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
+boo_barc <- bc1 != bc2  # filter out reads that map to the same barcode
+bc1 <- bc1[boo_barc]
+bc2 <- bc2[boo_barc]
 rm(ov)
 
-# One dplyr command to save the day -- determine occurences of overlapping reads
-hugeDF %>% filter(bc1 != bc2) %>%  # filter out reads that map to the same barcode
-  mutate(barc1 = ifelse(bc1 > bc2, bc1, bc2),
-         barc2 = ifelse(bc1 > bc2, bc2, bc1)) %>%  # switch to respect alphabetical order if necessary
-  select(-one_of(c("bc1", "bc2"))) %>% # drop non-ordered barcode columns
-  group_by(barc1, barc2) %>% summarise(n_both = n()/2) %>%  # group and count; divide by 2 to solve double counting (symmetry in overlap)
-  mutate(n_barc1 = nKept[barc1], n_barc2 = nKept[barc2]) %>% as.data.frame() -> implicatedPairs # keep baseline numbers
-rm(hugeDF)
-rm(barcodes)
+hugeDF <- data.table(
+  barc1 = ifelse(bc1 > bc2, bc1, bc2),
+  barc2 = ifelse(bc1 > bc2, bc2, bc1)
+)
+
+# Break up previous massive dplyr call for speed in data.table
+implicatedPairs <- hugeDF2[, .(n_both = .N/2), by = list(barc1, barc2)]
+implicatedPairs$barc1 <- nKept[barcode_gDT[["barc1"]]]
+implicatedPairs$barc2 <- nKept[barcode_gDT[["barc2"]]]
 
 # Export
 saveRDS(implicatedPairs, file = out_frag_rds_file)

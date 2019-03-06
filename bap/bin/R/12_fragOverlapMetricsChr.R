@@ -37,6 +37,7 @@ if(FALSE){
   blacklistRegionsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19.full.blacklist.bed"
 }
 
+
 # Import blacklist file
 bldf <- data.frame(fread(blacklistRegionsFile))
 blgr <- makeGRangesFromDataFrame(bldf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
