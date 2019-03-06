@@ -89,8 +89,8 @@ hugeDF <- data.table(
 
 # Break up previous massive dplyr call for speed in data.table
 implicatedPairs <- hugeDF[, .(n_both = .N/2), by = list(barc1, barc2)]
-implicatedPairs$barc1 <- nKept[implicatedPairs[["barc1"]]]
-implicatedPairs$barc2 <- nKept[implicatedPairs[["barc2"]]]
+implicatedPairs$n_barc1 <- nKept[implicatedPairs[["barc1"]]]
+implicatedPairs$n_barc2 <- nKept[implicatedPairs[["barc2"]]]
 
 # Export
 saveRDS(implicatedPairs, file = out_frag_rds_file)

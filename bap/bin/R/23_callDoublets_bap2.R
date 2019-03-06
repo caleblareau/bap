@@ -50,32 +50,37 @@ if(FALSE){
   one_to_one <- FALSE
   barcoded_tn5 <- FALSE
 }
+
+if(FALSE){
+  rdsDir <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/frag_overlap/"
+  n_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/knee/jaccardPairsForIGVbarcodeQuantsSimple.csv"
+  tblOut <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/final/o.tsv"
+  min_jaccard_frag <- 0.005
+  name <- "x"
+  one_to_one <- FALSE
+  barcoded_tn5 <- FALSE
+}
+
 rdsFiles <- list.files(rdsDir, full.names = TRUE, pattern = "_overlapCount.rds$")
 rdsFiles <- rdsFiles[sapply(lapply(rdsFiles,file.info), function(x) x$size) > 0]
 
-# Implicate overlapping fragments
-if(!barcoded_tn5){
-  lapply(rdsFiles, readRDS) %>%
-    rbindlist(fill = TRUE) %>% as.data.frame() %>%
-    group_by(barc1, barc2) %>%
-    summarise(N_both = sum(n_both), N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2)) %>% # fixed the previous divided by two in the upstream script (22) for overall accuracy
-    mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
-    filter(jaccard_frag > 0) %>% 
-    arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
-  
-  # Only consider merging when the Tn5 is the same
-} else {
-  lapply(rdsFiles, readRDS) %>%
-    rbindlist(fill = TRUE) %>% as.data.frame() %>%
-    mutate(tn5_1 = substrRight(barc1),
-           tn5_2 = substrRight(barc2)) %>%
-    filter(tn5_1 == tn5_2) %>% 
-    group_by(barc1, barc2) %>%
-    summarise(N_both = sum(n_both), N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2)) %>% # fixed the previous divided by two in the upstream script (22) for overall accuracy
-    mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
-    filter(jaccard_frag > 0) %>% 
-    arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
+
+lapply(rdsFiles, readRDS) %>%
+  rbindlist(fill = TRUE) -> inputDF
+
+# Only consider merging when Tn5 is the same
+if(barcoded_tn5){
+  tn5_1 = substrRight(inputDF[["barc1"]])
+  tn5_2 = substrRight(inputDF[["barc2"]])
+  inputDF <- inputDF[tn5_1 == tn5_2]
 }
+
+inputDF[, `:=` (N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2), N_both = sum(n_both)), by = list(barc1, barc2)] %>%
+  data.frame() %>% # fixed the previous divided by two in the upstream script (22) for overall accuracy
+  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
+  filter(jaccard_frag > 0) %>% 
+  arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
+
 
 # Call knee if we need to
 if(min_jaccard_frag == 0){
