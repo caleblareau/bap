@@ -38,7 +38,9 @@ if(FALSE){
   base <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/"
   anno_bedpe_file <- paste0(base, "/", "N729_Exp110_sample8_combined_S1.chrX.frag.bedpe.annotated.tsv.gz")
   hq_beads_file <- paste0("/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/final/N729_Exp110_sample8_combined_S1.HQbeads.tsv")
+  out_frag_rds_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/N729_Exp110_sample8_combined_S1.chrX_overlapCount.rds"
   out_nc_count_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/N729_Exp110_sample8_combined_S1.chrX_ncCount.tsv"
+  
 }
 
 
@@ -88,9 +90,9 @@ hugeDF <- data.table(
 )
 
 # Break up previous massive dplyr call for speed in data.table
-implicatedPairs <- hugeDF2[, .(n_both = .N/2), by = list(barc1, barc2)]
-implicatedPairs$barc1 <- nKept[barcode_gDT[["barc1"]]]
-implicatedPairs$barc2 <- nKept[barcode_gDT[["barc2"]]]
+implicatedPairs <- hugeDF[, .(n_both = .N/2), by = list(barc1, barc2)]
+implicatedPairs$barc1 <- nKept[implicatedPairs[["barc1"]]]
+implicatedPairs$barc2 <- nKept[implicatedPairs[["barc2"]]]
 
 # Export
 saveRDS(implicatedPairs, file = out_frag_rds_file)

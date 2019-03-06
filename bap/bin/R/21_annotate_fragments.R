@@ -36,23 +36,33 @@ if(FALSE){
   unique_count_out_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/temp/filt_split/small_mix.hg19_chr1.bead_counts.tsv"
 }
 
+if(FALSE){
+  
+  base <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/"
+  blacklist_file <- "/data/aryee/caleb/pythondev/bap/bap/anno/blacklist/mm10.full.blacklist.bed"
+  frag_bedpe_file <- paste0(base, "/", "N729_Exp110_sample8_combined_S1.chrX.frag.bedpe.gz")
+  read_bead_file <-  paste0(base, "/", "N729_Exp110_sample8_combined_S1.chrX.read_bead.tsv.gz")
+  annotated_out_file <- paste0(base, "/", "N729_Exp110_sample8_combined_S1.chrX.frag.bedpe.annotated.tsv.gz")
+  unique_count_out_file <- paste0(base, "/", "N729_Exp110_sample8_combined_S1.chrX.bead_counts.tsv")
+  
+}
+
 # Import frags and annotate with bead
-frags <- fread(cmd = paste0("zcat < ", frag_bedpe_file), col.names = c("chr", "start", "end", "read_name")) %>% data.frame()
-bead_read <- fread(cmd = paste0("zcat < ", read_bead_file), col.names = c("read_name", "bead_id")) %>% data.frame() %>% na.omit() %>% distinct()
-mdf <- left_join(frags, bead_read, by= "read_name") %>% na.omit()
+frags <- fread(cmd = paste0("zcat < ", frag_bedpe_file), col.names = c("chr", "start", "end", "read_name")) 
+bead_read <- fread(cmd = paste0("zcat < ", read_bead_file), col.names = c("read_name", "bead_id"))%>% na.omit() %>% unique()
+mdf <- merge(frags, bead_read, by= "read_name") %>% na.omit()
 
 # Filter for fragments overlapping the blacklist
 bl <- fread(blacklist_file, col.names = c("chr", "start", "end")) %>% data.frame() %>% makeGRangesFromDataFrame()
 ov_bl <- findOverlaps(bl, makeGRangesFromDataFrame(mdf))
 blacklist_reads <- mdf$read_name[subjectHits(ov_bl)]
-mdf <- mdf %>% filter(read_name %ni% blacklist_reads)
+mdf <- mdf[read_name %ni% blacklist_reads]
 
 # NOTE: the majority of the missing read names are instances where the MAPQ filter was not surpassed.
 
-mdf %>% group_by(chr, start, end, bead_id) %>%
-  summarize(count = n()) %>%
-  ungroup() %>% group_by(bead_id) %>%
-  summarize(nUnique = n()) -> out_bead_quant
+# Quantify the number of unique fragments per barcode
+pcr_dup_df <- mdf[, .(count = .N), by = list(chr, start, end, bead_id)]
+out_bead_quant <- pcr_dup_df[,.(nUnique = .N), by = bead_id]
 
 # Export tables
 write.table(mdf, file = annotated_out_file, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
