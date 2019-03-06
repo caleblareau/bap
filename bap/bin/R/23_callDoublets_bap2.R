@@ -75,7 +75,7 @@ if(barcoded_tn5){
   inputDF <- inputDF[tn5_1 == tn5_2]
 }
 
-inputDF[, `:=` (N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2), N_both = sum(n_both)), by = list(barc1, barc2)] %>%
+inputDF[, .(N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2), N_both = sum(n_both)), by = list(barc1, barc2)] %>%
   data.frame() %>% # fixed the previous divided by two in the upstream script (22) for overall accuracy
   mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
   filter(jaccard_frag > 0) %>% 
