@@ -3,6 +3,7 @@ options(warn=-1)
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(tools)))
+suppressMessages(suppressWarnings(library(GenomicRanges)))
 
 "%ni%" <- Negate("%in%")
 
@@ -36,16 +37,16 @@ if(FALSE){
 if(FALSE){
   nc_threshold <- 6
   base <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/"
-  anno_bedpe_file <- paste0(base, "/", "N729_Exp110_sample8_combined_S1.chrX.frag.bedpe.annotated.tsv.gz")
+  anno_bedpe_file <- paste0(base, "/", "N729_Exp110_sample8_combined_S1.chr1.frag.bedpe.annotated.tsv.gz")
   hq_beads_file <- paste0("/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/final/N729_Exp110_sample8_combined_S1.HQbeads.tsv")
-  out_frag_rds_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/N729_Exp110_sample8_combined_S1.chrX_overlapCount.rds"
-  out_nc_count_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/N729_Exp110_sample8_combined_S1.chrX_ncCount.tsv"
+  out_frag_rds_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/N729_Exp110_sample8_combined_S1.chr1_overlapCount.rds"
+  out_nc_count_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/filt_split/N729_Exp110_sample8_combined_S1.chr1_ncCount.tsv"
   
 }
 
 
 # Import fragments
-frags <- fread(cmd = paste0("zcat < ", anno_bedpe_file), col.names = c("chr", "start", "end", "read_name", "bead_barcode"))
+frags <- fread(cmd = paste0("zcat < ", anno_bedpe_file), col.names = c("read_name", "chr", "start", "end", "bead_barcode"))
 HQbeads <- fread(hq_beads_file, col.names = "beads")[[1]]
 
 # Filter 1 for eligible barcodes
@@ -59,9 +60,6 @@ write.table(frags_filt1 %>% group_by(n_distinct_barcodes) %>% summarise(count = 
 # Filter out high NC values + first pass PCR duplicate removal at the bead level
 nc_value <- frags_filt1[n_distinct_barcodes <= nc_threshold] 
 frags_filt2 <- nc_value[, .(PCRdupCount = .N), by = list(chr, start, end, bead_barcode)]
-
-frags_filt2 <- nc_value %>%
-  group_by(chr, start, end, bead_barcode) %>% summarize(PCRdupCount = n()); rm(nc_value)
 
 # Pull out barcode for retained
 barcodes <- frags_filt2[["bead_barcode"]]
