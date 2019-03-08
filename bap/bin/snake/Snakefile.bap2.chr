@@ -182,6 +182,7 @@ rule determine_barcode_merges:
 		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, input.HQbeads, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5])
 		os.system(r_call_findDoublets)
 
+
 rule temp_out:
 	input:
 		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv"
