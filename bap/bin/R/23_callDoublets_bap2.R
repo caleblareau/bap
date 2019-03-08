@@ -43,9 +43,9 @@ tblOut <- gsub(".gz$", "", tblOut)
 
 # For devel only
 if(FALSE){
-  rdsDir <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/temp/frag_overlap"
-  n_bc_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/knee/jaccardPairsForIGVbarcodeQuantsSimple.csv"
-  tblOut <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap_out/final/o.tsv"
+  rdsDir <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/temp/frag_overlap"
+  n_bc_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/knee/jaccardPairsForIGVbarcodeQuantsSimple.csv"
+  tblOut <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/final/o.tsv"
   min_jaccard_frag <- 0.005
   name <- "x"
   one_to_one <- FALSE
@@ -170,4 +170,20 @@ while(dim(nBC)[1] > 0){
 write.table(nBC_keep[,c("BeadBarcode", "DropBarcode")],
             file = gsub(".implicatedBarcodes.csv$", ".barcodeTranslate.tsv", tblOut),
             quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+
+
+# Finally, collate the NC values
+tsvFiles <- list.files(rdsDir, full.names = TRUE, pattern = "_ncCount.tsv$")
+tsvFiles <- tsvFiles[sapply(lapply(tsvFiles,file.info), function(x) x$size) > 0]
+
+lapply(tsvFiles, read.table, header = FALSE) %>%
+  rbindlist(fill = TRUE) %>% data.frame() -> inputDF
+colnames(inputDF) <- c("NC_value", "i")
+inputDF %>% group_by(NC_value) %>% 
+  summarize(NumberOfFragments = sum(i)) -> NCtsv_out_df
+
+nc_file_out <- gsub(".implicatedBarcodes.csv$", ".NCsumstats.tsv", tblOut)
+write.table(NCtsv_out_df, file = nc_file_out, 
+            quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
+
 

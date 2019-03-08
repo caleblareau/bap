@@ -24,17 +24,23 @@ nc_threshold = str(config["nc_threshold"])
 one_to_one = str(config["one_to_one"])
 barcoded_tn5 = str(config["barcoded_tn5"])
 barcode_whitelist = str(config["barcode_whitelist"])
-
 blacklistRegionsFile = str(config["blacklistFile"])
-
-# Determine .bam files to execute for fragment overlap analysis
-infile1 = outdir + "/.internal/samples/" + "/" + name + ".chrbam.txt"
 barcodeQuantFile =  outdir + "/final/" + name + ".barcodequants.csv"
 
-with open(infile1) as f:
+# Determine .bam files to execute for fragment overlap analysis
+infile_nuclear = outdir + "/.internal/samples/" + name + ".chrbam.txt"
+with open(infile_nuclear) as f:
     SAMPLES = f.readlines()
+SAMPLES = [x.strip() for x in SAMPLES]
 
-SAMPLES = [x.strip() for x in SAMPLES] 
+with open(outdir + "/.internal/samples/" + name + ".mitochrbam.txt") as f:
+	mito_sample = f.readlines()
+mito_sample = [x.strip() for x in mito_sample]
+
+# Merge mito to the others
+SAMPLES_noMito = SAMPLES
+SAMPLES = SAMPLES + mito_sample
+
 rdsin = [re.sub(".raw.bam$", "_overlapCount.rds", x.replace("/filt_split/", "/frag_overlap/")) for x in SAMPLES]
 simple = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES]
 chrOut = [x.replace("/filt_split/", "/drop_barcode/") for x in SAMPLES]
@@ -42,7 +48,6 @@ all_bead_counts = [output + "/temp/filt_split/" + x + ".bead_counts.tsv" for x i
 
 # Filepaths to executable scripts
 knee_call_R = script_dir + "/bin/R/10b_knee_execute.R"
-
 annotate_fragments_R = script_dir + "/bin/R/21_annotate_fragments.R"
 fragOverlapChr_R = script_dir + "/bin/R/22_fragOverlapMetricsChr_bap2.R"
 determineDoubles_R = script_dir + "/bin/R/23_callDoublets_bap2.R"
@@ -161,7 +166,7 @@ rule compute_bap_stat_chr:
 		R_call_frag = R_call_frag + output.fragrds + " " + output.nc_count
 		os.system(R_call_frag)
 
-# Collate everything
+# Collate everything including NCs and bead merges; call knee if needed
 rule determine_barcode_merges:
 	input:
 		rdsin = rdsin,
@@ -169,7 +174,8 @@ rule determine_barcode_merges:
 		HQbeads = outdir + "/final/" + name + ".HQbeads.tsv"
 	output:
 		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
-		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv"
+		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv",
+		outNCtsv = outdir + "/final/"+name+".NCsumstats.tsv"
 	run: 	
 		# collate chr inference and make a single file
 		rdsdir = outdir + "/temp/frag_overlap"

@@ -20,25 +20,26 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.command()
 @click.version_option()
 
-@click.argument('mode', type=click.Choice(['bam', '10x', 'check', 'support']))
+@click.argument('mode', type=click.Choice(['bam',  'check', 'support']))
 
-@click.option('--input', '-i', help='Input for bap; varies by which mode is specified; for `bam`, .bam file with an index. For `10X`, the filepath to the fragments.tsv.gz file.')
+@click.option('--input', '-i', help='Input for bap; varies by which mode is specified; for `bam`, .bam file with an index.')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; this is where everything is housed.')
 @click.option('--name', '-n', default="default", help='Name for all of the output files (default: uses the .bam prefix)')
 
 @click.option('--ncores', '-c', default = "detect", help='Number of cores to run the main job in parallel.')
-@click.option('--reference-genome', '-r', default = "hg19", help='Support for built-in genome; choices are hg19, mm9, hg38, mm10, hg19_mm10_c and hg19-mm10 (species mix)')
+@click.option('--reference-genome', '-r', default = "hg19", help='Specifcy supported reference genome. Check `bap2 support` for a list')
 
 @click.option('--cluster', default = "",  help='Message to send to Snakemake to execute jobs on cluster interface; see documentation.')
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
+
 @click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 0, help='Minimum number of fragments to be thresholded for doublet merging.')
-@click.option('--barcode-whitelist', '-w', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold; a required argument for `10X` mode.')
+@click.option('--barcode-whitelist', '-w', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold.')
 
 @click.option('--minimum-jaccard-index', '-ji', default = 0.0, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
 @click.option('--nc-threshold', '-nc', default = 6, help='Number of barcodes that a paired-end read must be observed for the read to be filtered.')
-@click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (making this merging useless)')
+@click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (making the merging useless from bap useless)')
 @click.option('--barcoded-tn5',  is_flag=True, help='Process data knowing that the barcodes were generated with a barcoded Tn5')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
@@ -48,11 +49,11 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--bedtools-genome', '-bg', default = "", help='Path to bedtools genome file; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
-@click.option('--mito-chromosome', '-mc', default = "default", help='Name of the mitochondrial chromosome; only necessary to specify if the reference genome is unknown but will overwrite default if needbe')
+@click.option('--mito-chromosome', '-mc', default = "default", help='Name of the mitochondrial chromosome; only necessary to specify if the reference genome is unknown but will overwrite default if necessary')
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 
 @click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
-@click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode; valid for bam mode.')
+@click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode.')
 
 
 def main(mode, input, output, name, ncores, reference_genome,
@@ -67,7 +68,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	bap2: ~improved~ Bead-based scATAC-seq data Processing \n
 	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
 	
-	mode = ['bam', '10x', 'check', 'support']\n
+	mode = ['bam', 'check', 'support']\n
 	"""
 	
 	__version__ = get_distribution('bap').version
@@ -165,7 +166,10 @@ def main(mode, input, output, name, ncores, reference_genome,
 		
 		#-------------------------------------------------------
 		# Step 1- Filter and split input .bam file by chromosome
-		#-------------------------------------------------------		
+		#-------------------------------------------------------
+		click.echo(gettime() + "Splitting input bam files by chromosome for parallel processing.")
+		click.echo(gettime() + "User specified "+ncores+" cores for parallel processing.")
+		
 		line1 = 'python ' +script_dir+'/bin/python/20_names_split_filt.py --input '+p.bamfile
 		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.bead_tag + " --bedtools-reference-genome " + p.bedtoolsGenomeFile 
@@ -177,30 +181,35 @@ def main(mode, input, output, name, ncores, reference_genome,
 		#----------------------------------------
 		# Step 2 - Process fragments by Snakemake
 		#----------------------------------------
-		
+		click.echo(gettime() + "Processing per-chromosome fragments in parallel. This is the most computationally intensive step.")
 		# Round trip the .yaml of user configuration
 		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
 		with open(y_s, 'w') as yaml_file:
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
-			
-		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '"'
-		print(snakecmd_chr)
+		
+		# Assemble some log files for the snake file
+		snake_stats = logs + "/" + p.name + ".snakemake.stats"
+		snake_log = logs + "/" + p.name + ".snakemake.log"
+		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
 		os.system(snakecmd_chr)
-		sys.exit("try1")
-		
-		#-------------------------------------------------
-		# Step 3 - Handle aggregation of NC filtered reads
-		#-------------------------------------------------
-		nc_R = script_dir + "/bin/R/15_ncReadCleanup.R"
-		barcodeQuantFile =  p.output + "/final/" + p.name + ".barcodequants.csv"
-		
-		# Irrespective, modify the barcode quantification sumstats
-		nc_R_call = " ".join([p.R+"script", nc_R, p.output, str(keep_temp_files), barcodeQuantFile])
-		os.system(nc_R_call)
 
+		#-----------------------------------
+		# Step 3 - Make knee plots
+		#-----------------------------------
+		bapParamsFile =  p.output + "/knee/" + p.name + ".bapParams.csv"
+		beadBarcodesFile = p.output + "/knee/" + p.name + ".barcodeQuantSimple.csv"
+		implicatedBarcodeFile = p.output + "/final/" + p.name + ".implicatedBarcodes.csv.gz"
+		
+		click.echo(gettime() + "Generating knee plots for parameters (if applicable).")
+		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
+		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
+		os.system(r_callKneePlot)
+		sys.exit("Thanks for using bap2")
+		
 		#-----------------------------------
 		# Step 4 - QC stats / outside Snakemake since not-essential
 		#-----------------------------------
+		click.echo(gettime() + "Generating QC report + summarized experiment file...")
 		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
 		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
 		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
@@ -223,7 +232,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 			oneToOneGo = "no"
 		
 		# Full system call to R script
-		click.echo(gettime() + "generating QC report + summarized experiment file...")
+		
 		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile, peakFileGo, speciesMixGo, oneToOneGo])
 		os.system(r_callQC)
 
@@ -242,17 +251,6 @@ def main(mode, input, output, name, ncores, reference_genome,
 			
 			os.system(mito_cmd)
 		
-		#-----------------------------------
-		# Step 6 - Make knee plots
-		#-----------------------------------
-		bapParamsFile =  p.output + "/knee/" + p.name + ".bapParams.csv"
-		beadBarcodesFile = p.output + "/knee/" + p.name + ".barcodeQuantSimple.csv"
-		implicatedBarcodeFile = p.output + "/final/" + p.name + ".implicatedBarcodes.csv.gz"
-		
-		click.echo(gettime() + "generating knee plots associated with beads.")
-		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
-		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
-		os.system(r_callKneePlot)
 		
 		#-------------------------------------------------------
 		# Final-- remove intermediate files if necessary
@@ -268,9 +266,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 				shutil.rmtree(byefolder + "/mito")
 			
 			click.echo(gettime() + "Intermediate files successfully removed.")
-	
-	if(mode == "10x"):
-		click.echo(gettime() + "Under development!")
+
 			
 	# If we get to this stage in the processing, then everything worked
 	if (mode == "check"):
