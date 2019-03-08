@@ -48,10 +48,6 @@ fragOverlapChr_R = script_dir + "/bin/R/22_fragOverlapMetricsChr_bap2.R"
 determineDoubles_R = script_dir + "/bin/R/23_callDoublets_bap2.R"
 
 
-#-----------------
-# Helper functions
-#-----------------
-
 rule all:
 	input:
 		outdir + "/final/"+name+".bap.bam.bai"
@@ -169,14 +165,15 @@ rule compute_bap_stat_chr:
 rule determine_barcode_merges:
 	input:
 		rdsin = rdsin,
-		forKnee = outdir + "/knee/" + name + "barcodeQuantsSimple.csv"
+		forKnee = outdir + "/knee/" + name + "barcodeQuantsSimple.csv",
+		HQbeads = outdir + "/final/" + name + ".HQbeads.tsv"
 	output:
 		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
 		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv"
 	run: 	
 		# collate chr inference and make a single file
 		rdsdir = outdir + "/temp/frag_overlap"
-		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5])
+		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, input.HQbeads, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5])
 		os.system(r_call_findDoublets)
 
 rule temp_out:

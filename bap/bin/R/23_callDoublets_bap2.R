@@ -25,8 +25,9 @@ source(normalizePath(gsub("23_callDoublets_bap2.R", "00_knee_CL.R", gsub(needle,
 
 # Import parameters using logic from the end3
 nn <- length(args)
-rdsDir <- args[nn-6] # directory of .rds files
-n_bc_file <- args[nn-5] # file for the number of reads supporting each barcode
+rdsDir <- args[nn-7] # directory of .rds files
+n_bc_file <- args[nn-6] # file for the number of reads supporting each barcode
+hq_bc_file <- args[nn-5] # file for the HQ barcodes that were nominated
 tblOut <- args[nn-4] # filepath to write the implicated barcode pairs
 min_jaccard_frag <- as.numeric(args[nn-3])
 name <- args[nn-2] #name prefix for file naming convention
@@ -52,9 +53,10 @@ if(FALSE){
 }
 
 if(FALSE){
-  rdsDir <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/temp/frag_overlap/"
-  n_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/knee/jaccardPairsForIGVbarcodeQuantsSimple.csv"
-  tblOut <- "/data/aryee/caleb/biorad/mouse_brain/N729_Exp110_sample8_combined_S1_2b2a2p/final/o.tsv"
+  rdsDir <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/temp/frag_overlap/"
+  n_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/knee/N704_Exp119_sample4_S1barcodeQuantsSimple.csv"
+  hq_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/final/N704_Exp119_sample4_S1.HQbeads.tsv"
+  tblOut <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/final/o.tsv"
   min_jaccard_frag <- 0.005
   name <- "x"
   one_to_one <- FALSE
@@ -109,7 +111,9 @@ system(paste0("gzip ", tblOut))
 ovdf %>% filter(jaccard_frag > min_jaccard_frag) %>% data.frame() -> ovdf
 
 # Import number of barcodes
-nBC <- fread(n_bc_file, col.names = c("BeadBarcode", "count"), sep = ",") %>% data.frame() %>% arrange(desc(count))
+valid_barcodes <- fread(hq_bc_file, col.names = c("bc"))[["bc"]]
+nBC <- fread(n_bc_file, col.names = c("BeadBarcode", "count"), sep = ",") %>%
+  data.frame() %>% filter(BeadBarcode %in% valid_barcodes) %>% arrange(desc(count))
 
 # Guess at how wide we need to make the barcodes to handle leading zeros
 guess <- ceiling(log10(dim(nBC)[1]))
@@ -127,8 +131,8 @@ while(dim(nBC)[1] > 0){
   friendsRow1 <- which(barcode ==  ovdf[,"barc1", drop = TRUE])
   if(length(friendsRow1) > 0){
     friends1 <- as.character(ovdf[friendsRow1,"barc2"])
-    OverlapReads = OverlapReads + sum(ovdf[1:dim(ovdf)[1] %in% friendsRow1, "N_both"])
-    ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow1,]
+    #OverlapReads = OverlapReads + sum(ovdf[1:dim(ovdf)[1] %in% friendsRow1, "N_both"])
+    #ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow1,]
     barcode_combine <- c(barcode_combine, friends1)
   }
   
@@ -136,15 +140,13 @@ while(dim(nBC)[1] > 0){
   friendsRow2 <- which(barcode ==  ovdf[,"barc2", drop = TRUE])
   if(length(friendsRow2) > 0){
     friends2 <- as.character(ovdf[friendsRow2,"barc1"])
-    OverlapReads = OverlapReads + sum(ovdf[1:dim(ovdf)[1] %in% friendsRow2, "N_both"])
-    ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow2,]
+    #OverlapReads = OverlapReads + sum(ovdf[1:dim(ovdf)[1] %in% friendsRow2, "N_both"])
+    #ovdf <- ovdf[1:dim(ovdf)[1] %ni% friendsRow2,]
     barcode_combine <- c(barcode_combine, friends2)
   }
   
   # If user species one to one, then only remove that one barcode
-  if(one_to_one){
-    barcode_combine <- barcode
-  }
+  if(one_to_one) barcode_combine <- barcode
   
   # Make a drop barcode and save our progress
   if(!barcoded_tn5){
@@ -157,7 +159,7 @@ while(dim(nBC)[1] > 0){
   
   # Annotate with new values
   nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "DropBarcode"] <- dropBarcode
-  nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "OverlapReads"] <- OverlapReads
+  #nBC_keep[nBC_keep$BeadBarcode %in% barcode_combine, "OverlapReads"] <- OverlapReads
   
   idx <- idx + 1
   

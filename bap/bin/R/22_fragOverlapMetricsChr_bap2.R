@@ -95,4 +95,3 @@ implicatedPairs$n_barc2 <- nKept[implicatedPairs[["barc2"]]]
 # Export
 saveRDS(implicatedPairs, file = out_frag_rds_file)
 
-
