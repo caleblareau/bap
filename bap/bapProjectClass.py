@@ -62,7 +62,7 @@ class bapProject():
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 		extract_mito, keep_temp_files, mapq, 
-		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
+		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, bedtools_path, samtools_path, 
 		drop_tag, bead_tag):
 		
 		#----------------------------------
@@ -74,6 +74,7 @@ class bapProject():
 		self.cluster = cluster
 		self.jobs = jobs
 		self.mapq = mapq
+		self.ncores = ncores
 		
 		if(minimum_jaccard_index > 1):
 			sys.exit("Cannot specify jaccard index > 1; user specified : %s" % str(minimum_jaccard_index))
@@ -122,7 +123,11 @@ class bapProject():
 		R = get_software_path('R', r_path)
 		#check_R_packages(['Rsamtools', 'GenomicAlignments', 'GenomicRanges', 'dplyr'], R)
 		self.R = R
-
+		
+		bedtools = get_software_path('bedtools', bedtools_path)
+		self.bedtools = bedtools
+		samtools = get_software_path('samtools', samtools_path)
+		self.samtools = samtools
 		#------------------------
 		# Handle reference genome
 		#------------------------
@@ -186,7 +191,8 @@ class bapProject():
 		yield 'output', self.output
 		yield 'bamfile', self.bamfile
 		yield 'name', self.name
-
+		yield 'ncores', self.ncores
+		
 		yield 'cluster', self.cluster
 		yield 'jobs', self.jobs
 		yield 'peakFile', self.peakFile
@@ -207,6 +213,8 @@ class bapProject():
 		yield 'bedtoolsGenomeFile', self.bedtoolsGenomeFile
 		yield 'mitochr', self.mitochr
 		yield 'R', self.R
+		yield 'samtools', self.samtools
+		yield 'bedtools', self.bedtools
 		
 		yield 'drop_tag', self.drop_tag
 		yield 'bead_tag', self.bead_tag

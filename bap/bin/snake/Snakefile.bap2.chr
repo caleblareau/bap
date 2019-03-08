@@ -9,10 +9,16 @@ from collections import Counter
 
 configfile: config["cfp"]     
 outdir = config["output"]
-script_dir = config["script_dir"]          
+script_dir = config["script_dir"]   
+
+samtools = config["samtools"]
+bedtools = config["bedtools"]     
 R = config["R"] 
+
 name = config["name"] 
-output = config["output"] 
+output = config["output"]
+threads_max = int(config["ncores"])
+ 
 bead_tag = config["bead_tag"] 
 drop_tag = config["drop_tag"] 
 
@@ -41,34 +47,52 @@ mito_sample = [x.strip() for x in mito_sample]
 SAMPLES_noMito = SAMPLES
 SAMPLES = SAMPLES + mito_sample
 
+# Create vectors of inputs
 rdsin = [re.sub(".raw.bam$", "_overlapCount.rds", x.replace("/filt_split/", "/frag_overlap/")) for x in SAMPLES]
+chrOut = [x.replace("/filt_split/", "/drop_barcode/") for x in SAMPLES_noMito]
+
 simple = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES]
-chrOut = [x.replace("/filt_split/", "/drop_barcode/") for x in SAMPLES]
 all_bead_counts = [output + "/temp/filt_split/" + x + ".bead_counts.tsv" for x in simple]
+
+simple_noMito = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES_noMito]
+HQfragsfiles = [output + "/temp/filt_split/" + x + ".frag.bedpe.annotated.dedup.tsv.gz" for x in simple_noMito]
+sumstats_nomito = [output + "/temp/filt_split/" + x + "_frag.sumstats.tsv" for x in simple_noMito]
+
+simple_mito = list(set(simple) ^ set(simple_noMito))[0]
 
 # Filepaths to executable scripts
 knee_call_R = script_dir + "/bin/R/10b_knee_execute.R"
 annotate_fragments_R = script_dir + "/bin/R/21_annotate_fragments.R"
 fragOverlapChr_R = script_dir + "/bin/R/22_fragOverlapMetricsChr_bap2.R"
 determineDoubles_R = script_dir + "/bin/R/23_callDoublets_bap2.R"
+reannoFrags_R = script_dir + "/bin/R/24_reannoFrags_bap2.R"
+paint_py = script_dir + "/bin/python/25_paintDropBarcode_bap2.py"
+qcRep1_R = script_dir + "/bin/R/26a_QCsimple_bap2.R"
 
 
 rule all:
 	input:
-		outdir + "/final/"+name+".bap.bam.bai"
+		outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
+		outdir + "/final/"+name+".barcodeTranslate.tsv",
+		outdir + "/final/"+name+".NCsumstats.tsv",
+		outdir + "/final/"+name+".HQbeads.tsv",
+		outdir + "/final/"+name+".bap.bam",
+		outdir + "/final/"+name+".bap.bam.bai",
+		outdir + "/final/"+name+".HQfrags.tsv.gz",
+		outdir + "/final/"+name+".basicQC.tsv"
 
 rule assemble_fragments:
 	input:
 		rawbam = output + "/temp/filt_split/" + "{name}" + ".raw.bam"
 	output:
 		outbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.gz",
-		outlog = output + "/logs/frag/" + "{name}" + ".bedtools.txt"
+		outlog = output + "/logs/frag/" + "{name}" + ".bedtools.fragmerge.log"
 	threads:
 		1
 	run:
 		namesort_bam = input.rawbam.replace(".raw.bam", "_nameSorted.bam")
 		pysam.sort(input.rawbam, '-n','-o', namesort_bam, catch_stdout=False)
-		l1 = "(bedtools bamtobed -i "+ namesort_bam
+		l1 = "("+bedtools+" bamtobed -i "+ namesort_bam
 		l2 = ''' -bedpe | awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' | gzip > ''' 
 		l3 = output.outbedpe + ") 2> " + output.outlog
 		call_frag_gen = l1 + l2 + l3
@@ -100,6 +124,8 @@ rule determine_HQ_beads:
 		forKnee = outdir + "/knee/" + name + "barcodeQuantsSimple.csv",
 		bapParams = outdir + "/knee/" + name + ".bapParams.csv",
 		HQbeads = outdir + "/final/" + name + ".HQbeads.tsv"
+	threads: 
+		1
 	run:
 		
 		# Pool together per-chromosome fragment counts
@@ -161,6 +187,8 @@ rule compute_bap_stat_chr:
 	output:
 		fragrds = output + "/temp/frag_overlap/" + "{name}" + "_overlapCount.rds",
 		nc_count = output + "/temp/frag_overlap/" + "{name}" + "_ncCount.tsv"
+	threads:
+		1
 	run:
 		R_call_frag = R + "script " + fragOverlapChr_R + " " + nc_threshold + " " + input.HQbeads + " " + input.annobedpe + " "
 		R_call_frag = R_call_frag + output.fragrds + " " + output.nc_count
@@ -176,17 +204,84 @@ rule determine_barcode_merges:
 		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
 		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv",
 		outNCtsv = outdir + "/final/"+name+".NCsumstats.tsv"
+	threads:
+		1
 	run: 	
 		# collate chr inference and make a single file
 		rdsdir = outdir + "/temp/frag_overlap"
 		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, input.HQbeads, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5])
 		os.system(r_call_findDoublets)
 
-
-rule temp_out:
+rule reannotate_fragments_get_summary_stats_chr:
 	input:
-		outtsv = outdir + "/final/"+name+".barcodeTranslate.tsv"
+		annobedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.tsv.gz",
+		bc_translate_tsv = outdir + "/final/"+name+".barcodeTranslate.tsv"
 	output:
-		finalout = outdir + "/final/"+name+".bap.bam.bai"
+		cleanbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv.gz",
+		frag_ss = output + "/temp/filt_split/" + "{name}" + "_frag.sumstats.tsv"
 	run:
-		os.system("touch " + output.finalout)
+		R_call_reanno_ss = r_call_findDoublets = " ".join([R+"script", reannoFrags_R, input.annobedpe, input.bc_translate_tsv, output.cleanbedpe, output.frag_ss])
+		os.system(R_call_reanno_ss)
+
+rule reannotate_bam_file:
+	input:
+		cleanbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv.gz",
+		dictionary = outdir + "/final/"+name+".barcodeTranslate.tsv",
+		rawbam = output + "/temp/filt_split/" + "{name}" + ".raw.bam"
+	output:
+		bcbam = output + "/temp/drop_barcode/" + "{name}" + ".raw.bam",
+		bcbai = output + "/temp/drop_barcode/" + "{name}" + ".raw.bam.bai"
+	threads:
+		1
+	run:
+		# Run python script that reannotates old split bam file
+		py_call = " ".join(["python", paint_py, "--input", input.rawbam, "--output", output.bcbam, "--bead-barcode", bead_tag, "--drop-barcode", drop_tag, "--dict-file", input.dictionary, "--hq-frags", input.cleanbedpe])
+		os.system(py_call)
+		pysam.index(output.bcbam)
+		
+rule final_bam_merge:
+	input:
+		chrOut = chrOut
+	output:
+		finalbam = outdir + "/final/"+name+".bap.bam",
+		finalbai = outdir + "/final/"+name+".bap.bam.bai",
+		samtools_merge_log_file = outdir + "/logs/" + name + "_finalmerge.log"
+	threads:
+		threads_max
+	run:
+		merge_parameters = [samtools, "merge", "-@", str(threads_max)] + [output.finalbam] + input.chrOut
+		os.popen("(" + " ".join(merge_parameters) + ")&>" + output.samtools_merge_log_file).read()
+		index_parameters = [samtools, "index", "-@", str(threads_max)] + [output.finalbam]
+		os.system(" ".join(index_parameters))
+		
+rule final_frag_merge:
+	input:
+		HQfragsfiles = HQfragsfiles
+	output:
+		finalfrags = outdir + "/final/"+name+".HQfrags.tsv.gz"
+	threads:
+		1
+	run:
+		infiles = " ".join(HQfragsfiles)
+		os.system("cat " + infiles + " > " + output.finalfrags)
+
+rule assemble_basic_QC:
+	input:
+		mito_qc = output + "/temp/filt_split/" + simple_mito + "_frag.sumstats.tsv",
+		others_qc = sumstats_nomito
+	output:
+		basic_qc = outdir + "/final/"+name+".basicQC.tsv"
+	threads:
+		1
+	run:
+		# Throw all of the per-chromosome fragment counts together
+		basic_qc_temp = outdir + "/temp/"+name+".basicQC-temp.tsv"
+		infiles = " ".join(sumstats_nomito)
+		os.system("cat " + infiles + " > " + basic_qc_temp)	
+		
+		# Execute the first half of the QC report -- handle species mixing
+		R_call_reanno_ss = " ".join([R+"script", qcRep1_R, basic_qc_temp, input.mito_qc, output.basic_qc])
+		#os.system(R_call_reanno_ss)
+		print(R_call_reanno_ss)
+		os.system("cp " + basic_qc_temp + " " + output.basic_qc)
+		

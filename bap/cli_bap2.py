@@ -51,6 +51,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--mito-chromosome', '-mc', default = "default", help='Name of the mitochondrial chromosome; only necessary to specify if the reference genome is unknown but will overwrite default if necessary')
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
+@click.option('--bedtools-path', default = "", help='Path to bedtools; by default, assumes that bedtools is in PATH')
+@click.option('--samtools-path', default = "", help='Path to samtools; by default, assumes that samtools is in PATH')
 
 @click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
 @click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode.')
@@ -61,7 +63,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 	minimum_barcode_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
-	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
+	bedtools_genome, blacklist_file, tss_file, mito_chromosome,
+	r_path, bedtools_path, samtools_path,
 	drop_tag, bead_tag):
 	
 	"""
@@ -108,7 +111,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 
-		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
+		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
+		r_path, bedtools_path, samtools_path, 
 		drop_tag, bead_tag)
 	
 	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
@@ -186,6 +190,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
 		with open(y_s, 'w') as yaml_file:
 			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
+		os.system("cp " + y_s +  " " + logs + "/" + p.name + ".parameters.txt")
 		
 		# Assemble some log files for the snake file
 		snake_stats = logs + "/" + p.name + ".snakemake.stats"
