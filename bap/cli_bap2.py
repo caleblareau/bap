@@ -104,7 +104,13 @@ def main(mode, input, output, name, ncores, reference_genome,
 		click.echo(gettime() + "List of built-in genomes supported in bap:")
 		click.echo(gettime() + str(supported_genomes))
 		sys.exit(gettime() + 'Specify one of these genomes or provide your own files (see documentation).')
-		
+	
+	# Figure out if the specified reference genome is a species mix
+	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
+		speciesMix = True
+	else:
+		speciesMix = False
+	
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
@@ -113,12 +119,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, 
-		drop_tag, bead_tag)
-	
-	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
-		speciesMix = True
-	else:
-		speciesMix = False
+		drop_tag, bead_tag, speciesMix)
 	
 	# Make a counts table from user-supplied peaks and bam files
 	if(mode == 'bam'):
@@ -226,7 +227,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		else:
 			peakFileGo = p.peakFile
 		
-		if(speciesMix):
+		if(p.speciesMix):
 			speciesMixGo = "yes"
 		else:
 			speciesMixGo = "no"

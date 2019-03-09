@@ -21,6 +21,7 @@ threads_max = int(config["ncores"])
  
 bead_tag = config["bead_tag"] 
 drop_tag = config["drop_tag"] 
+speciesMix = config["speciesMix"] 
 
 # Relevant thresholds
 minimum_barcode_fragments = config["minimum_barcode_fragments"]
@@ -280,8 +281,7 @@ rule assemble_basic_QC:
 		os.system("cat " + infiles + " > " + basic_qc_temp)	
 		
 		# Execute the first half of the QC report -- handle species mixing
-		R_call_reanno_ss = " ".join([R+"script", qcRep1_R, basic_qc_temp, input.mito_qc, output.basic_qc])
-		#os.system(R_call_reanno_ss)
-		print(R_call_reanno_ss)
-		os.system("cp " + basic_qc_temp + " " + output.basic_qc)
+		R_call_reanno_ss = " ".join([R+"script", qcRep1_R, basic_qc_temp, input.mito_qc, output.basic_qc, speciesMix])
+		os.system(R_call_reanno_ss)
+
 		
