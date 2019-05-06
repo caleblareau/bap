@@ -22,6 +22,8 @@ threads_max = int(config["ncores"])
 bead_tag = config["bead_tag"] 
 drop_tag = config["drop_tag"] 
 speciesMix = config["speciesMix"] 
+#bins = config["bins"] 
+#bin_resolution = config["bin_resolution"] 
 
 # Relevant thresholds
 minimum_barcode_fragments = config["minimum_barcode_fragments"]
@@ -43,6 +45,7 @@ SAMPLES = [x.strip() for x in SAMPLES]
 with open(outdir + "/.internal/samples/" + name + ".mitochrbam.txt") as f:
 	mito_sample = f.readlines()
 mito_sample = [x.strip() for x in mito_sample]
+
 
 # Merge mito to the others
 SAMPLES_noMito = SAMPLES

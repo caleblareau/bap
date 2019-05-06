@@ -33,6 +33,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
 
 @click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment')
+@click.option('--bins', '-bs', is_flag=True, help='Use bins rather than extact fragment edges to determine doublets; recommended for linked read data.')
+@click.option('--bin-resolution', '-br', default = 5000, help='Resolution of bins for overlaps. Only applicable when the --bins flag is thrown.')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 0, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--barcode-whitelist', '-w', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold.')
@@ -59,7 +61,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 
 def main(mode, input, output, name, ncores, reference_genome,
-	cluster, jobs, peak_file,
+	cluster, jobs, peak_file, bins, bin_resolution,
 	minimum_barcode_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
@@ -179,7 +181,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.bead_tag + " --bedtools-reference-genome " + p.bedtoolsGenomeFile 
 		line4 = " --mito-chr " +p.mitochr + " --ncores " + str(ncores) + " --mapq " + str(mapq)
-			
+		
+		
 		filt_split_cmd = line1 + line2 + line3 + line4 
 		os.system(filt_split_cmd)
 
@@ -198,9 +201,18 @@ def main(mode, input, output, name, ncores, reference_genome,
 		snake_log = logs + "/" + p.name + ".snakemake.log"
 		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
 		os.system(snakecmd_chr)
-
+		
 		#-----------------------------------
-		# Step 3 - Make knee plots
+		# Step 3 - QC stats / outside Snakemake since not-essential
+		#-----------------------------------
+		click.echo(gettime() + "Generating QC report + summarized experiment file...")
+		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
+		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
+		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
+		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE.R"
+		
+		#-----------------------------------
+		# Step 4 - Make knee plots
 		#-----------------------------------
 		bapParamsFile =  p.output + "/knee/" + p.name + ".bapParams.csv"
 		beadBarcodesFile = p.output + "/knee/" + p.name + ".barcodeQuantSimple.csv"
@@ -211,15 +223,6 @@ def main(mode, input, output, name, ncores, reference_genome,
 		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
 		os.system(r_callKneePlot)
 		sys.exit("Thanks for using bap2")
-		
-		#-----------------------------------
-		# Step 4 - QC stats / outside Snakemake since not-essential
-		#-----------------------------------
-		click.echo(gettime() + "Generating QC report + summarized experiment file...")
-		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
-		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
-		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
-		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE.R"
 		
 		# Determine user flags for proper QC stuff		
 		if(p.peakFile == ""):

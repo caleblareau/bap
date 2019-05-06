@@ -28,7 +28,7 @@ bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em -pf data/test.small.peaks
 
 ### testing species mixing
 ```
- bap bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 100 -cf 100
+ bap2 bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 100 
 ```
 
 ## debarcoding

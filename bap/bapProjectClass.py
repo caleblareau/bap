@@ -45,6 +45,7 @@ def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, sup
 	return(bedtoolsGenomeFile, blacklistFile)
 
 def mitoChr(reference_genome, mito_chromosome):
+
 	if(mito_chromosome != "default"):
 		return(mito_chromosome)
 	else:
@@ -187,7 +188,6 @@ class bapProject():
 			self.peakFile = ""
 		
 		self.mitochr = mitoChr(reference_genome, mito_chromosome)
-		
 		
 	#--------------------------------------------------------------------------------
 	# Define a method to dump the object as a .yaml/dictionary for use in other files
