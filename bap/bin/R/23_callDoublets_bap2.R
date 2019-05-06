@@ -54,6 +54,7 @@ if(FALSE){
 
 if(FALSE){
   rdsDir <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/temp/frag_overlap/"
+  rdsDir <- "/data/aryee/caleb/tenx-scatac/other_10x_assays_for_bap/scCNV/breast_tissue_A_bap2/temp/frag_overlap"
   n_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/knee/N704_Exp119_sample4_S1barcodeQuantsSimple.csv"
   hq_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/final/N704_Exp119_sample4_S1.HQbeads.tsv"
   tblOut <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/final/o.tsv"
