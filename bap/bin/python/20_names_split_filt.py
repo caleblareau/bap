@@ -103,7 +103,7 @@ toy_out = pool.map(writeBeadReadName, zip(chrs, read_barcode_file))
 pool.close()
 
 # Make some routing files
-bamchrfiles = [out + "/" + name + "." + chr + ".raw" +".bam" for chr in chrs if chr != "chrM"]
+bamchrfiles = [out + "/" + name + "." + chr + ".raw" +".bam" for chr in chrs if chr != mitochr]
 bamchrrouter = open(out.replace("temp/filt_split", ".internal/samples") + "/" + name + ".chrbam.txt", "w") 
 for v in bamchrfiles:
 	bamchrrouter.write(v+"\n")

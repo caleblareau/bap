@@ -9,6 +9,7 @@ import itertools
 import time
 import platform
 from ruamel import yaml
+from pkg_resources import get_distribution
 from .bapHelp import *
 
 def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, supported_genomes):
@@ -44,6 +45,7 @@ def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, sup
 	return(bedtoolsGenomeFile, blacklistFile)
 
 def mitoChr(reference_genome, mito_chromosome):
+
 	if(mito_chromosome != "default"):
 		return(mito_chromosome)
 	else:
@@ -63,11 +65,12 @@ class bapProject():
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, bedtools_path, samtools_path, 
-		drop_tag, bead_tag):
+		drop_tag, bead_tag, speciesMix):
 		
 		#----------------------------------
 		# Assign straightforward attributes
 		#----------------------------------
+		self.bap_version = get_distribution('bap').version
 		self.script_dir = script_dir
 		self.mode = mode
 		self.output = output
@@ -128,6 +131,7 @@ class bapProject():
 		self.bedtools = bedtools
 		samtools = get_software_path('samtools', samtools_path)
 		self.samtools = samtools
+		
 		#------------------------
 		# Handle reference genome
 		#------------------------
@@ -148,6 +152,11 @@ class bapProject():
 					sys.exit("ERROR: specify valid reference genome with --reference-genome flag; QUITTING")
 				else:
 					sys.exit("ERROR: non-supported reference genome specified so these five must be validly specified: --bedtools-genome, --blacklist-file, --tss-file; QUITTING")
+		
+		if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
+			self.speciesMix = "yes"
+		else:
+			self.speciesMix = "none"
 		
 		#------------------------------		
 		# Make sure all files are valid
@@ -180,12 +189,12 @@ class bapProject():
 		
 		self.mitochr = mitoChr(reference_genome, mito_chromosome)
 		
-		
 	#--------------------------------------------------------------------------------
 	# Define a method to dump the object as a .yaml/dictionary for use in other files
 	#--------------------------------------------------------------------------------
 	def __iter__(self):
 		
+		yield 'bap_version', self.bap_version
 		yield 'script_dir', self.script_dir
 		yield 'mode', self.mode
 		yield 'output', self.output
@@ -218,5 +227,5 @@ class bapProject():
 		
 		yield 'drop_tag', self.drop_tag
 		yield 'bead_tag', self.bead_tag
-		
+		yield 'speciesMix', self.speciesMix
 	
