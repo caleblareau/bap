@@ -115,7 +115,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file,
+		cluster, jobs, peak_file, bins, bin_resolution,
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 

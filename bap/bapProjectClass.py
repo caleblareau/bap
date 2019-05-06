@@ -60,7 +60,7 @@ def mitoChr(reference_genome, mito_chromosome):
 
 class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file,
+		cluster, jobs, peak_file, bins, bin_resolution,
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 		extract_mito, keep_temp_files, mapq, 
@@ -78,6 +78,8 @@ class bapProject():
 		self.jobs = jobs
 		self.mapq = mapq
 		self.ncores = ncores
+		self.bins = str(bins)
+		self.bin_resolution = str(bin_resolution)
 		
 		if(minimum_jaccard_index > 1):
 			sys.exit("Cannot specify jaccard index > 1; user specified : %s" % str(minimum_jaccard_index))
@@ -96,8 +98,13 @@ class bapProject():
 				sys.exit("Could not find the bead whitelist file: %s" % barcode_whitelist)
 		self.barcode_whitelist = barcode_whitelist
 		
-		self.minimum_barcode_fragments = minimum_barcode_fragments
+		if(bins and nc_threshold < 10):
+			print(gettime() + "NOTE: low nc_threshold detected (default is 6 but should be higher for bins mode)")
+			print(gettime() + "NOTE: Setting to bins default of 1000")
+			nc_threshold = 1000
 		self.nc_threshold = nc_threshold
+		
+		self.minimum_barcode_fragments = minimum_barcode_fragments
 		self.minimum_jaccard_index = minimum_jaccard_index
 		self.one_to_one = one_to_one
 		self.barcoded_tn5 = barcoded_tn5
@@ -205,6 +212,8 @@ class bapProject():
 		yield 'cluster', self.cluster
 		yield 'jobs', self.jobs
 		yield 'peakFile', self.peakFile
+		yield 'bins', self.bins
+		yield 'bin_resolution', self.bin_resolution
 		
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
 		yield 'barcode_whitelist', self.barcode_whitelist
