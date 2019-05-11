@@ -61,37 +61,47 @@ write.table(frags_filt1 %>% group_by(n_distinct_barcodes) %>% summarise(count = 
 nc_value <- frags_filt1[n_distinct_barcodes <= nc_threshold] 
 frags_filt2 <- nc_value[, .(PCRdupCount = .N), by = list(chr, start, end, bead_barcode)]
 
-# Pull out barcode for retained fragments; double to consider left and right inserts
+# Pull out barcode for retained fragments
 # CONSIDER: padding by 1bp to fix old behavior
-inserts_df <- data.table(
-  chr = c(frags_filt2[["chr"]], frags_filt2[["chr"]]),
-  start = c(frags_filt2[["start"]], frags_filt2[["end"]]) ,
-  end = c(frags_filt2[["start"]], frags_filt2[["end"]]) ,
-  bead_barcode = c(frags_filt2[["bead_barcode"]], frags_filt2[["bead_barcode"]])
-)
-barcodes <- inserts_df[["bead_barcode"]]
-GAfilt <- makeGRangesFromDataFrame(inserts_df)
 
-# Find find overlaps of Tn5 insertions
-ov <- findOverlaps(GAfilt, GAfilt, type = "any")
+make_insert_overlap <- function(element_in_table){
+  inserts_df <- data.table(
+    chr = c(frags_filt2[["chr"]]),
+    start = c(frags_filt2[[element_in_table]]),
+    end = c(frags_filt2[[element_in_table]]) + 1,
+    bead_barcode = c(frags_filt2[["bead_barcode"]])
+  )
+  barcodes <- inserts_df[["bead_barcode"]]
+  GAfilt <- makeGRangesFromDataFrame(inserts_df)
+  
+  # Find find overlaps of Tn5 insertions
+  ov <- findOverlaps(GAfilt, GAfilt, type = "any")
+  
+  # Determine baseline numbers
+  XBtable <- table(barcodes)
+  whichKeep <- names(XBtable)
+  nKept <- as.numeric(XBtable); names(nKept) <- whichKeep
+  rm(XBtable)
+  
+  # Make a dataframe of all combinations that have fragments overlapping
+  bc1 = barcodes[queryHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
+  bc2 = barcodes[subjectHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
+  boo_barc <- bc1 != bc2  # filter out reads that map to the same barcode
+  bc1 <- bc1[boo_barc]
+  bc2 <- bc2[boo_barc]
+  rm(ov)
+  
+  hugeDF <- data.table(
+    barc1 = ifelse(bc1 > bc2, bc1, bc2),
+    barc2 = ifelse(bc1 > bc2, bc2, bc1)
+  )
+  hugeDF
+}
 
-# Determine baseline numbers
-XBtable <- table(barcodes)
-whichKeep <- names(XBtable)
-nKept <- as.numeric(XBtable); names(nKept) <- whichKeep
-rm(XBtable)
-
-# Make a dataframe of all combinations that have fragments overlapping
-bc1 = barcodes[queryHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
-bc2 = barcodes[subjectHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
-boo_barc <- bc1 != bc2  # filter out reads that map to the same barcode
-bc1 <- bc1[boo_barc]
-bc2 <- bc2[boo_barc]
-rm(ov)
-
-hugeDF <- data.table(
-  barc1 = ifelse(bc1 > bc2, bc1, bc2),
-  barc2 = ifelse(bc1 > bc2, bc2, bc1)
+#Double to consider left and right inserts
+hugeDF <- rbind(
+  make_insert_overlap("start"),
+  make_insert_overlap("end")
 )
 
 # Break up previous massive dplyr call for speed in data.table
