@@ -78,9 +78,19 @@ if(barcoded_tn5){
   inputDF <- inputDF[tn5_1 == tn5_2]
 }
 
-inputDF[, .(N_barc1 = sum(n_barc1), N_barc2 = sum(n_barc2), N_both = sum(n_both)), by = list(barc1, barc2)] %>%
-  data.frame() %>% # fixed the previous divided by two in the upstream script (22) for overall accuracy
-  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 1),4)) %>% 
+
+# Import number of barcodes
+valid_barcodes <- fread(hq_bc_file, col.names = c("bc"))[["bc"]]
+nBC <- fread(n_bc_file, col.names = c("BeadBarcode", "count"), sep = ",") %>%
+  data.frame() %>% filter(BeadBarcode %in% valid_barcodes) %>% arrange(desc(count))
+count_vec <- nBC$count*2; names(count_vec) <- as.character(nBC$BeadBarcode)
+
+sum_dt <- inputDF[, .(N_both = sum(n_both)), by = list(barc1, barc2)] 
+sum_dt$N_barc1 <- count_vec[sum_dt$barc1]
+sum_dt$N_barc2 <- count_vec[sum_dt$barc2]
+
+data.frame(sum_dt) %>% # fixed the previous divided by two in the upstream script (22) for overall accuracy
+  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 0.05),4)) %>% 
   filter(jaccard_frag > 0) %>% 
   arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
 
@@ -110,11 +120,6 @@ system(paste0("gzip ", tblOut))
 
 # Now filter based on the min_jaccard_frag
 ovdf %>% filter(jaccard_frag > min_jaccard_frag) %>% data.frame() -> ovdf
-
-# Import number of barcodes
-valid_barcodes <- fread(hq_bc_file, col.names = c("bc"))[["bc"]]
-nBC <- fread(n_bc_file, col.names = c("BeadBarcode", "count"), sep = ",") %>%
-  data.frame() %>% filter(BeadBarcode %in% valid_barcodes) %>% arrange(desc(count))
 
 # Guess at how wide we need to make the barcodes to handle leading zeros
 guess <- ceiling(log10(dim(nBC)[1]))
