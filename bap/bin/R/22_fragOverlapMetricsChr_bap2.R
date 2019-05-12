@@ -76,11 +76,11 @@ make_insert_overlap <- function(element_in_table){
   inserts_df <- data.table(
     chr = c(frags_filt2[["chr"]]),
     start = c(frags_filt2[[element_in_table]]),
-    end = c(frags_filt2[[element_in_table]]) + 1,
+    end = c(frags_filt2[[element_in_table]]) ,
     bead_barcode = c(frags_filt2[["bead_barcode"]])
   )
   GAfilt <- makeGRangesFromDataFrame(inserts_df)
-  ov <- findOverlaps(GAfilt, GAfilt, type = "any")
+  ov <- findOverlaps(GAfilt, GAfilt, type = "equal")
 
   # Make a dataframe of all combinations that have fragments overlapping
   bc1 = barcodes[queryHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]

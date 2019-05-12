@@ -136,7 +136,6 @@ def writeUniquePassingReads(chrom):
 				# Write out old base pair if we have things to write
 				if(len(barcode_bp_dict) > 0):
 					for key, value in barcode_bp_dict.items():
-						print(value)
 						value.tags = value.tags + [("NS", bp_bc_count)]
 						file.write(value)
 				
