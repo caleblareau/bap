@@ -22,8 +22,7 @@ threads_max = int(config["ncores"])
 bead_tag = config["bead_tag"] 
 drop_tag = config["drop_tag"] 
 speciesMix = config["speciesMix"] 
-bins = str(config["bins"])
-bin_resolution = str(config["bin_resolution"])
+
 
 # Relevant thresholds
 minimum_barcode_fragments = config["minimum_barcode_fragments"]
@@ -196,12 +195,7 @@ rule compute_bap_stat_chr:
 	threads:
 		1
 	run:
-		if(bins == "False"):
-			print("Running normal bead merging inference")
-			R_call_frag = R + "script " + fragOverlapChr_R + " " + nc_threshold + " " + input.HQbeads + " " + input.annobedpe + " "
-		if(bins == "True"):
-			print("Running modified bead merging with bin resolution")
-			R_call_frag = R + "script " + fragOverlapBinChr_R + " " + bin_resolution + " " + nc_threshold + " " + input.HQbeads + " " + input.annobedpe + " "
+		R_call_frag = R + "script " + fragOverlapChr_R + " " + nc_threshold + " " + input.HQbeads + " " + input.annobedpe + " "
 		R_call_frag = R_call_frag + output.fragrds + " " + output.nc_count
 		os.system(R_call_frag)
 

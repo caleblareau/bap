@@ -133,10 +133,10 @@ def writeUniquePassingReads(chrom):
 			
 			# New base pair -- no duplicates; write out the dictionary and update
 			if(read.reference_start != bp):
-				
 				# Write out old base pair if we have things to write
 				if(len(barcode_bp_dict) > 0):
 					for key, value in barcode_bp_dict.items():
+						print(value)
 						value.tags = value.tags + [("NS", bp_bc_count)]
 						file.write(value)
 				
@@ -279,4 +279,3 @@ for k, v in barcodes.items():
 		mito = all_bc_short.get(k)
 	bcfile.write(k +","+ str(v)+"," + str(all_barcodes.get(k)) + "," + str(mito) + "\n")
 bcfile.close() 
-

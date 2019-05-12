@@ -30,11 +30,11 @@ blacklistRegionsFile <- args[i+4]
 
 # Don't execute-- strictly for testing
 if(FALSE){
-  base <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/tests"
+  base <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests"
   bamfile <- paste0(base, "/", "bap_out/temp/filt_split/test.small.chr21.bam")
   barcodeTag <- "CB"
   barcodeQuantFile <- paste0(base, "/", "bap_out/final/test.small.barcodequants.csv")
-  blacklistRegionsFile <- "/Volumes/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19.full.blacklist.bed"
+  blacklistRegionsFile <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/anno/blacklist/hg19.full.blacklist.bed"
 }
 
 

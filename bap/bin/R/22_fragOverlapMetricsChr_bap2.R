@@ -61,28 +61,27 @@ write.table(frags_filt1 %>% group_by(n_distinct_barcodes) %>% summarise(count = 
 nc_value <- frags_filt1[n_distinct_barcodes <= nc_threshold] 
 frags_filt2 <- nc_value[, .(PCRdupCount = .N), by = list(chr, start, end, bead_barcode)]
 
+# Determine baseline numbers
+barcodes <- frags_filt2[["bead_barcode"]]
+XBtable <- table(barcodes)
+whichKeep <- names(XBtable)
+nKept <- as.numeric(XBtable); names(nKept) <- whichKeep
+rm(XBtable)
+
 # Pull out barcode for retained fragments
 # CONSIDER: padding by 1bp to fix old behavior
-
 make_insert_overlap <- function(element_in_table){
+  
+  # Find find overlaps of Tn5 insertions
   inserts_df <- data.table(
     chr = c(frags_filt2[["chr"]]),
     start = c(frags_filt2[[element_in_table]]),
     end = c(frags_filt2[[element_in_table]]) + 1,
     bead_barcode = c(frags_filt2[["bead_barcode"]])
   )
-  barcodes <- inserts_df[["bead_barcode"]]
   GAfilt <- makeGRangesFromDataFrame(inserts_df)
-  
-  # Find find overlaps of Tn5 insertions
   ov <- findOverlaps(GAfilt, GAfilt, type = "any")
-  
-  # Determine baseline numbers
-  XBtable <- table(barcodes)
-  whichKeep <- names(XBtable)
-  nKept <- as.numeric(XBtable); names(nKept) <- whichKeep
-  rm(XBtable)
-  
+
   # Make a dataframe of all combinations that have fragments overlapping
   bc1 = barcodes[queryHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
   bc2 = barcodes[subjectHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]

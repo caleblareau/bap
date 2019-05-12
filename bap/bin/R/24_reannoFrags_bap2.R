@@ -57,6 +57,7 @@ merge_ss$chr <- as.character(mdf[1,"chr"])
 
 # Export deduplicated fragments
 frag_anno_file_out_nocompress <- gsub(".gz$", "", frag_anno_file_out)
+pcr_dup_df2 <- pcr_dup_df2[order(start)]
 write.table(pcr_dup_df2, file = frag_anno_file_out_nocompress,
             row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
 system(paste0("gzip ", frag_anno_file_out_nocompress))

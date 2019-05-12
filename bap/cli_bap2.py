@@ -33,8 +33,6 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface.')
 
 @click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment')
-@click.option('--bins', '-bs', is_flag=True, help='Use bins rather than extact fragment edges to determine doublets; recommended for linked read data.')
-@click.option('--bin-resolution', '-br', default = 5000, help='Resolution of bins for overlaps. Only applicable when the --bins flag is thrown.')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 0, help='Minimum number of fragments to be thresholded for doublet merging.')
 @click.option('--barcode-whitelist', '-w', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold.')
@@ -61,7 +59,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 
 def main(mode, input, output, name, ncores, reference_genome,
-	cluster, jobs, peak_file, bins, bin_resolution,
+	cluster, jobs, peak_file,
 	minimum_barcode_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
@@ -115,7 +113,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file, bins, bin_resolution,
+		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 
