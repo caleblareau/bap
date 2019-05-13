@@ -45,8 +45,9 @@ stopifnot(file.exists(bapParamsFile))
 
 # Parse knee-called values
 bapParams <- read.table(bapParamsFile, sep = ",")
-bead_threshold <- bapParams %>% filter(V1 == "bead_threshold") %>% pull(V2)
-jaccard_threshold <- bapParams %>% filter(V1 == "jaccard_threshold") %>% pull(V2)
+bead_threshold <- bapParams %>% filter(V1 == "bead_threshold") %>% pull(V2) %>% as.character() %>% as.numeric()
+jaccard_threshold <- bapParams %>% filter(V1 == "jaccard_threshold") %>% pull(V2)%>% as.character() %>% as.numeric()
+bead_threshold <- ifelse(is.na(bead_threshold), 0, bead_threshold)
 
 # Make bead barcodes knee plot
 if(file.exists(beadBarcodesFile)){
