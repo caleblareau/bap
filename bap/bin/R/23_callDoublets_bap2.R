@@ -90,7 +90,7 @@ sum_dt$N_barc1 <- count_vec[sum_dt$barc1]
 sum_dt$N_barc2 <- count_vec[sum_dt$barc2]
 
 data.frame(sum_dt) %>% # fixed the previous divided by two in the upstream script (22) for overall accuracy
-  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 0.05),4)) %>% 
+  mutate(jaccard_frag = round((N_both)/(N_barc1 + N_barc2 - N_both + 0.05), 5)) %>% 
   filter(jaccard_frag > 0) %>% 
   arrange(desc(jaccard_frag)) %>% data.frame() -> ovdf
 
