@@ -39,6 +39,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--minimum-jaccard-index', '-ji', default = 0.0, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
 @click.option('--nc-threshold', '-nc', default = 6, help='Number of barcodes that a paired-end read must be observed for the read to be filtered.')
+@click.option('--regularize-threshold', '-rt', default = 4, help='Minimum number of inserts two barcodes must share to be counted. Anything less than this number will be shrunk to 0 for the chromosome to improve runtime.')
+
 @click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (making the merging useless from bap useless)')
 @click.option('--barcoded-tn5',  is_flag=True, help='Process data knowing that the barcodes were generated with a barcoded Tn5')
 
@@ -61,7 +63,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 def main(mode, input, output, name, ncores, reference_genome,
 	cluster, jobs, peak_file,
 	minimum_barcode_fragments, barcode_whitelist,
-	minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
+	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 	r_path, bedtools_path, samtools_path,
@@ -114,8 +116,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
-		minimum_barcode_fragments, barcode_whitelist,
-		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5, 
+		minimum_barcode_fragments, barcode_whitelist, 
+		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, 

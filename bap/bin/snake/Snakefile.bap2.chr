@@ -28,6 +28,7 @@ speciesMix = config["speciesMix"]
 minimum_barcode_fragments = config["minimum_barcode_fragments"]
 minimum_jaccard_index = str(config["minimum_jaccard_index"])
 nc_threshold = str(config["nc_threshold"])
+regularize_threshold = str(config["regularize_threshold"])
 
 one_to_one = str(config["one_to_one"])
 barcoded_tn5 = str(config["barcoded_tn5"])
@@ -67,7 +68,6 @@ simple_mito = list(set(simple) ^ set(simple_noMito))[0]
 knee_call_R = script_dir + "/bin/R/10b_knee_execute.R"
 annotate_fragments_R = script_dir + "/bin/R/21_annotate_fragments.R"
 fragOverlapChr_R = script_dir + "/bin/R/22_fragOverlapMetricsChr_bap2.R"
-fragOverlapBinChr_R = script_dir + "/bin/R/22b_fragOverlapMetricsBinChr_bap2.R"
 
 determineDoubles_R = script_dir + "/bin/R/23_callDoublets_bap2.R"
 reannoFrags_R = script_dir + "/bin/R/24_reannoFrags_bap2.R"
@@ -196,7 +196,7 @@ rule compute_bap_stat_chr:
 		1
 	run:
 		R_call_frag = R + "script " + fragOverlapChr_R + " " + nc_threshold + " " + input.HQbeads + " " + input.annobedpe + " "
-		R_call_frag = R_call_frag + output.fragrds + " " + output.nc_count
+		R_call_frag = R_call_frag + output.fragrds + " " + output.nc_count + " " + regularize_threshold
 		os.system(R_call_frag)
 
 # Collate everything including NCs and bead merges; call knee if needed

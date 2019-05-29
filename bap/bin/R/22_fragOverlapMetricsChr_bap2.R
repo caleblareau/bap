@@ -24,6 +24,7 @@ hq_beads_file <- args[i+2]
 anno_bedpe_file <- args[i+3]
 out_frag_rds_file <- args[i+4]
 out_nc_count_file <- args[i+5]
+regularize_threshold <- as.numeric(args[i+6])
 
 # Don't execute-- strictly for testing
 if(FALSE){
@@ -105,7 +106,8 @@ hugeDF <- rbind(
 
 # Break up previous massive dplyr call for speed in data.table
 implicatedPairs <- hugeDF[, .(n_both = .N/2), by = list(barc1, barc2)]
-
+implicatedPairs <- implicatedPairs[n_both >= regularize_threshold]
+  
 # Export
 saveRDS(implicatedPairs, file = out_frag_rds_file)
 

@@ -62,7 +62,7 @@ class bapProject():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist,
-		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
+		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, bedtools_path, samtools_path, 
 		drop_tag, bead_tag, speciesMix):
@@ -97,7 +97,8 @@ class bapProject():
 				sys.exit("Could not find the bead whitelist file: %s" % barcode_whitelist)
 		self.barcode_whitelist = barcode_whitelist
 		self.nc_threshold = nc_threshold
-		
+		self.regularize_threshold = regularize_threshold
+
 		self.minimum_barcode_fragments = minimum_barcode_fragments
 		self.minimum_jaccard_index = minimum_jaccard_index
 		self.one_to_one = one_to_one
@@ -212,6 +213,7 @@ class bapProject():
 
 		yield 'minimum_jaccard_index', self.minimum_jaccard_index
 		yield 'nc_threshold', self.nc_threshold
+		yield 'regularize_threshold', self.regularize_threshold
 		yield 'one_to_one', self.one_to_one
 		yield 'barcoded_tn5', self.barcoded_tn5
 		
