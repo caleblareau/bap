@@ -11,6 +11,9 @@ configfile: config["cfp"]
 outdir = config["output"]
 script_dir = config["script_dir"]   
 
+bgzip = config["bgzip"]
+tabix = config["tabix"]
+
 samtools = config["samtools"]
 bedtools = config["bedtools"]     
 R = config["R"] 
@@ -59,7 +62,7 @@ simple = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) f
 all_bead_counts = [output + "/temp/filt_split/" + x + ".bead_counts.tsv" for x in simple]
 
 simple_noMito = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES_noMito]
-HQfragsfiles = [output + "/temp/filt_split/" + x + ".frag.bedpe.annotated.dedup.tsv.gz" for x in simple_noMito]
+HQfragsfiles = [output + "/temp/filt_split/" + x + ".frag.bedpe.annotated.dedup.tsv" for x in simple_noMito]
 sumstats_nomito = [output + "/temp/filt_split/" + x + "_frag.sumstats.tsv" for x in simple_noMito]
 
 simple_mito = list(set(simple) ^ set(simple_noMito))[0]
@@ -222,15 +225,15 @@ rule reannotate_fragments_get_summary_stats_chr:
 		annobedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.tsv.gz",
 		bc_translate_tsv = outdir + "/final/"+name+".barcodeTranslate.tsv"
 	output:
-		cleanbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv.gz",
+		cleanbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv",
 		frag_ss = output + "/temp/filt_split/" + "{name}" + "_frag.sumstats.tsv"
 	run:
-		R_call_reanno_ss = r_call_findDoublets = " ".join([R+"script", reannoFrags_R, input.annobedpe, input.bc_translate_tsv, output.cleanbedpe, output.frag_ss])
+		R_call_reanno_ss = " ".join([R+"script", reannoFrags_R, input.annobedpe, input.bc_translate_tsv, output.cleanbedpe, output.frag_ss])
 		os.system(R_call_reanno_ss)
 
 rule reannotate_bam_file:
 	input:
-		cleanbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv.gz",
+		cleanbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv",
 		dictionary = outdir + "/final/"+name+".barcodeTranslate.tsv",
 		rawbam = output + "/temp/filt_split/" + "{name}" + ".raw.bam"
 	output:
@@ -268,7 +271,10 @@ rule final_frag_merge:
 		1
 	run:
 		infiles = " ".join(HQfragsfiles)
-		os.system("cat " + infiles + " > " + output.finalfrags)
+		raw_out = output.finalfrags[:-3]
+		os.system("cat " + infiles + " > " + raw_out)
+		os.system(bgzip + " " + raw_out)
+		os.system(tabix + " " + raw_out + ".gz")
 
 rule assemble_basic_QC:
 	input:

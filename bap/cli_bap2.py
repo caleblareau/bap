@@ -123,7 +123,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
-		r_path, bedtools_path, samtools_path, 
+		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
 		drop_tag, bead_tag, speciesMix)
 	
 	# Make a counts table from user-supplied peaks and bam files

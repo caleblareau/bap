@@ -64,7 +64,8 @@ class bap2Project():
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
 		extract_mito, keep_temp_files, mapq, 
-		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, bedtools_path, samtools_path, 
+		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
+		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
 		drop_tag, bead_tag, speciesMix):
 		
 		#----------------------------------
@@ -133,6 +134,10 @@ class bap2Project():
 		self.bedtools = bedtools
 		samtools = get_software_path('samtools', samtools_path)
 		self.samtools = samtools
+		bgzip = get_software_path('bgzip', bgzip_path)
+		self.bgzip = bgzip
+		tabix = get_software_path('tabix', tabix_path)
+		self.tabix = tabix
 		
 		#------------------------
 		# Handle reference genome
@@ -224,9 +229,12 @@ class bap2Project():
 		yield 'blacklistFile', self.blacklistFile
 		yield 'bedtoolsGenomeFile', self.bedtoolsGenomeFile
 		yield 'mitochr', self.mitochr
+		
 		yield 'R', self.R
 		yield 'samtools', self.samtools
 		yield 'bedtools', self.bedtools
+		yield 'bgzip', self.bgzip
+		yield 'tabix', self.tabix
 		
 		yield 'drop_tag', self.drop_tag
 		yield 'bead_tag', self.bead_tag

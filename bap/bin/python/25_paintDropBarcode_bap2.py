@@ -42,7 +42,7 @@ with open(dictfile) as f:
     d[tok[0]] = tok[1].strip()
 
 # Import a set of read names that are in the HQ deduplicated set
-keep_reads = set( (x.split("\t"))[4].strip() for x in gzip.open(hqfrags, "rt") )
+keep_reads = set( (x.split("\t"))[4].strip() for x in open(hqfrags, "rt") )
 
 # Iterate through bam
 bam = pysam.AlignmentFile(bamname, "rb")
