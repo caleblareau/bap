@@ -58,7 +58,7 @@ def mitoChr(reference_genome, mito_chromosome):
 		else:
 			return("hg19_chrM")
 
-class bapProject():
+class bap2Project():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist,

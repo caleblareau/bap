@@ -121,18 +121,19 @@ def writeUniquePassingReads(chrom):
 	bp_bc_count = 0
 	idx = chrs.index(chrom)
 	file = fopen[idx]
-	
+
 	# Iterate through bam file
 	bam = pysam.AlignmentFile(bamname,'rb')
 	Itr = bam.fetch(str(chrom),multiple_iterators=True)
 	for read in Itr:
-	
+
 		# only consider reads with sufficient mapping quality
 		if(read.mapping_quality > minmapq):
 			read_barcode = getBarcode(read.tags)
-			
+
 			# New base pair -- no duplicates; write out the dictionary and update
 			if(read.reference_start != bp):
+				
 				# Write out old base pair if we have things to write
 				if(len(barcode_bp_dict) > 0):
 					for key, value in barcode_bp_dict.items():
@@ -164,7 +165,6 @@ def writeUniquePassingReads(chrom):
 				# New barcode-- append the read directly
 				else:
 					barcode_bp_dict[read_barcode] = read
-				
 	bam.close()
 	return(chrom)
 
@@ -278,3 +278,4 @@ for k, v in barcodes.items():
 		mito = all_bc_short.get(k)
 	bcfile.write(k +","+ str(v)+"," + str(all_barcodes.get(k)) + "," + str(mito) + "\n")
 bcfile.close() 
+

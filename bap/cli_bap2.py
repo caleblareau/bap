@@ -13,7 +13,7 @@ import pysam
 from pkg_resources import get_distribution
 from subprocess import call, check_call
 from .bapHelp import *
-from .bapProjectClass import *
+from .bap2ProjectClass import *
 from ruamel import yaml
 from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
@@ -52,9 +52,12 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--mito-chromosome', '-mc', default = "default", help='Name of the mitochondrial chromosome; only necessary to specify if the reference genome is unknown but will overwrite default if necessary')
+
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
 @click.option('--bedtools-path', default = "", help='Path to bedtools; by default, assumes that bedtools is in PATH')
 @click.option('--samtools-path', default = "", help='Path to samtools; by default, assumes that samtools is in PATH')
+@click.option('--bgzip-path', default = "", help='Path to bgzip; by default, assumes that bgzip is in PATH')
+@click.option('--tabix-path', default = "", help='Path to samtools; by default, assumes that tabix is in PATH')
 
 @click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
 @click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode.')
@@ -66,7 +69,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome,
-	r_path, bedtools_path, samtools_path,
+	r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
 	drop_tag, bead_tag):
 	
 	"""
@@ -114,7 +117,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		speciesMix = False
 	
 	# Verify dependencies and set up an object to do all the dirty work
-	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
+	p = bap2Project(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist, 
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, 

@@ -13,7 +13,7 @@ import pysam
 from pkg_resources import get_distribution
 from subprocess import call, check_call
 from .bapHelp import *
-from .bapProjectClass import *
+from .bap1ProjectClass import *
 from ruamel import yaml
 from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
@@ -34,6 +34,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 0, help='Minimum number of fragments to be thresholded for doublet merging.')
+@click.option('--minimum-cell-fragments', '-cf', default = 500, help='Minimum number of unique to be thresholded for final output.')
 @click.option('--barcode-whitelist', '-wl', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold.')
 
 @click.option('--minimum-jaccard-index', '-ji', default = 0.0, help='Minimum jaccard index for collapsing bead barcodes to cell barcodes')
@@ -50,8 +51,6 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--tss-file', '-ts', default = "", help='Path bed file of transcription start sites; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--mito-chromosome', '-mc', default = "default", help='Name of the mitochondrial chromosome; only necessary to specify if the reference genome is unknown but will overwrite default if needbe')
 @click.option('--r-path', default = "", help='Path to R; by default, assumes that R is in PATH')
-@click.option('--bedtools-path', default = "", help='Path to bedtools; by default, assumes that bedtools is in PATH')
-@click.option('--samtools-path', default = "", help='Path to samtools; by default, assumes that samtools is in PATH')
 
 @click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
 @click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode; valid for bam mode.')
@@ -59,17 +58,15 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 def main(mode, input, output, name, ncores, reference_genome,
 	cluster, jobs, peak_file,
-	minimum_barcode_fragments, barcode_whitelist,
+	minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, 
-	bedtools_genome, blacklist_file, tss_file, mito_chromosome, 
-	r_path, bedtools_path, samtools_path,
+	bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 	drop_tag, bead_tag):
 	
 	"""
 	bap: Bead-based scATAC-seq data Processing \n
-	NOTE: this version is for legacy purposes ONLY 
-	For real analyses, use bap2 --help \n
+	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
 	
 	mode = ['bam', 'check', 'support']\n
 	"""
@@ -104,22 +101,15 @@ def main(mode, input, output, name, ncores, reference_genome,
 		click.echo(gettime() + "List of built-in genomes supported in bap:")
 		click.echo(gettime() + str(supported_genomes))
 		sys.exit(gettime() + 'Specify one of these genomes or provide your own files (see documentation).')
-	
-	# Figure out if the specified reference genome is a species mix
-	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
-		speciesMix = True
-	else:
-		speciesMix = False
-	
+		
 	# Verify dependencies and set up an object to do all the dirty work
-	p = bapProject(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
+	p = bap1Project(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
-		minimum_barcode_fragments, barcode_whitelist,
+		minimum_barcode_fragments, minimum_cell_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, 
-		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
-		r_path, bedtools_path, samtools_path, 
-		drop_tag, bead_tag, speciesMix)
+		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
+		drop_tag, bead_tag)
 	
 	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
 		speciesMix = True
