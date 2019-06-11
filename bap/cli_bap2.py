@@ -22,7 +22,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.argument('mode', type=click.Choice(['bam',  'check', 'support']))
 
-@click.option('--input', '-i', help='Input for bap; varies by which mode is specified; for `bam`, .bam file with an index.')
+@click.option('--input', '-i', help='Input for bap2-- a .bam file with an index.')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; this is where everything is housed.')
 @click.option('--name', '-n', default="default", help='Name for all of the output files (default: uses the .bam prefix)')
 

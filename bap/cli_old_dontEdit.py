@@ -75,7 +75,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 
 	click.echo(gettime() + "Starting bap pipeline v%s" % __version__)
-	
+	click.echo(gettime() + "WARNING: this is bap1-- you should really use bap2 unless you are trying to produce old results!")
+	click.echo(gettime() + "WARNING: The same arguments apply-- see `bap2 --help`")
+
 	# Determine which genomes are available
 	rawsg = os.popen('ls ' + script_dir + "/anno/bedtools/*.sizes").read().strip().split("\n")
 	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]  
