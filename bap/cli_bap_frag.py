@@ -172,7 +172,6 @@ def main(input, output, name, ncores, reference_genome,
 	snake_stats = logs + "/" + p.name + ".snakemake.stats"
 	snake_log = logs + "/" + p.name + ".snakemake.log"
 	snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap_frags --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
-	print(snakecmd_chr)
 	os.system(snakecmd_chr)
 		
 	

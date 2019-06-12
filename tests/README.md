@@ -19,10 +19,7 @@ time bap bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap
 ### Dedicated fragment generation
 
 ```
-bap-frag -i data/jaccardPairsForIGV.bam -be for_frag/jaccardPairsForIGV.barcodeTranslate.tsv -o test_bap_frag -z
-
-# Test snakemake
-snakemake --snakefile /Users/clareau/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/bin/snake/Snakefile.bap_frags --cores 12 --config cfp="test_bap_frag/.internal/parseltongue/bap.object.bam.yaml" --stats test_bap_frag/logs/jaccardPairsForIGV.snakemake.stats
+bap-frag -i data/jaccardPairsForIGV.bam -be for_frag/jaccardPairsForIGV.barcodeTranslate.tsv -o frag_bap_test -z
 
 ```
 

@@ -90,7 +90,6 @@ rule annotate_fragments:
 		read_bead_file = input.inbedpe.replace(".frag.bedpe.gz", ".read_bead.tsv.gz")
 		temp_anno_bedpe = output.outbedpe.replace(".gz", "")
 		r_call1 = " ".join([R+"script", annotate_fragments_R_versionA, blacklistRegionsFile, input.inbedpe, read_bead_file, nc_threshold, temp_anno_bedpe, output.outbeadcounts])
-		print(r_call1)
 		os.system(r_call1)
 		os.system("gzip " + temp_anno_bedpe)
 
