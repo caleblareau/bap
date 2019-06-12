@@ -21,9 +21,10 @@ args <- commandArgs(trailingOnly = FALSE)
 nn <- length(args)
 
 # Import parameters using logic from the end
-blacklist_file <- args[nn-4]
-frag_bedpe_file <- args[nn-3]
-read_bead_file <- args[nn-2] 
+blacklist_file <- args[nn-5]
+frag_bedpe_file <- args[nn-4]
+read_bead_file <- args[nn-3] 
+nc_threshold <- as.numeric(as.character(args[nn-2]))
 annotated_out_file <- args[nn-1] 
 unique_count_out_file <- args[nn]
 
@@ -61,11 +62,12 @@ mdf <- mdf[read_name %ni% blacklist_reads]
 # NOTE: the majority of the missing read names are instances where the MAPQ filter was not surpassed.
 
 # Quantify the number of unique fragments per barcode
-pcr_dup_df <- mdf[, .(count = .N), by = list(chr, start, end, bead_id)]
+pcr_dup_df <- mdf[, .(count = .N, read_name = head(read_name, 1)), by = list(chr, start, end, bead_id)]
 out_bead_quant <- pcr_dup_df[,.(nUnique = .N), by = bead_id]
 
 # Export tables
-write.table(mdf, file = annotated_out_file, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
+write.table(pcr_dup_df %>% filter(count < nc_threshold) %>% dplyr::select(c("read_name", "chr", "start", "end", "bead_id")),
+            file = annotated_out_file, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
 write.table(out_bead_quant, file = unique_count_out_file, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
 
 

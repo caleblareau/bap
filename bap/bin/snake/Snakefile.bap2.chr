@@ -86,7 +86,7 @@ rule all:
 		outdir + "/final/"+name+".HQbeads.tsv",
 		outdir + "/final/"+name+".bap.bam",
 		outdir + "/final/"+name+".bap.bam.bai",
-		outdir + "/final/"+name+".HQfrags.tsv.gz",
+		outdir + "/final/"+name+".fragments.tsv.gz",
 		outdir + "/final/"+name+".basicQC.tsv"
 
 rule assemble_fragments:
@@ -266,7 +266,7 @@ rule final_frag_merge:
 	input:
 		HQfragsfiles = HQfragsfiles
 	output:
-		finalfrags = outdir + "/final/"+name+".HQfrags.tsv.gz"
+		finalfrags = outdir + "/final/"+name+".fragments.tsv.gz"
 	threads:
 		1
 	run:
@@ -274,7 +274,7 @@ rule final_frag_merge:
 		raw_out = output.finalfrags[:-3]
 		os.system("cat " + infiles + " > " + raw_out)
 		os.system(bgzip + " " + raw_out)
-		os.system(tabix + " " + raw_out + ".gz")
+		os.system(tabix + " " + raw_out + ".gz + -p bed")
 
 rule assemble_basic_QC:
 	input:
@@ -291,7 +291,7 @@ rule assemble_basic_QC:
 		os.system("cat " + infiles + " > " + basic_qc_temp)	
 		
 		# Execute the first half of the QC report -- handle species mixing
-		R_call_reanno_ss = " ".join([R+"script", qcRep1_R, basic_qc_temp, input.mito_qc, output.basic_qc, speciesMix])
+		R_call_reanno_ss = " ".join([R+"script", qcRep1_R, basic_qc_temp, input.mito_qc, output.basic_qc, str(speciesMix)])
 		os.system(R_call_reanno_ss)
 
 		

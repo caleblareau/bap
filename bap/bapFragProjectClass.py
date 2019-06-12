@@ -60,7 +60,7 @@ def mitoChr(reference_genome, mito_chromosome):
 
 class bapFragProject():
 	def __init__(self, script_dir, supported_genomes, input, output, name, ncores, reference_genome,
-		cluster, jobs, barcode_extract,
+		cluster, jobs, barcode_translate,
 		nc_threshold, keep_temp_files, mapq, 
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
@@ -71,19 +71,23 @@ class bapFragProject():
 		#----------------------------------
 		self.bap_version = get_distribution('bap').version
 		self.script_dir = script_dir
-		self.mode = mode
+		self.bamfile = input
+		self.name = name
 		self.output = output
 		self.cluster = cluster
 		self.jobs = jobs
 		self.mapq = mapq
 		self.ncores = ncores
+		self.nc_threshold = nc_threshold
 		self.bead_tag = bead_tag
-		
 		# Figure out operating system just for funzies; not presently used
 		self.os = "linux"
 		if(platform.platform()[0:5]=="Darwi"):
 			self.os = "mac"
-
+		
+		if(name == "default"):
+			filename, file_extension = os.path.splitext(self.bamfile)
+			self.name = os.path.basename(filename)
 
 		#------------------------------------------
 		# Verify R and all of its packages are here
@@ -153,14 +157,6 @@ class bapFragProject():
 			else: 
 				sys.exit("Could not find the transcription start sites file: %s" % tss_file)
 		
-		if(peak_file != ""):	
-			if(os.path.isfile(peak_file)):
-				self.peakFile = peak_file
-			else: 
-				sys.exit("Could not find the transcription start sites file: %s" % peak_file)
-		else:
-			self.peakFile = ""
-		
 		self.mitochr = mitoChr(reference_genome, mito_chromosome)
 		
 	#--------------------------------------------------------------------------------
@@ -170,7 +166,6 @@ class bapFragProject():
 		
 		yield 'bap_version', self.bap_version
 		yield 'script_dir', self.script_dir
-		yield 'mode', self.mode
 		yield 'output', self.output
 		yield 'bamfile', self.bamfile
 		yield 'name', self.name

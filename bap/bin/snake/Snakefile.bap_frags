@@ -21,9 +21,11 @@ R = config["R"]
 name = config["name"] 
 output = config["output"]
 threads_max = int(config["ncores"])
- 
+nc_threshold = str(config["nc_threshold"])
+
 bead_tag = config["bead_tag"] 
-drop_tag = config["drop_tag"] 
+barcodeTranslateFile = config["barcodeTranslateFile"] 
+blacklistRegionsFile = config["blacklistFile"] 
 
 # Determine .bam files to execute for fragment overlap analysis
 infile_nuclear = outdir + "/.internal/samples/" + name + ".chrbam.txt"
@@ -47,13 +49,13 @@ sumstats_nomito = [output + "/temp/filt_split/" + x + "_frag.sumstats.tsv" for x
 
 
 # Filepaths to executable scripts
-annotate_fragments_R = script_dir + "/bin/R/21_annotate_fragments.R"
+annotate_fragments_R_versionA = script_dir + "/bin/R/21a_annotate_fragments_bap2_frags.R"
 reannoFrags_R = script_dir + "/bin/R/24_reannoFrags_bap2.R"
 
 
 rule all:
 	input:
-		outdir +name+".HQfrags.tsv.gz"
+		outdir + "/final/"+name+".fragments.tsv.gz"
 
 rule assemble_fragments:
 	input:
@@ -75,6 +77,7 @@ rule assemble_fragments:
 
 # here, the blacklist is enforced
 # and unlike standard bap2, we do the nc-filter here
+# This is because before, we didn't necessarily know which barcodes would pass the knee and thus be candidates to be filtered out
 rule annotate_fragments:
 	input:
 		inbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.gz"
@@ -86,7 +89,8 @@ rule annotate_fragments:
 	run:
 		read_bead_file = input.inbedpe.replace(".frag.bedpe.gz", ".read_bead.tsv.gz")
 		temp_anno_bedpe = output.outbedpe.replace(".gz", "")
-		r_call1 = " ".join([R+"script", annotate_fragments_R, blacklistRegionsFile, input.inbedpe, read_bead_file, temp_anno_bedpe, output.outbeadcounts])
+		r_call1 = " ".join([R+"script", annotate_fragments_R_versionA, blacklistRegionsFile, input.inbedpe, read_bead_file, nc_threshold, temp_anno_bedpe, output.outbeadcounts])
+		print(r_call1)
 		os.system(r_call1)
 		os.system("gzip " + temp_anno_bedpe)
 
@@ -94,7 +98,7 @@ rule annotate_fragments:
 rule reannotate_fragments_get_summary_stats_chr:
 	input:
 		annobedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.tsv.gz",
-		bc_translate_tsv = INPUT_FROM_USER
+		bc_translate_tsv = barcodeTranslateFile
 	output:
 		cleanbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv",
 		frag_ss = output + "/temp/filt_split/" + "{name}" + "_frag.sumstats.tsv"
@@ -103,12 +107,11 @@ rule reannotate_fragments_get_summary_stats_chr:
 		os.system(R_call_reanno_ss)
 
 		
-		
 rule final_frag_merge:
 	input:
 		HQfragsfiles = HQfragsfiles
 	output:
-		finalfrags = outdir + "/final/"+name+".HQfrags.tsv.gz"
+		finalfrags = outdir + "/final/"+name+".fragments.tsv.gz"
 	threads:
 		1
 	run:
@@ -116,4 +119,4 @@ rule final_frag_merge:
 		raw_out = output.finalfrags[:-3]
 		os.system("cat " + infiles + " > " + raw_out)
 		os.system(bgzip + " " + raw_out)
-		os.system(tabix + " " + raw_out + ".gz")
+		os.system(tabix + " " + raw_out + ".gz -p bed")

@@ -122,11 +122,11 @@ def main(input, output, name, ncores, reference_genome,
 		sys.exit("Found no overlapping chromosomes between bam and reference. Check reference genome specification with the --reference-genome flag.")
 				
 	# Make output folders
-	of = output; logs = of + "/logs"; logs_bedpe = logs+"/frag"; fin = of + "/final"; mito = of + "/mito"; temp = of + "/temp"
+	of = output; logs = of + "/logs"; logs_bedpe = logs+"/frag"; fin = of + "/final"; temp = of + "/temp"
 	temp_filt_split = temp + "/filt_split"; temp_frag_overlap = temp + "/frag_overlap"; knee = of + "/knee"
 	temp_drop_barcode = temp + "/drop_barcode"
 	
-	folders = [of, logs, logs_bedpe, fin, mito, temp,
+	folders = [of, logs, logs_bedpe, fin, temp,
 		temp_filt_split, temp_frag_overlap,temp_drop_barcode, knee,
 		of + "/.internal/parseltongue", of + "/.internal/samples"]
 
@@ -143,10 +143,23 @@ def main(input, output, name, ncores, reference_genome,
 		with open(of + "/.internal" + "/samples" + "/README" , 'w') as outfile:
 			outfile.write("This folder creates samples to be interpreted by Snakemake; don't modify it.\n\n")
 	
-	sys.exit("ready for snake call")
+	#-------------------------------------------------------
+	# Step 1- Filter and split input .bam file by chromosome
+	#-------------------------------------------------------
+	click.echo(gettime() + "Splitting input bam files by chromosome for parallel processing.")
+	click.echo(gettime() + "User specified "+ncores+" cores for parallel processing.")
+	
+	line1 = 'python ' +script_dir+'/bin/python/20_names_split_filt.py --input '+p.bamfile
+	line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
+	line3 = p.bead_tag + " --bedtools-reference-genome " + p.bedtoolsGenomeFile 
+	line4 = " --mito-chr " +p.mitochr + " --ncores " + str(ncores) + " --mapq " + str(mapq)
+	
+	
+	filt_split_cmd = line1 + line2 + line3 + line4 
+	os.system(filt_split_cmd)
 
 	#----------------------------------------
-	# Process fragments by Snakemake
+	# Step 2 - Process fragments by Snakemake
 	#----------------------------------------
 	click.echo(gettime() + "Processing per-chromosome fragments in parallel. This is the most computationally intensive step.")
 	# Round trip the .yaml of user configuration
@@ -159,6 +172,7 @@ def main(input, output, name, ncores, reference_genome,
 	snake_stats = logs + "/" + p.name + ".snakemake.stats"
 	snake_log = logs + "/" + p.name + ".snakemake.log"
 	snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap_frags --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
+	print(snakecmd_chr)
 	os.system(snakecmd_chr)
 		
 	
@@ -171,9 +185,6 @@ def main(input, output, name, ncores, reference_genome,
 		byefolder = of
 		shutil.rmtree(byefolder + "/.internal")
 		shutil.rmtree(byefolder + "/temp")
-
-		if(not extract_mito):
-			shutil.rmtree(byefolder + "/mito")
 		
 		click.echo(gettime() + "Intermediate files successfully removed.")
 

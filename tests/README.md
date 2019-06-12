@@ -16,19 +16,14 @@ time bap2 bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap2
 time bap bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap
 ```
 
+### Dedicated fragment generation
 
-## OLD - BAP 1
-
-**bam** mode
-
-### vanilla hg19 with peaks
 ```
-bap bam -i data/test.small.bam -z -bt CB -ji 0.002 -em -pf data/test.small.peaks.bed 
-```
+bap-frag -i data/jaccardPairsForIGV.bam -be for_frag/jaccardPairsForIGV.barcodeTranslate.tsv -o test_bap_frag -z
 
-### testing species mixing
-```
- bap2 bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 100 
+# Test snakemake
+snakemake --snakefile /Users/clareau/dat/Research/BuenrostroResearch/lareau_dev/bap/bap/bin/snake/Snakefile.bap_frags --cores 12 --config cfp="test_bap_frag/.internal/parseltongue/bap.object.bam.yaml" --stats test_bap_frag/logs/jaccardPairsForIGV.snakemake.stats
+
 ```
 
 ## debarcoding
