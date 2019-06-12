@@ -215,10 +215,10 @@ with gzip.open(a, "rt") as f1:
 			# Export one chunk in parallel
 			filename1 = output +'_1.fastq.gz'
 			filename2 = output +'_2.fastq.gz'
-			filenameMM = output +'_mismatches.csv.gz'
+			#filenameMM = output +'_mismatches.csv.gz'
 			
 			pool = Pool(processes=2)
-			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1]), (filenameMM, mm_values)])
+			toke = pool.starmap(chunk_writer_gzip, [(filename1, fqs[0]), (filename2, fqs[1])])
 			pool.close()
 			
 with open(o + "-parse" + '.sumstats.log', 'w') as logfile:

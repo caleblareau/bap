@@ -57,7 +57,7 @@ def prove_barcode(bc, valid_set, n_mismatch):
 		return(bc, "0")
 	else:
 		eo = process.extractOne(bc, valid_set)
-		if(eo[1] >= (len(bc)-n_mismatch)/len(bc)): 
+		if(eo[1] >= (len(bc)-n_mismatch)/len(bc)*100): 
 			return(eo[0], "1")
 		else:
 			return("N"*len(bc), "0")
