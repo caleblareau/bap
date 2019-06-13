@@ -272,7 +272,7 @@ rule final_frag_merge:
 	run:
 		infiles = " ".join(HQfragsfiles)
 		raw_out = output.finalfrags[:-3]
-		os.system("cat " + infiles + " > " + raw_out)
+		os.system("cat " + infiles + " | cut -f 1,2,3,4 > " + raw_out)
 		os.system(bgzip + " " + raw_out)
 		os.system(tabix + " " + raw_out + ".gz + -p bed")
 
