@@ -75,8 +75,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 
 	click.echo(gettime() + "Starting bap pipeline v%s" % __version__)
-	click.echo(gettime() + "WARNING: this is bap1-- you should really use bap2 unless you are trying to produce old results!")
-	click.echo(gettime() + "WARNING: The same arguments apply-- see `bap2 --help`")
+	click.echo(gettime() + "WARNING: this is bap1-- you should really use bap2 unless you are trying to reproduce old results!")
+	click.echo(gettime() + "NOTE: The same arguments apply-- see `bap2 --help`")
 
 	# Determine which genomes are available
 	rawsg = os.popen('ls ' + script_dir + "/anno/bedtools/*.sizes").read().strip().split("\n")
@@ -113,7 +113,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome, r_path, 
 		drop_tag, bead_tag)
 	
-	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
+	if(reference_genome in ["hg19-mm10", "hg19_mm10_c", "hg19-mm10_nochr"]):
 		speciesMix = True
 	else:
 		speciesMix = False

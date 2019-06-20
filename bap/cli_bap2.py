@@ -111,7 +111,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		sys.exit(gettime() + 'Specify one of these genomes or provide your own files (see documentation).')
 	
 	# Figure out if the specified reference genome is a species mix
-	if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
+	if(reference_genome in ["hg19-mm10", "hg19_mm10_c", "hg19-mm10_nochr"]):
 		speciesMix = True
 	else:
 		speciesMix = False
