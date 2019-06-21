@@ -1,4 +1,5 @@
 options(warn=-1)
+options(datatable.fread.input.cmd.message=FALSE)
 
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(dplyr)))

@@ -1,0 +1,97 @@
+import os
+import subprocess
+import shutil
+import re
+import pysam
+
+from os.path import join
+from collections import Counter
+
+configfile: config["cfp"]     
+outdir = config["output"]
+script_dir = config["script_dir"]   
+
+bgzip = config["bgzip"]
+tabix = config["tabix"]
+
+samtools = config["samtools"]
+bedtools = config["bedtools"]     
+R = config["R"] 
+
+name = config["name"] 
+output = config["output"]
+threads_max = int(config["ncores"])
+
+blacklistRegionsFile = config["blacklistFile"] 
+
+# Determine .bam files to execute for fragment overlap analysis
+infile_nuclear = outdir + "/.internal/samples/" + name + ".chrbam.txt"
+with open(infile_nuclear) as f:
+    SAMPLES = f.readlines()
+SAMPLES = [x.strip() for x in SAMPLES]
+
+with open(outdir + "/.internal/samples/" + name + ".mitochrbam.txt") as f:
+	mito_sample = f.readlines()
+
+# Merge mito to the others
+SAMPLES_noMito = SAMPLES
+
+# Create vectors of inputs
+chrOut = [x.replace("/filt_split/", "/drop_barcode/") for x in SAMPLES_noMito]
+simple = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES]
+
+simple_noMito = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES_noMito]
+HQfragsfiles = [output + "/temp/filt_split/" + x + ".frag.bedpe.annotated.dedup.tsv" for x in simple_noMito]
+sumstats_nomito = [output + "/temp/filt_split/" + x + "_frag.sumstats.tsv" for x in simple_noMito]
+
+# Filepaths to executable scripts
+main_script_R = script_dir + "/bin/R/21b_processRawFragments_bap_frag_bulk.R"
+
+rule all:
+	input:
+		outdir + "/final/"+name+".fragments.tsv.gz"
+
+rule assemble_fragments:
+	input:
+		rawbam = output + "/temp/filt_split/" + "{name}" + ".raw.bam"
+	output:
+		outbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe",
+		outlog = output + "/logs/frag/" + "{name}" + ".bedtools.fragmerge.log"
+	threads:
+		1
+	run:
+		namesort_bam = input.rawbam.replace(".raw.bam", "_nameSorted.bam")
+		os.system(samtools + " collate -o " + namesort_bam + " " + input.rawbam)
+		l1 = "("+bedtools+" bamtobed -i "+ namesort_bam
+		l2 = ''' -bedpe | awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' > ''' 
+		l3 = output.outbedpe + ") 2> " + output.outlog
+		call_frag_gen = l1 + l2 + l3
+		os.system(call_frag_gen)
+
+
+# here, the blacklist is enforced as well as PCR deduplication without any intermediate gzipping
+rule clean_up_fragments:
+	input:
+		inbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe"
+	output:
+		outbedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.dedup.tsv"
+	threads:
+		1
+	run:
+		r_call1 = " ".join([R+"script", main_script_R, blacklistRegionsFile, input.inbedpe, output.outbedpe])
+		print(r_call1)
+		os.system(r_call1)
+		
+rule final_frag_merge:
+	input:
+		HQfragsfiles = HQfragsfiles
+	output:
+		finalfrags = outdir + "/final/"+name+".fragments.tsv.gz"
+	threads:
+		1
+	run:
+		infiles = " ".join(HQfragsfiles)
+		raw_out = output.finalfrags[:-3]
+		os.system("cat " + infiles + " > " + raw_out)
+		os.system(bgzip + " " + raw_out)
+		os.system(tabix + " " + raw_out + ".gz -p bed")
