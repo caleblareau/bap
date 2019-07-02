@@ -229,7 +229,6 @@ def main(mode, input, output, name, ncores, reference_genome,
 		click.echo(gettime() + "Generating knee plots for parameters (if applicable).")
 		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
 		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
-		print(r_callKneePlot)
 		os.system(r_callKneePlot)
 		sys.exit("Thanks for using bap2")
 		
