@@ -205,13 +205,18 @@ def main(mode, input, output, name, ncores, reference_genome,
 		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
 		os.system(snakecmd_chr)
 		
+		# Check to make sure snakemake Processing worked
+		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
+		if(os.path.exists(finalBamFile)):
+			click.echo(gettime() + "Finished processing per-chromosome fragments.")
+		else:
+			sys.exit(gettime() + "ERROR: Check " + snake_log + " file for more information")
 		#-----------------------------------
 		# Step 3 - QC stats / outside Snakemake since not-essential
 		#-----------------------------------
 		click.echo(gettime() + "Generating QC report + summarized experiment file...")
 		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
 		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
-		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
 		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE.R"
 		
 		#-----------------------------------
@@ -224,6 +229,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		click.echo(gettime() + "Generating knee plots for parameters (if applicable).")
 		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
 		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
+		print(r_callKneePlot)
 		os.system(r_callKneePlot)
 		sys.exit("Thanks for using bap2")
 		

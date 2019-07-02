@@ -129,7 +129,7 @@ rule determine_HQ_beads:
 	input:
 		all_bead_counts 
 	output:
-		forKnee = outdir + "/knee/" + name + ".barcodeQuantsSimple.csv",
+		forKnee = outdir + "/knee/" + name + ".barcodeQuantSimple.csv",
 		bapParams = outdir + "/knee/" + name + ".bapParams.csv",
 		HQbeads = outdir + "/final/" + name + ".HQbeads.tsv"
 	threads: 
@@ -206,7 +206,7 @@ rule compute_bap_stat_chr:
 rule determine_barcode_merges:
 	input:
 		rdsin = rdsin,
-		forKnee = outdir + "/knee/" + name + ".barcodeQuantsSimple.csv",
+		forKnee = outdir + "/knee/" + name + ".barcodeQuantSimple.csv",
 		HQbeads = outdir + "/final/" + name + ".HQbeads.tsv"
 	output:
 		outcsv = outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
