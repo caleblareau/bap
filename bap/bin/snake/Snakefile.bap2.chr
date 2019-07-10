@@ -99,7 +99,8 @@ rule assemble_fragments:
 		1
 	run:
 		namesort_bam = input.rawbam.replace(".raw.bam", "_nameSorted.bam")
-		os.system(samtools + " collate -o " + namesort_bam + " " + input.rawbam)
+		pysam.sort(input.rawbam, '-n','-o', namesort_bam, catch_stdout=False)
+		#os.system(samtools + " collate -o " + namesort_bam + " " + input.rawbam)
 		l1 = "("+bedtools+" bamtobed -i "+ namesort_bam
 		l2 = ''' -bedpe | awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' | gzip > ''' 
 		l3 = output.outbedpe + ") 2> " + output.outlog
