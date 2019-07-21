@@ -45,19 +45,8 @@ tblOut <- gsub(".gz$", "", tblOut)
 if(FALSE){
   rdsDir <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/temp/frag_overlap"
   n_bc_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/knee/jaccardPairsForIGVbarcodeQuantsSimple.csv"
+  hq_bc_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/final/jaccardPairsForIGV.HQbeads.tsv"
   tblOut <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/final/o.tsv"
-  min_jaccard_frag <- 0.005
-  name <- "x"
-  one_to_one <- FALSE
-  barcoded_tn5 <- FALSE
-}
-
-if(FALSE){
-  rdsDir <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/temp/frag_overlap/"
-  rdsDir <- "/data/aryee/caleb/tenx-scatac/other_10x_assays_for_bap/scCNV/breast_tissue_A_bap2/temp/frag_overlap"
-  n_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/knee/N704_Exp119_sample4_S1barcodeQuantsSimple.csv"
-  hq_bc_file <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/final/N704_Exp119_sample4_S1.HQbeads.tsv"
-  tblOut <- "/data/aryee/caleb/biorad/mouse_brain/N704_Exp119_sample4_S1_2b2a2p/final/o.tsv"
   min_jaccard_frag <- 0.005
   name <- "x"
   one_to_one <- FALSE
@@ -80,7 +69,7 @@ if(barcoded_tn5){
 
 
 # Import number of barcodes
-valid_barcodes <- fread(hq_bc_file, col.names = c("bc"))[["bc"]]
+valid_barcodes <- fread(hq_bc_file, col.names = c("bc"), header = FALSE)[["bc"]]
 nBC <- fread(n_bc_file, col.names = c("BeadBarcode", "count"), sep = ",") %>%
   data.frame() %>% filter(BeadBarcode %in% valid_barcodes) %>% arrange(desc(count))
 count_vec <- nBC$count*2; names(count_vec) <- as.character(nBC$BeadBarcode)

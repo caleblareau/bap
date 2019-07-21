@@ -16,21 +16,6 @@ time bap2 bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap2
 time bap bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap
 ```
 
-### Dedicated fragment generation
 
-```
-bap-frag -i data/jaccardPairsForIGV.bam -be for_frag/jaccardPairsForIGV.barcodeTranslate.tsv -o frag_bap_test -z
-
-```
-
-## debarcoding
-```
-bap-barcode v1.0 -a fastq_br/biorad_v1_R1.fastq.gz -b fastq_br/biorad_v1_R2.fastq.gz --nmismatches 1
-bap-barcode v2.1 -a fastq_br/biorad_v2_R1.fastq.gz -b fastq_br/biorad_v2_R2.fastq.gz --nmismatches 1
-bap-barcode v2.1-multi -a fastq_br/biorad_v2-multi_R1.fastq.gz -b fastq_br/biorad_v2-multi_R2.fastq.gz --nmismatches 1
-
-
-bwa mem /Volumes/dat/genomes/hg19_bwa/hg19.fa debarcode-c001_1.fastq.gz debarcode-c001_2.fastq.gz | samtools view -bS - |  samtools sort -@ 4 - -o debarcode.bam
-```
 
 <br><br>

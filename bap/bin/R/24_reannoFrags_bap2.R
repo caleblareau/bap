@@ -35,8 +35,8 @@ if(FALSE){
 }
 
 # Import frags and annotate with cell barcode ID
-frags <- fread(cmd = paste0("zcat < ", frag_bedpe_file), col.names = c("read_name","chr", "start", "end", "bead_barcode")) 
-barcode_translate <- fread(barcode_translate_file, col.names = c("bead_barcode", "cell_barcode"))
+frags <- fread(cmd = paste0("zcat < ", frag_bedpe_file), col.names = c("read_name","chr", "start", "end", "bead_barcode"), header = FALSE) 
+barcode_translate <- fread(barcode_translate_file, col.names = c("bead_barcode", "cell_barcode"), header = FALSE)
 mdf <- merge(frags, barcode_translate, by= "bead_barcode")
 
 # Group by the cell barcode and 1) get representative read 2) get summary stats 
