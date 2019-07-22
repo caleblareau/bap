@@ -32,6 +32,9 @@ minimum_barcode_fragments = config["minimum_barcode_fragments"]
 minimum_jaccard_index = str(config["minimum_jaccard_index"])
 nc_threshold = str(config["nc_threshold"])
 regularize_threshold = str(config["regularize_threshold"])
+mapq = str(config["mapq"])
+proper_pair = str(config["proper_pair"])
+max_insert = str(config["max_insert"])
 
 one_to_one = str(config["one_to_one"])
 barcoded_tn5 = str(config["barcoded_tn5"])
@@ -101,10 +104,17 @@ rule assemble_fragments:
 		namesort_bam = input.rawbam.replace(".raw.bam", "_nameSorted.bam")
 		pysam.sort(input.rawbam, '-n','-o', namesort_bam, catch_stdout=False)
 		#os.system(samtools + " collate -o " + namesort_bam + " " + input.rawbam)
-		l1 = "("+bedtools+" bamtobed -i "+ namesort_bam
-		l2 = ''' -bedpe | awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' | gzip > ''' 
-		l3 = output.outbedpe + ") 2> " + output.outlog
-		call_frag_gen = l1 + l2 + l3
+		
+		# Assemble a long system call to generate valid fragments
+		if(proper_pair== "true"):
+			pp = "-bf 0x2 "
+		l0 = "(" + samtools + " view " + pp + namesort_bam + " | " # filter proper pairs
+		l1 = bedtools+" bamtobed -i stdin -bedpe | " # convert reads to frags
+		l2 = ' awk -v d=' + max_insert + ' -v q=' + mapq + ''' '$5 - $3 <= d && $8 >=q {print $0}' | '''  # awk command to filter based on insert size and mapq
+		l3 = ''' awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' | gzip > ''' # awk to offset Tn5 insertions
+		l4 = output.outbedpe + ") 2> " + output.outlog
+		call_frag_gen = l0 + l1 + l2 + l3 + l4
+		print(call_frag_gen)
 		os.system(call_frag_gen)
 
 

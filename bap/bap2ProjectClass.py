@@ -63,7 +63,7 @@ class bap2Project():
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
-		extract_mito, keep_temp_files, mapq, 
+		extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
 		drop_tag, bead_tag, speciesMix):
@@ -107,6 +107,7 @@ class bap2Project():
 		self.extract_mito = extract_mito
 		self.drop_tag = drop_tag
 		self.bead_tag = bead_tag
+		self.max_insert = max_insert
 		
 		# Figure out operating system just for funzies; not presently used
 		self.os = "linux"
@@ -122,7 +123,12 @@ class bap2Project():
 			if(name == "default"):
 				filename, file_extension = os.path.splitext(self.bamfile)
 				self.name = os.path.basename(filename)
-
+		
+		if(all_pairs):
+			self.proper_pair = "false"
+		else:
+			self.proper_pair = "true"
+		
 		#------------------------------------------
 		# Verify R and all of its packages are here
 		#------------------------------------------
@@ -221,6 +227,7 @@ class bap2Project():
 		yield 'regularize_threshold', self.regularize_threshold
 		yield 'one_to_one', self.one_to_one
 		yield 'barcoded_tn5', self.barcoded_tn5
+		yield 'proper_pair', self.proper_pair
 		
 		yield 'extract_mito', self.extract_mito
 		yield 'mapq', self.mapq
@@ -238,5 +245,6 @@ class bap2Project():
 		
 		yield 'drop_tag', self.drop_tag
 		yield 'bead_tag', self.bead_tag
+		yield 'max_insert', self.max_insert
 		yield 'speciesMix', self.speciesMix
 	

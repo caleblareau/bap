@@ -47,6 +47,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA too?.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
 @click.option('--mapq', '-mq', default = 30, help='Minimum mapping quality to keep read for downstream analyses')
+@click.option('--max-insert', '-mi', default = 2000, help='Max insert size to keep fragment for downstream analysis')
+@click.option('--all-pairs', '-ap', is_flag=True, help='Include all read pairs when assembling fragments (not just proper pairs, which is the default)')
 
 @click.option('--bedtools-genome', '-bg', default = "", help='Path to bedtools genome file; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
 @click.option('--blacklist-file', '-bl', default = "", help='Path to bed file of blacklist; overrides default if --reference-genome flag is set and is necessary for non-supported genomes.')
@@ -67,7 +69,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	cluster, jobs, peak_file,
 	minimum_barcode_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
-	extract_mito, keep_temp_files, mapq, 
+	extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 	r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
 	drop_tag, bead_tag):
@@ -121,7 +123,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist, 
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, 
-		extract_mito, keep_temp_files, mapq, 
+		extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
 		drop_tag, bead_tag, speciesMix)

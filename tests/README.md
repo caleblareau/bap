@@ -1,12 +1,12 @@
 # Testing
 
-Some basic use cases for testing `bap` and `bap2`
+Some basic use cases for testing `bap2`'s execution
 
 
-## NEW - bap2
+## bap2
 
 ```
- time bap2 bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 10
+time bap2 bam -i data/small_mix.bam -bt XB -ji 0.0001 -r hg19-mm10 -z --mapq 0 -bf 10
 ```
 
 ### Comparison
