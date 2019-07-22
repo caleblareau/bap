@@ -8,7 +8,7 @@ data files for downstream analyses for SureCell single-cell ATAC-seq data.
 
 ## Documentation
 
-[See the bap wiki page](documentation/aboutQC.md)
+[See the bap wiki page](https://github.com/caleblareau/bap/wiki) for details and FAQs about bap.
 
 ## Installation
 
@@ -41,7 +41,7 @@ Try a sample analysis on the test `.bam` file:
 
 ```
 cd tests
-bap2 bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap2
+bap2 bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap_out
 ```
 
 Verify that there are files `bap_out/final`
