@@ -3,23 +3,14 @@
 
 ## About
 This is an integrated `python` (>= 3.6) and `R` package that
-performs analysis and identification of bead doublets and processes
+performs analysis and identification of barcode multiplets and processes
 data files for downstream analyses for SureCell single-cell ATAC-seq data. 
 
-## Quality control statistics
+## Documentation
 
-[Descriptions about QC metrics](documentation/aboutQC.md)
+[See the bap wiki page](documentation/aboutQC.md)
 
-## Docker
-
-Notes for CAL:
-```
-docker build -t caleblareau/bap bap
-
-docker exec -it caleblareau/bap bash
-```
-
-## Install
+## Installation
 
 **Recommended:**
 First, create a `python` virtual environment in some working directory to keep things tidy:
@@ -46,15 +37,11 @@ bap --help
 
 ## Simple Test
 
-Try a sample analysis on the test .bam file:
+Try a sample analysis on the test `.bam` file:
 
 ```
 cd tests
-bap bam -i data/test.small.bam -bt CB
+bap2 bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap2
 ```
 
 Verify that there are files `bap_out/final`
-
-#### Contact
-Lead: [Caleb Lareau](mailto:clareau@broadinstitute.org)
-<br><br>

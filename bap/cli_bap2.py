@@ -213,16 +213,9 @@ def main(mode, input, output, name, ncores, reference_genome,
 			click.echo(gettime() + "Finished processing per-chromosome fragments.")
 		else:
 			sys.exit(gettime() + "ERROR: Check " + snake_log + " file for more information")
+
 		#-----------------------------------
-		# Step 3 - QC stats / outside Snakemake since not-essential
-		#-----------------------------------
-		click.echo(gettime() + "Generating QC report + summarized experiment file...")
-		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
-		qcStats16File =  p.output + "/final/" + p.name + ".QCstats.csv"
-		qc_R = script_dir + "/bin/R/16_qualityControlReport_SE.R"
-		
-		#-----------------------------------
-		# Step 4 - Make knee plots
+		# Step 3 - Make knee plots
 		#-----------------------------------
 		bapParamsFile =  p.output + "/knee/" + p.name + ".bapParams.csv"
 		beadBarcodesFile = p.output + "/knee/" + p.name + ".barcodeQuantSimple.csv"
@@ -232,7 +225,10 @@ def main(mode, input, output, name, ncores, reference_genome,
 		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
 		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
 		os.system(r_callKneePlot)
-		sys.exit("Thanks for using bap2")
+
+		#-----------------------------------
+		# Step 4 - Process final quality control files
+		#-----------------------------------
 		
 		# Determine user flags for proper QC stuff		
 		if(p.peakFile == ""):
@@ -250,9 +246,15 @@ def main(mode, input, output, name, ncores, reference_genome,
 		else:
 			oneToOneGo = "no"
 		
-		# Full system call to R script
+		# Define additional parameters
+		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
+		qcStatsBasicFile =  p.output + "/final/" + p.name + ".basicQC.tsv"
+		finalFragsFile = p.output + "/final/" + p.name + ".fragments.tsv.gz"
+		qc_R = script_dir + "/bin/R/26b_QCadvanced_SE_bap2.R"
 		
-		r_callQC = " ".join([p.R+"script", qc_R, finalBamFile, barcodeTranslateFile, barcodeQuantFile, p.tssFile, p.drop_tag, p.blacklistFile, peakFileGo, speciesMixGo, oneToOneGo])
+		# Polish up QC and add additional metrics; make SE if necessary
+		click.echo(gettime() + "Generating QC report + summarized experiment file.")
+		r_callQC = " ".join([p.R+"script", qc_R, finalFragsFile, p.tssFile, peakFileGo, qcStatsBasicFile, speciesMixGo, oneToOneGo, barcodeTranslateFile])
 		os.system(r_callQC)
 
 		#-----------------------------------
@@ -280,6 +282,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 			byefolder = of
 			shutil.rmtree(byefolder + "/.internal")
 			shutil.rmtree(byefolder + "/temp")
+			os.rm(qcStatsBasicFile)
 
 			if(not extract_mito):
 				shutil.rmtree(byefolder + "/mito")

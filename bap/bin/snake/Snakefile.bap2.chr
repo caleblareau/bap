@@ -110,7 +110,7 @@ rule assemble_fragments:
 			pp = "-bf 0x2 "
 		l0 = "(" + samtools + " view " + pp + namesort_bam + " | " # filter proper pairs
 		l1 = bedtools+" bamtobed -i stdin -bedpe | " # convert reads to frags
-		l2 = ' awk -v d=' + max_insert + ' -v q=' + mapq + ''' '$5 - $3 <= d && $8 >=q {print $0}' | '''  # awk command to filter based on insert size and mapq
+		l2 = ' awk -v d=' + max_insert + ' -v q=' + mapq + ''' '$6 - $2 <= d && $8 >=q {print $0}' | '''  # awk command to filter based on insert size and mapq
 		l3 = ''' awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' | gzip > ''' # awk to offset Tn5 insertions
 		l4 = output.outbedpe + ") 2> " + output.outlog
 		call_frag_gen = l0 + l1 + l2 + l3 + l4
