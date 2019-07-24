@@ -4,7 +4,6 @@ suppressMessages(suppressWarnings(library(GenomicRanges)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(tools)))
-suppressMessages(suppressWarnings(library(tidyr)))
 
 "%ni%" <- Negate("%in%")
 
@@ -69,6 +68,7 @@ if(species_mix != "none"){
   QCstats <- basic_qc
 }
 
-write.table(QCstats %>% replace(is.na(.),0),
+QCstats[is.na(QCstats)] <- 0
+write.table(QCstats,
             file = firstQCout,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")

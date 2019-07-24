@@ -1,7 +1,5 @@
 options(warn=-1)
 
-suppressMessages(suppressWarnings(library(Rsamtools)))
-suppressMessages(suppressWarnings(library(GenomicAlignments)))
 suppressMessages(suppressWarnings(library(GenomicRanges)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(data.table)))
