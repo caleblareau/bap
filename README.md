@@ -10,38 +10,5 @@ data files for downstream analyses for SureCell single-cell ATAC-seq data.
 
 [See the bap wiki page](https://github.com/caleblareau/bap/wiki) for details and FAQs about bap.
 
-## Installation
-
-**Recommended:**
-First, create a `python` virtual environment in some working directory to keep things tidy:
-
-```
-python3 -m venv venv3
-source venv3/bin/activate
-```
-
-Next, install `bap`:
-
-```
-git clone https://github.com/caleblareau/bap.git
-cd bap
-pip3 install -e . 
-```
-
-Verify install:
-
-```
-bap --help
-```
 
 
-## Simple Test
-
-Try a sample analysis on the test `.bam` file:
-
-```
-cd tests
-bap2 bam -i data/jaccardPairsForIGV.bam -bt XB -r hg19 -z -o bap_out
-```
-
-Verify that there are files `bap_out/final`
