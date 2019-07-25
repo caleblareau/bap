@@ -60,6 +60,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--samtools-path', default = "", help='Path to samtools; by default, assumes that samtools is in PATH')
 @click.option('--bgzip-path', default = "", help='Path to bgzip; by default, assumes that bgzip is in PATH')
 @click.option('--tabix-path', default = "", help='Path to tabix; by default, assumes that tabix is in PATH')
+@click.option('--snakemake-path', default = "", help='Path to snakemake; by default, assumes that snakemake is in PATH')
 
 @click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
 @click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode.')
@@ -71,7 +72,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
 	extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome,
-	r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
+	r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
 	drop_tag, bead_tag):
 	
 	"""
@@ -125,7 +126,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, 
 		extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
-		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
+		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
 		drop_tag, bead_tag, speciesMix)
 	
 	# Make a counts table from user-supplied peaks and bam files
@@ -194,7 +195,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		#----------------------------------------
 		# Step 2 - Process fragments by Snakemake
 		#----------------------------------------
-		click.echo(gettime() + "Processing per-chromosome fragments in parallel. This is the most computationally intensive step.")
+		click.echo(gettime() + "Processing bam file using a Snakemake workflow. This is the most computationally intensive step.")
 		# Round trip the .yaml of user configuration
 		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
 		with open(y_s, 'w') as yaml_file:
@@ -204,61 +205,19 @@ def main(mode, input, output, name, ncores, reference_genome,
 		# Assemble some log files for the snake file
 		snake_stats = logs + "/" + p.name + ".snakemake.stats"
 		snake_log = logs + "/" + p.name + ".snakemake.log"
-		snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
+		snakecmd_chr = p.snakemake+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
 		os.system(snakecmd_chr)
 		
 		# Check to make sure snakemake Processing worked
 		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
 		if(os.path.exists(finalBamFile)):
-			click.echo(gettime() + "Finished processing per-chromosome fragments.")
+			click.echo(gettime() + "Finished processing via Snakemake.")
 		else:
-			sys.exit(gettime() + "ERROR: Check " + snake_log + " file for more information")
+			sys.exit(gettime() + "ERROR: Snakemake execution failed. Check " + snake_log + " file for more information. If blank, try allocating more memory.")
+
 
 		#-----------------------------------
-		# Step 3 - Make knee plots
-		#-----------------------------------
-		bapParamsFile =  p.output + "/knee/" + p.name + ".bapParams.csv"
-		beadBarcodesFile = p.output + "/knee/" + p.name + ".barcodeQuantSimple.csv"
-		implicatedBarcodeFile = p.output + "/final/" + p.name + ".implicatedBarcodes.csv.gz"
-		
-		click.echo(gettime() + "Generating knee plots for parameters (if applicable).")
-		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
-		r_callKneePlot = " ".join([p.R+"script", kneePlot_R, bapParamsFile, beadBarcodesFile, implicatedBarcodeFile])
-		os.system(r_callKneePlot)
-
-		#-----------------------------------
-		# Step 4 - Process final quality control files
-		#-----------------------------------
-		
-		# Determine user flags for proper QC stuff		
-		if(p.peakFile == ""):
-			peakFileGo = "none"
-		else:
-			peakFileGo = p.peakFile
-		
-		if(p.speciesMix):
-			speciesMixGo = "yes"
-		else:
-			speciesMixGo = "no"
-			
-		if(one_to_one):
-			oneToOneGo = "yes"
-		else:
-			oneToOneGo = "no"
-		
-		# Define additional parameters
-		barcodeTranslateFile = p.output + "/final/" + p.name + ".barcodeTranslate.tsv"
-		qcStatsBasicFile =  p.output + "/final/" + p.name + ".basicQC.tsv"
-		finalFragsFile = p.output + "/final/" + p.name + ".fragments.tsv.gz"
-		qc_R = script_dir + "/bin/R/26b_QCadvanced_SE_bap2.R"
-		
-		# Polish up QC and add additional metrics; make SE if necessary
-		click.echo(gettime() + "Generating QC report + summarized experiment file.")
-		r_callQC = " ".join([p.R+"script", qc_R, finalFragsFile, p.tssFile, peakFileGo, qcStatsBasicFile, speciesMixGo, oneToOneGo, barcodeTranslateFile])
-		os.system(r_callQC)
-
-		#-----------------------------------
-		# Step 5 - Process mitochondria
+		# Step 3 - Process mitochondria
 		#-----------------------------------
 		if(extract_mito):
 			click.echo(gettime() + "Creating a new .bam file for mitochondria.")
@@ -282,7 +241,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 			byefolder = of
 			shutil.rmtree(byefolder + "/.internal")
 			shutil.rmtree(byefolder + "/temp")
-			os.rm(qcStatsBasicFile)
+			os.remove(qcStatsBasicFile)
+			os.remove(knee + "/" + name + ".kneesPlotted.txt")
 
 			if(not extract_mito):
 				shutil.rmtree(byefolder + "/mito")

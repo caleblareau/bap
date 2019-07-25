@@ -65,7 +65,7 @@ class bap2Project():
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
 		extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
-		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path,
+		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
 		drop_tag, bead_tag, speciesMix):
 		
 		#----------------------------------
@@ -144,7 +144,8 @@ class bap2Project():
 		self.bgzip = bgzip
 		tabix = get_software_path('tabix', tabix_path)
 		self.tabix = tabix
-		
+		snakemake = get_software_path('snakemake', snakemake_path)
+		self.snakemake = snakemake
 		#------------------------
 		# Handle reference genome
 		#------------------------
@@ -242,6 +243,7 @@ class bap2Project():
 		yield 'bedtools', self.bedtools
 		yield 'bgzip', self.bgzip
 		yield 'tabix', self.tabix
+		yield 'snakemake', self.snakemake
 		
 		yield 'drop_tag', self.drop_tag
 		yield 'bead_tag', self.bead_tag

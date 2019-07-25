@@ -26,7 +26,6 @@ bead_tag = config["bead_tag"]
 drop_tag = config["drop_tag"] 
 speciesMix = config["speciesMix"] 
 
-
 # Relevant thresholds
 minimum_barcode_fragments = config["minimum_barcode_fragments"]
 minimum_jaccard_index = str(config["minimum_jaccard_index"])
@@ -40,7 +39,10 @@ one_to_one = str(config["one_to_one"])
 barcoded_tn5 = str(config["barcoded_tn5"])
 barcode_whitelist = str(config["barcode_whitelist"])
 blacklistRegionsFile = str(config["blacklistFile"])
+tssFile = str(config["tssFile"])
 barcodeQuantFile =  outdir + "/final/" + name + ".barcodequants.csv"
+
+# Parse other parameters
 
 # Determine .bam files to execute for fragment overlap analysis
 infile_nuclear = outdir + "/.internal/samples/" + name + ".chrbam.txt"
@@ -90,7 +92,8 @@ rule all:
 		outdir + "/final/"+name+".bap.bam",
 		outdir + "/final/"+name+".bap.bam.bai",
 		outdir + "/final/"+name+".fragments.tsv.gz",
-		outdir + "/final/"+name+".basicQC.tsv"
+		outdir + "/final/"+name+".QCstats.csv", 
+		outdir + "/knee/" + name + ".kneesPlotted.txt"
 
 rule assemble_fragments:
 	input:
@@ -114,7 +117,6 @@ rule assemble_fragments:
 		l3 = ''' awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4,$7}else if($9=="-"){print $1,$2-5,$6-5,$7}}' | gzip > ''' # awk to offset Tn5 insertions
 		l4 = output.outbedpe + ") 2> " + output.outlog
 		call_frag_gen = l0 + l1 + l2 + l3 + l4
-		print(call_frag_gen)
 		os.system(call_frag_gen)
 
 
@@ -304,5 +306,53 @@ rule assemble_basic_QC:
 		# Execute the first half of the QC report -- handle species mixing
 		R_call_reanno_ss = " ".join([R+"script", qcRep1_R, basic_qc_temp, input.mito_qc, output.basic_qc, str(speciesMix)])
 		os.system(R_call_reanno_ss)
+
+rule final_QC_SE:
+	input:
+		qcStatsBasicFile = outdir + "/final/"+name+".basicQC.tsv",
+		finalFragsFile = outdir + "/final/"+name+".fragments.tsv.gz",
+		barcodeTranslateFile =  outdir + "/final/"+name+".barcodeTranslate.tsv"
+	output:
+		advanced_qc = outdir + "/final/"+name+".QCstats.csv"
+	threads:
+		1
+	run:
+
+		# Determine user flags for proper QC input parameters (lots of binary configurations		
+		if(str(config["peakFile"]) == ""):
+			peakFileGo = "none"
+		else:
+			peakFileGo = str(config["peakFile"])
+		
+		if(config["speciesMix"] == "none"):
+			speciesMixGo = "no"
+		else:
+			speciesMixGo = "yes"
+			
+		if(str(config["one_to_one"]) == "true"):
+			oneToOneGo = "yes"
+		else:
+			oneToOneGo = "no"
+		
+		# Define additional parameters
+		qc_final_R = script_dir + "/bin/R/26b_QCadvanced_SE_bap2.R"
+		
+		# Polish up QC and add additional metrics; make SE if necessary
+		r_callQC = " ".join([R+"script", qc_final_R, input.finalFragsFile, tssFile, peakFileGo, input.qcStatsBasicFile, speciesMixGo, oneToOneGo, input.barcodeTranslateFile])
+		os.system(r_callQC)
+		
+rule final_knee_call_plot:
+	input:
+		beadBarcodesFile = outdir + "/knee/" + name + ".barcodeQuantSimple.csv",
+		implicatedBarcodeFile = outdir + "/final/" + name + ".implicatedBarcodes.csv.gz"
+	output:
+		kneePlotsFile = outdir + "/knee/" + name + ".kneesPlotted.txt"
+	threads:
+		1
+	run:
+		bapParamsFile =  outdir + "/knee/" + name + ".bapParams.csv"
+		kneePlot_R = script_dir + "/bin/R/19_makeKneePlots.R"
+		r_callKneePlot = " ".join([R+"script", kneePlot_R, bapParamsFile, input.beadBarcodesFile, input.implicatedBarcodeFile])
+		os.system(r_callKneePlot)
 
 		

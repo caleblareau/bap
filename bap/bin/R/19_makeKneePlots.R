@@ -159,4 +159,6 @@ if(file.exists(jaccardFragsFile)){
                   width = 6, height = 6)
   
 }
-
+statusUpdateTxt <- gsub(".barcodeQuantSimple.csv", ".kneesPlotted.txt", beadBarcodesFile)
+write.table(data.frame("yes"), 
+            file = statusUpdateTxt, row.names = FALSE, col.names = FALSE, sep = "\t", quote = FALSE)
