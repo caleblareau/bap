@@ -46,6 +46,8 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA and annotate with droplet barcodes.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
+@click.option('--snakemake-stdout', '-ss', is_flag=True, help='Write what would typically go in the snakemake log file into stdout.')
+
 @click.option('--mapq', '-mq', default = 30, help='Minimum mapping quality to keep read for downstream analyses')
 @click.option('--max-insert', '-mi', default = 2000, help='Max insert size to keep fragment for downstream analysis')
 @click.option('--all-pairs', '-ap', is_flag=True, help='Include all read pairs when assembling fragments (not just proper pairs, which is the default)')
@@ -62,15 +64,15 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--tabix-path', default = "", help='Path to tabix; by default, assumes that tabix is in PATH')
 @click.option('--snakemake-path', default = "", help='Path to snakemake; by default, assumes that snakemake is in PATH')
 
-@click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the drop barcode.')
-@click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that point to the bead barcode.')
+@click.option('--drop-tag', '-dt', default = "DB", help='New tag in the .bam file(s) that will be the name of the droplet barcode.')
+@click.option('--bead-tag', '-bt', default = "XB", help='Tag in the .bam file(s) that points to the bead barcode (should already exist).')
 
 
 def main(mode, input, output, name, ncores, reference_genome,
 	cluster, jobs, peak_file,
 	minimum_barcode_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
-	extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
+	extract_mito, keep_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 	r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
 	drop_tag, bead_tag):
@@ -125,7 +127,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist, 
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, 
-		extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
+		extract_mito, keep_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
 		drop_tag, bead_tag, speciesMix)
@@ -206,7 +208,14 @@ def main(mode, input, output, name, ncores, reference_genome,
 		# Assemble some log files for the snake file
 		snake_stats = logs + "/" + p.name + ".snakemake.stats"
 		snake_log = logs + "/" + p.name + ".snakemake.log"
-		snakecmd_chr = p.snakemake+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
+		
+		# Handle edge cases of needing to write snakemake stdout to log
+		if(snakemake_stdout):
+			snake_log_preference = ""
+		else:
+			snake_log_preference = ' &>' + snake_log
+		
+		snakecmd_chr = p.snakemake+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+snake_log_preference
 		os.system(snakecmd_chr)
 		
 		# Check to make sure snakemake Processing worked

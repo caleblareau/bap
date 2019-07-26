@@ -287,7 +287,7 @@ rule final_frag_merge:
 		raw_out = output.finalfrags[:-3]
 		os.system("cat " + infiles + " | cut -f 1,2,3,4 > " + raw_out)
 		os.system(bgzip + " " + raw_out)
-		os.system(tabix + " " + raw_out + ".gz + -p bed")
+		os.system(tabix + " -p bed " + raw_out + ".gz" )
 
 rule assemble_basic_QC:
 	input:

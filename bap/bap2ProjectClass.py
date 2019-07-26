@@ -63,7 +63,7 @@ class bap2Project():
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
-		extract_mito, keep_temp_files, mapq, max_insert, all_pairs,
+		extract_mito, s_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
 		drop_tag, bead_tag, speciesMix):
