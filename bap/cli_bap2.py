@@ -86,6 +86,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 
 	click.echo(gettime() + "Starting bap2 pipeline v%s" % __version__)
+	output = output.rstrip("/") # just for consistency
 	
 	# Determine which genomes are available
 	rawsg = os.popen('ls ' + script_dir + "/anno/bedtools/*.sizes").read().strip().split("\n")
@@ -241,8 +242,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 			byefolder = of
 			shutil.rmtree(byefolder + "/.internal")
 			shutil.rmtree(byefolder + "/temp")
-			os.remove(qcStatsBasicFile)
-			os.remove(knee + "/" + name + ".kneesPlotted.txt")
+			os.remove(fin + "/"+p.name+".basicQC.tsv")
+			os.remove(knee + "/" + p.name + ".kneesPlotted.txt")
 
 			if(not extract_mito):
 				shutil.rmtree(byefolder + "/mito")
