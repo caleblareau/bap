@@ -4,6 +4,7 @@ suppressMessages(suppressWarnings(library(GenomicRanges)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(tools)))
+suppressMessages(suppressWarnings(library(SummarizedExperiment)))
 
 "%ni%" <- Negate("%in%")
 
