@@ -4,7 +4,6 @@ suppressMessages(suppressWarnings(library(GenomicRanges)))
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(tools)))
-suppressMessages(suppressWarnings(library(SummarizedExperiment)))
 
 "%ni%" <- Negate("%in%")
 
@@ -105,6 +104,7 @@ rm(ovTSS); rm(promoter)
 
 # Deal with FRIP if we have a peak file
 if(peakFile != "none"){
+  suppressMessages(suppressWarnings(library(SummarizedExperiment)))
   peakdf <- data.frame(fread(peakFile))[,c(1,2,3)]
   colnames(peakdf) <- c("V1", "V2", "V3")
   peaks <- makeGRangesFromDataFrame(peakdf, seqnames.field = "V1", start.field = "V2", end.field = "V3")
