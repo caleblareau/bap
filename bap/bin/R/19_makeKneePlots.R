@@ -1,8 +1,6 @@
 options(warn=-1)
 
 suppressMessages(suppressWarnings(library(ggplot2)))
-suppressMessages(suppressWarnings(library(cowplot)))
-
 suppressMessages(suppressWarnings(library(dplyr)))
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(tools)))
@@ -78,12 +76,12 @@ if(file.exists(beadBarcodesFile)){
     geom_hline(yintercept = bead_threshold, color = "dodgerblue4")
   
   # Export to PDF for vectorized stuff
-  cowplot::ggsave(barcode_counts_plot, file = beadBarcodesKneePlot,
-                  width = 6, height = 6)
+  ggsave(barcode_counts_plot, file = beadBarcodesKneePlot,
+         width = 6, height = 6, useDingbats=FALSE)
   
   # Also save as a png for good measure
-  cowplot::ggsave(barcode_counts_plot, file = gsub(".pdf$", ".png", beadBarcodesKneePlot),
-                  width = 6, height = 6)
+  ggsave(barcode_counts_plot, file = gsub(".pdf$", ".png", beadBarcodesKneePlot),
+         width = 6, height = 6)
   
   #--------------------------
   # Additional QC plots
@@ -103,8 +101,8 @@ if(file.exists(beadBarcodesFile)){
     density_plot
   
   beadBarcodesKneeDensityPlot <- gsub(".barcodeQuantSimple.csv", ".beadBarcodeKneeDensity.pdf", beadBarcodesFile)
-  cowplot::ggsave(density_plot, file = beadBarcodesKneeDensityPlot,
-                  width = 6, height = 6)
+  ggsave(density_plot, file = beadBarcodesKneeDensityPlot, useDingbats=FALSE, 
+         width = 6, height = 6)
   
   # Knee Plot
   barcode_counts_mut %>%
@@ -117,8 +115,8 @@ if(file.exists(beadBarcodesFile)){
     knee_plot
   
   beadBarcodesKneeCurvePlot <- gsub(".barcodeQuantSimple.csv", ".beadBarcodeKneeCurve.pdf", beadBarcodesFile)
-  cowplot::ggsave(knee_plot, file = beadBarcodesKneeCurvePlot,
-                  width = 6, height = 6)
+  ggsave(knee_plot, file = beadBarcodesKneeCurvePlot,
+         width = 6, height = 6,  useDingbats=FALSE)
   
 }
 
@@ -151,12 +149,12 @@ if(file.exists(jaccardFragsFile)){
     geom_hline(yintercept = jaccard_threshold, color = "dodgerblue4")
   
   # Export to PDF for vectorized stuff
-  cowplot::ggsave(jaccard_plot, file = jaccardKneePlot,
-                  width = 6, height = 6)
+  ggsave(jaccard_plot, file = jaccardKneePlot,
+         width = 6, height = 6, useDingbats=FALSE)
   
   # Also save as a png for good measure
-  cowplot::ggsave(jaccard_plot, file = gsub(".pdf$", ".png", jaccardKneePlot),
-                  width = 6, height = 6)
+  ggsave(jaccard_plot, file = gsub(".pdf$", ".png", jaccardKneePlot),
+         width = 6, height = 6)
   
 }
 statusUpdateTxt <- gsub(".barcodeQuantSimple.csv", ".kneesPlotted.txt", beadBarcodesFile)

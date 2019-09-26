@@ -1,3 +1,5 @@
+# 0.6.2
+- Removed dependency on cowplot
 
 # 0.6.1
 - Fixed minor dependency bug when generating Summarized Experiments with the --peak-file flag

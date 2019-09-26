@@ -8,7 +8,7 @@ dependencies = ['python-Levenshtein','biopython','fuzzysearch','fuzzywuzzy','cli
 
 setup(
     name='bap',
-    version='0.6.1',
+    version='0.6.2',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
