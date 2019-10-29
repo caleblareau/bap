@@ -25,14 +25,15 @@ source(normalizePath(gsub("23_callDoublets_bap2.R", "00_knee_CL.R", gsub(needle,
 
 # Import parameters using logic from the end3
 nn <- length(args)
-rdsDir <- args[nn-7] # directory of .rds files
-n_bc_file <- args[nn-6] # file for the number of reads supporting each barcode
-hq_bc_file <- args[nn-5] # file for the HQ barcodes that were nominated
-tblOut <- args[nn-4] # filepath to write the implicated barcode pairs
-min_jaccard_frag <- as.numeric(args[nn-3])
-name <- args[nn-2] #name prefix for file naming convention
-one_to_one <- args[nn-1] #arguement for keeping bead : drop conversion 1 to 1
-barcoded_tn5 <- args[nn]
+rdsDir <- args[nn-8] # directory of .rds files
+n_bc_file <- args[nn-7] # file for the number of reads supporting each barcode
+hq_bc_file <- args[nn-6] # file for the HQ barcodes that were nominated
+tblOut <- args[nn-5] # filepath to write the implicated barcode pairs
+min_jaccard_frag <- as.numeric(args[nn-4])
+name <- args[nn-3] #name prefix for file naming convention
+one_to_one <- args[nn-2] #arguement for keeping bead : drop conversion 1 to 1
+barcoded_tn5 <- args[nn-1]
+barcode_prior_file <- args[nn]
 
 # Fix to R boolean
 one_to_one <- one_to_one == "True" 
@@ -44,13 +45,15 @@ tblOut <- gsub(".gz$", "", tblOut)
 # For devel only
 if(FALSE){
   rdsDir <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/temp/frag_overlap"
-  n_bc_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/knee/jaccardPairsForIGVbarcodeQuantsSimple.csv"
+  n_bc_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/knee/jaccardPairsForIGV.barcodeQuantSimple.csv"
   hq_bc_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/final/jaccardPairsForIGV.HQbeads.tsv"
   tblOut <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/final/o.tsv"
   min_jaccard_frag <- 0.005
   name <- "x"
   one_to_one <- FALSE
   barcoded_tn5 <- FALSE
+  barcode_prior_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/data/jaccardPairsTest_sep.tsv"
+  
 }
 
 rdsFiles <- list.files(rdsDir, full.names = TRUE, pattern = "_overlapCount.rds$")
@@ -101,14 +104,49 @@ if(min_jaccard_frag == 0){
 write(paste0("jaccard_threshold,", as.character(min_jaccard_frag)),
       gsub("/final/", "/knee/", gsub(".implicatedBarcodes.csv$", ".bapParams.csv", tblOut)), append = TRUE)
 
-# Export the implicated barcodes
 ovdf$merged <- ovdf$jaccard_frag > min_jaccard_frag
+
+# Merge barcodes above the knee unless there's a prior reason why we shouldn't
+if(barcode_prior_file != "none"){
+  
+  # Import and assign each 
+  bp_df <- fread(barcode_prior_file, header = FALSE) 
+  feature_vec <- as.character(bp_df[["V2"]]); names(feature_vec) <- as.character(bp_df[["V1"]])
+  merged_df <- ovdf %>% filter(merged)
+  priorf1 <- feature_vec[as.character(merged_df[["barc1"]])] %>% unname()
+  priorf2 <- feature_vec[as.character(merged_df[["barc2"]])] %>% unname()
+  
+  # Find conflicts,  missing values, and 
+  conflicts <- priorf1 != priorf2
+  sum_is_na <- sum(is.na(conflicts))
+  sum_conflicts = sum(conflicts, na.rm = TRUE)
+  sum_valid = sum(!conflicts, na.rm = TRUE)
+  
+  # Write out conflicts and filter if we observe them
+  if(sum_conflicts > 0){
+    conflictFile = gsub("/final/", "/knee/", gsub(".implicatedBarcodes.csv$", ".barcode_prior_conflicts.csv", tblOut))
+    write.table(merged_df[which(conflicts),], file = conflictFile, row.names = FALSE, col.names = TRUE, sep = ",", quote = FALSE)
+    ovdf <- ovdf[1:dim(ovdf)[1] %ni% which(conflicts),]
+  }
+  
+  # Either way, write out statistics
+  out_stat_prior_df <- data.frame(
+    what = c("Valid merges (stil merged)", "Merges with 1 or more NA (still merged)", "Conflicted merges (not merged)"),
+    count = c(sum_valid, sum_is_na, sum_conflicts)
+  )
+  statFile = gsub("/final/", "/knee/", gsub(".implicatedBarcodes.csv$", ".barcode_prior_stats.csv", tblOut))
+  write.table(out_stat_prior_df, file = statFile, row.names = FALSE, col.names = FALSE, sep = ",", quote = FALSE)
+  
+} 
+
+
+# Export the implicated barcodes
 write.table(ovdf, file = tblOut,
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = ",")
 system(paste0("gzip ", tblOut))
 
 # Now filter based on the min_jaccard_frag
-ovdf %>% filter(jaccard_frag > min_jaccard_frag) %>% data.frame() -> ovdf
+ovdf %>% filter(merged) %>% data.frame() -> ovdf
 
 # Guess at how wide we need to make the barcodes to handle leading zeros
 guess <- ceiling(log10(dim(nBC)[1]))

@@ -33,6 +33,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 @click.option('--jobs', default = "0",  help='Max number of jobs to be running concurrently on the cluster interface; see Snakemake documentation.')
 
 @click.option('--peak-file', '-pf', default = "", help='If supplied, compute FRIP (in QC stats) and generate Summarized Experiment (not required)')
+@click.option('--barcode-prior', '-bp', default = "", help='If supplied, a two-column file that imposes barcode merges to occur within a prior annotation (e.g. donor or hash).')
 
 @click.option('--minimum-barcode-fragments', '-bf', default = 0, help='Minimum number of fragments to be thresholded for doublet merging; by default, determines a threshold via knee-calling')
 @click.option('--barcode-whitelist', '-w', default = "", help='File path of a whitelist of bead barcodes (one per line) to be used in lieu of a fixed threshold.')
@@ -43,7 +44,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (cancels the merging)')
 @click.option('--barcoded-tn5',  is_flag=True, help='Process data knowing that the barcodes were generated with a barcoded Tn5; assumes that the last 6 characters of the barcode sequence correspond to the barcoded Tn5 sequence.')
-@click.option('--keep-read-names',  is_flag=True, help='Process data knowing that the barcodes were generated with a barcoded Tn5; assumes that the last 6 characters of the barcode sequence correspond to the barcoded Tn5 sequence.')
+@click.option('--keep-read-names',  is_flag=True, help='Retain the read namems that correspond to the final fragment assemebled in the final output.')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA and annotate with droplet barcodes.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
@@ -70,7 +71,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 
 def main(mode, input, output, name, ncores, reference_genome,
-	cluster, jobs, peak_file,
+	cluster, jobs, peak_file, barcode_prior,
 	minimum_barcode_fragments, barcode_whitelist,
 	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, keep_read_names,
 	extract_mito, keep_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
@@ -125,7 +126,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	
 	# Verify dependencies and set up an object to do all the dirty work
 	p = bap2Project(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file,
+		cluster, jobs, peak_file, barcode_prior,
 		minimum_barcode_fragments, barcode_whitelist, 
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, keep_read_names,
 		extract_mito, keep_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,

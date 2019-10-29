@@ -35,6 +35,8 @@ mapq = str(config["mapq"])
 proper_pair = str(config["proper_pair"])
 max_insert = str(config["max_insert"])
 keep_read_names = str(config["keep_read_names"])
+barcode_prior_file = str(config["barcode_prior"])
+
 one_to_one = str(config["one_to_one"])
 barcoded_tn5 = str(config["barcoded_tn5"])
 barcode_whitelist = str(config["barcode_whitelist"])
@@ -230,7 +232,7 @@ rule determine_barcode_merges:
 	run: 	
 		# collate chr inference and make a single file
 		rdsdir = outdir + "/temp/frag_overlap"
-		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, input.HQbeads, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5])
+		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, input.HQbeads, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5, barcode_prior_file])
 		os.system(r_call_findDoublets)
 
 rule reannotate_fragments_get_summary_stats_chr:
@@ -322,7 +324,7 @@ rule final_QC_SE:
 		1
 	run:
 
-		# Determine user flags for proper QC input parameters (lots of binary configurations		
+		# Determine user flags for proper QC input parameters (lots of binary configurations)		
 		if(str(config["peakFile"]) == ""):
 			peakFileGo = "none"
 		else:

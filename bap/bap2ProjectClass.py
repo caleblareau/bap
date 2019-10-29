@@ -60,7 +60,7 @@ def mitoChr(reference_genome, mito_chromosome):
 
 class bap2Project():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
-		cluster, jobs, peak_file,
+		cluster, jobs, peak_file, barcode_prior,
 		minimum_barcode_fragments, barcode_whitelist,
 		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, keep_read_names,
 		extract_mito, s_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
@@ -96,6 +96,15 @@ class bap2Project():
 				pass
 			else: 
 				sys.exit("Could not find the bead whitelist file: %s" % barcode_whitelist)
+				
+		if(barcode_prior == ""):
+			barcode_prior = "none"
+		else:
+			if(os.path.isfile(barcode_prior)):
+				pass
+			else: 
+				sys.exit("Could not find the barcode prior file: %s" % barcode_prior)
+		self.barcode_prior = barcode_prior
 		self.barcode_whitelist = barcode_whitelist
 		self.nc_threshold = nc_threshold
 		self.regularize_threshold = regularize_threshold
@@ -220,6 +229,7 @@ class bap2Project():
 		yield 'cluster', self.cluster
 		yield 'jobs', self.jobs
 		yield 'peakFile', self.peakFile
+		yield 'barcode_prior', self.barcode_prior
 		
 		yield 'minimum_barcode_fragments', self.minimum_barcode_fragments
 		yield 'barcode_whitelist', self.barcode_whitelist

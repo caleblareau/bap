@@ -89,9 +89,9 @@ if(FALSE){
 # Import fragments
 frag_df <- fread(fragsFile, header = FALSE)
 if(dim(frag_df)[2] == 4){
-  colnammes(frag_df) = c("chr", "start", "end", "cell_barcode")
+  colnames(frag_df) = c("chr", "start", "end", "cell_barcode")
 } else {
-  colnammes(frag_df) = c("chr", "start", "end", "cell_barcode", "read_name")
+  colnames(frag_df) = c("chr", "start", "end", "cell_barcode", "read_name")
 }
 frag_gr <- makeGRangesFromDataFrame(frag_df)
 
