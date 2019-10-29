@@ -71,7 +71,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	mode = ['bam', 'check', 'support']\n
 	"""
 	
-	__version__ = get_distribution('bap').version
+	__version__ = get_distribution('bap-atac').version
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 
 	click.echo(gettime() + "Starting bap pipeline v%s" % __version__)

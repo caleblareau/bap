@@ -43,6 +43,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 
 @click.option('--one-to-one', '-oo', is_flag=True, help='Enforce that each bead barcode maps to one unique drop barcode (cancels the merging)')
 @click.option('--barcoded-tn5',  is_flag=True, help='Process data knowing that the barcodes were generated with a barcoded Tn5; assumes that the last 6 characters of the barcode sequence correspond to the barcoded Tn5 sequence.')
+@click.option('--keep-read-names',  is_flag=True, help='Process data knowing that the barcodes were generated with a barcoded Tn5; assumes that the last 6 characters of the barcode sequence correspond to the barcoded Tn5 sequence.')
 
 @click.option('--extract-mito', '-em', is_flag=True, help='Extract mitochondrial DNA and annotate with droplet barcodes.')
 @click.option('--keep-temp-files', '-z', is_flag=True, help='Keep all intermediate files.')
@@ -71,7 +72,7 @@ from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
 def main(mode, input, output, name, ncores, reference_genome,
 	cluster, jobs, peak_file,
 	minimum_barcode_fragments, barcode_whitelist,
-	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
+	minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, keep_read_names,
 	extract_mito, keep_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
 	bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 	r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
@@ -84,7 +85,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	mode = ['bam', 'check', 'support']\n
 	"""
 	
-	__version__ = get_distribution('bap').version
+	__version__ = get_distribution('bap-atac').version
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 
 	click.echo(gettime() + "Starting bap2 pipeline v%s" % __version__)
@@ -126,7 +127,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 	p = bap2Project(script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist, 
-		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, 
+		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, keep_read_names,
 		extract_mito, keep_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,

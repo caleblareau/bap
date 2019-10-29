@@ -34,7 +34,7 @@ regularize_threshold = str(config["regularize_threshold"])
 mapq = str(config["mapq"])
 proper_pair = str(config["proper_pair"])
 max_insert = str(config["max_insert"])
-
+keep_read_names = str(config["keep_read_names"])
 one_to_one = str(config["one_to_one"])
 barcoded_tn5 = str(config["barcoded_tn5"])
 barcode_whitelist = str(config["barcode_whitelist"])
@@ -285,7 +285,11 @@ rule final_frag_merge:
 	run:
 		infiles = " ".join(HQfragsfiles)
 		raw_out = output.finalfrags[:-3]
-		os.system("cat " + infiles + " | cut -f 1,2,3,4 > " + raw_out)
+		if(keep_read_names ==  "True"):
+			cut_cols = "1,2,3,4,5"
+		else:
+			cut_cols = "1,2,3,4"
+		os.system("cat " + infiles + " | cut -f "+cut_cols+" > " + raw_out)
 		os.system(bgzip + " " + raw_out)
 		os.system(tabix + " -p bed " + raw_out + ".gz" )
 

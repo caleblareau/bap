@@ -7,8 +7,8 @@ from distutils.core import setup, Extension
 dependencies = ['python-Levenshtein','biopython','fuzzysearch','fuzzywuzzy','click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
 
 setup(
-    name='bap',
-    version='0.6.2',
+    name='bap-atac',
+    version='0.6.3',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',

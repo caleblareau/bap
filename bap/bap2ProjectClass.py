@@ -62,7 +62,7 @@ class bap2Project():
 	def __init__(self, script_dir, supported_genomes, mode, input, output, name, ncores, reference_genome,
 		cluster, jobs, peak_file,
 		minimum_barcode_fragments, barcode_whitelist,
-		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5,
+		minimum_jaccard_index, nc_threshold, regularize_threshold, one_to_one, barcoded_tn5, keep_read_names,
 		extract_mito, s_temp_files, snakemake_stdout, mapq, max_insert, all_pairs,
 		bedtools_genome, blacklist_file, tss_file, mito_chromosome,
 		r_path, bedtools_path, samtools_path, bgzip_path, tabix_path, snakemake_path,
@@ -71,7 +71,7 @@ class bap2Project():
 		#----------------------------------
 		# Assign straightforward attributes
 		#----------------------------------
-		self.bap_version = get_distribution('bap').version
+		self.bap_version = get_distribution('bap-atac').version
 		self.script_dir = script_dir
 		self.mode = mode
 		self.output = output
@@ -104,6 +104,7 @@ class bap2Project():
 		self.minimum_jaccard_index = minimum_jaccard_index
 		self.one_to_one = one_to_one
 		self.barcoded_tn5 = barcoded_tn5
+		self.keep_read_names = keep_read_names
 		self.extract_mito = extract_mito
 		self.drop_tag = drop_tag
 		self.bead_tag = bead_tag
@@ -228,6 +229,7 @@ class bap2Project():
 		yield 'regularize_threshold', self.regularize_threshold
 		yield 'one_to_one', self.one_to_one
 		yield 'barcoded_tn5', self.barcoded_tn5
+		yield 'keep_read_names', self.keep_read_names
 		yield 'proper_pair', self.proper_pair
 		
 		yield 'extract_mito', self.extract_mito
