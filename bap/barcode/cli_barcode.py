@@ -42,7 +42,7 @@ def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches, reve
 	mode = ['v1.0', 'v2.0', 'v2.1', 'v2.1-multi', '10X-v1'] for bead design\n
 	"""
 	
-	__version__ = get_distribution('bap').version
+	__version__ = get_distribution('bap-atac').version
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 	click.echo(gettime() + "Starting de-barcoding from bap pipeline v%s" % __version__)
 	
