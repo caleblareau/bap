@@ -151,7 +151,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 		chrs_ref = []
 		with open(p.bedtoolsGenomeFile) as f:
 			for line in f:
-				chrs_ref.append(line.split("\t")[0])
+				if line.rstrip():
+					chrs_ref.append(line.split("\t")[0])
 		
 		# Quant the overlaps and exit if no overlap
 		chrs_both = intersection(chrs_bam, chrs_ref)

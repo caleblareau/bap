@@ -161,7 +161,6 @@ class bap2Project():
 		#------------------------
 		self.reference_genome = reference_genome
 		if any(self.reference_genome == s for s in supported_genomes):
-			click.echo(gettime() + "Found designated reference genome: %s" % self.reference_genome)
 			
 			self.tssFile = script_dir + "/anno/TSS/" + self.reference_genome + ".refGene.TSS.bed"
 			self.blacklistFile = script_dir + "/anno/blacklist/" + self.reference_genome + ".full.blacklist.bed"
@@ -187,9 +186,14 @@ class bap2Project():
 		#------------------------------	
 		if(bedtools_genome != ""):
 			if(os.path.isfile(bedtools_genome)):
+				click.echo(gettime() + "Importing custom reference genome files.")
 				self.bedtoolsGenomeFile = bedtools_genome
 			else: 
 				sys.exit("Could not find the bedtools genome file: %s" % bedtools_genome)
+		else:
+			# Cleaned up case
+			click.echo(gettime() + "Found designated reference genome: %s" % self.reference_genome)
+
 				
 		if(blacklist_file != ""):
 			if(os.path.isfile(blacklist_file)):
@@ -207,7 +211,7 @@ class bap2Project():
 			if(os.path.isfile(peak_file)):
 				self.peakFile = peak_file
 			else: 
-				sys.exit("Could not find the transcription start sites file: %s" % peak_file)
+				sys.exit("Could not find the peaks file: %s" % peak_file)
 		else:
 			self.peakFile = ""
 		

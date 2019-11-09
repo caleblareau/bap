@@ -1,4 +1,8 @@
 
+# 0.6.5
+- Fix an error in bap-barcode as well as warning reporting
+- Auto-remove whitespace from the genome parser
+
 # 0.6.4
 - Inclusion of a prior table to skip merges when a prior annotation is known
 

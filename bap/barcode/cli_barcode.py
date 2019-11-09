@@ -44,7 +44,7 @@ def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches, reve
 	
 	__version__ = get_distribution('bap-atac').version
 	script_dir = os.path.dirname(os.path.realpath(__file__))
-	click.echo(gettime() + "Starting de-barcoding from bap pipeline v%s" % __version__)
+	click.echo(gettime() + "Starting de-barcoding from bap pipeline v%s\n" % __version__)
 	
 	# Parse user settings
 	core_call1 = " --fastq1 " + fastq1 + " --fastq2 " + fastq2 + " --ncores " + str(ncores) 
@@ -80,6 +80,6 @@ def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches, reve
 		sys.exit(gettime() + "User-supplied mode %s not found!" % mode)
 	
 	# Assemble the final call
-	sys_call = cmd + earlier + later + core_call
+	sys_call = cmd + earlier + later + core_call + " 2> "+output+".stderr.txt"
 	os.system(sys_call)
 		
