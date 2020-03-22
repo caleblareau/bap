@@ -20,8 +20,8 @@ from itertools import repeat
 from Bio import SeqIO
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
+from rapidfuzz import fuzz
+from rapidfuzz import process
 from fuzzysearch import find_near_matches
 
 #### OPTIONS ####
