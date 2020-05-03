@@ -69,7 +69,7 @@ class bapFragProject():
 		#----------------------------------
 		# Assign straightforward attributes
 		#----------------------------------
-		self.bap_version = get_distribution('bap').version
+		self.bap_version = get_distribution('bap-atac').version
 		self.script_dir = script_dir
 		self.bamfile = input
 		self.name = name
