@@ -5,8 +5,8 @@ import sys
 import gzip
 from itertools import repeat
 
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
+from rapidfuzz import fuzz
+from rapidfuzz import process
 from fuzzysearch import find_near_matches
 
 def batch_iterator(iterator, batch_size):

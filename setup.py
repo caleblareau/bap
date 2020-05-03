@@ -4,7 +4,7 @@ bap: Bead-based scATAC-seq data Processing
 from setuptools import find_packages, setup
 from distutils.core import setup, Extension
 
-dependencies = ['python-Levenshtein','biopython','fuzzysearch','fuzzywuzzy','click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
+dependencies = ['biopython','fuzzysearch','click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
 
 setup(
     name='bap-atac',
