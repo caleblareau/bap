@@ -8,7 +8,7 @@ dependencies = ['biopython','fuzzysearch','click', 'pytest', 'snakemake', 'optpa
 
 setup(
     name='bap-atac',
-    version='0.6.6',
+    version='0.6.7',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',

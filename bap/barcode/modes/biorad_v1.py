@@ -115,10 +115,10 @@ def extract_barcode_v1(sequence1):
 		me_hit = find_near_matches(me, sequence1[55:95], max_l_dist=2)
 		
 		# Now grab the barcodes
-		bc1, mm1 = prove_barcode(sequence1[c1_hit[0][0]-6:c1_hit[0][0]], barcodes, n_mismatch)
-		bc2, mm2 = prove_barcode(sequence1[c1_hit[0][1]:c2_hit[0][0]+20], barcodes, n_mismatch)
-		bc3, mm3 = prove_barcode(sequence1[c2_hit[0][1]+20:nxt_hit[0][0]+47], barcodes, n_mismatch)
-		seq = sequence1[me_hit[0][1]+55:]
+		bc1, mm1 = prove_barcode(sequence1[c1_hit[0].start-6:c1_hit[0].start], barcodes, n_mismatch)
+		bc2, mm2 = prove_barcode(sequence1[c1_hit[0].end:c2_hit[0].start+20], barcodes, n_mismatch)
+		bc3, mm3 = prove_barcode(sequence1[c2_hit[0].end+20:nxt_hit[0].start+47], barcodes, n_mismatch)
+		seq = sequence1[me_hit[0].end+55:]
 	
 		return(bc1 + "_" + bc2 + "_" + bc3, seq, str(mm1)+","+str(mm2)+","+str(mm3))
 	except:

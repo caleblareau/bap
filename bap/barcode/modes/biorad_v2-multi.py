@@ -107,10 +107,10 @@ def extractbarcode_v2_tn5(sequence1):
 		
 		# Now grab the barcodes
 		bc1, mm1 = prove_barcode(sequence1[0:7], barcodes, n_mismatch)
-		bc2, mm2 = prove_barcode(sequence1[c1_hit[0][1]+7:c2_hit[0][0]+23], barcodes, n_mismatch)
-		bc3, mm3 = prove_barcode(sequence1[c2_hit[0][1]+23:nxt_hit[0][0]+33], barcodes, n_mismatch)
-		bc_tn5, mm4 = prove_barcode(sequence1[nxt_hit[0][1]+33:me_hit[0][0]+55], tn5, n_mismatch)
-		seq = sequence1[me_hit[0][1]+55:]
+		bc2, mm2 = prove_barcode(sequence1[c1_hit[0].end+7:c2_hit[0].start+23], barcodes, n_mismatch)
+		bc3, mm3 = prove_barcode(sequence1[c2_hit[0].end+23:nxt_hit[0].start+33], barcodes, n_mismatch)
+		bc_tn5, mm4 = prove_barcode(sequence1[nxt_hit[0].end+33:me_hit[0].start+55], tn5, n_mismatch)
+		seq = sequence1[me_hit[0].end+55:]
 		
 		return(bc1 + "_" + bc2 + "_" + bc3 + "_" + bc_tn5, seq, str(mm1)+","+str(mm2)+","+str(mm3)+","+str(mm4))
 	except:
