@@ -4,11 +4,11 @@ bap: Bead-based scATAC-seq data Processing
 from setuptools import find_packages, setup
 from distutils.core import setup, Extension
 
-dependencies = ['biopython','fuzzysearch','click', 'pytest', 'snakemake', 'optparse-pretty', 'regex', 'pysam', 'ruamel.yaml']
+dependencies = ['biopython','fuzzysearch','click', 'pytest', 'snakemake', 'optparse-pretty', 'multiprocess', 'regex', 'pysam', 'ruamel.yaml', 'biopython']
 
 setup(
     name='bap-atac',
-    version='0.6.7',
+    version='0.7.0',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'bap = bap.cli_old_dontEdit:main',
             'bap-barcode = bap.barcode.cli_barcode:main',
+            'bap-scale = bap.barcode.cli_scaleatac:main',
             'bap2 = bap.cli_bap2:main',
             'bap-frag = bap.cli_bap_frag:main',
             'bap-bulk-frag = bap.cli_bap_bulk_frag:main',
@@ -35,8 +36,8 @@ setup(
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
         # 'Development Status :: 3 - Alpha',
-         'Development Status :: 4 - Beta',
-        # 'Development Status :: 5 - Production/Stable',
+        # 'Development Status :: 4 - Beta',
+         'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
         # 'Development Status :: 7 - Inactive',
         'Environment :: Console',

@@ -68,14 +68,6 @@ def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches, reve
 		cmd = 'python '+script_dir+'/modes/biorad_v2-multi.py '
 		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
 		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
-	elif(mode == "10X-v1"):
-		if(reverse_complement):
-			rc = " --reverse-complement 1 "
-		else:
-			rc = " --reverse-complement 0 "
-		cmd = 'python '+script_dir+'/modes/tenX_v1.py '
-		earlier = " --barcodesFile " + script_dir+'/modes/10Xdata/737K-cratac-v1.txt.gz'
-		later = " --fastqI " + fastqi + rc
 	else:
 		sys.exit(gettime() + "User-supplied mode %s not found!" % mode)
 	

@@ -174,6 +174,24 @@ def filterExistingSamples(samples, fastq1, fastq2, output):
 	# already exist
 	return(samples, fastq1, fastq2)
 
+# Process through iterator
+def batch_iterator(iterator, batch_size):
+	entry = True  # Make sure we loop once
+	while entry:
+		batch = []
+		while len(batch) < batch_size:
+			try:
+				entry = iterator.__next__()
+			except StopIteration:
+				entry = None
+			if entry is None:
+				# End of file
+				break
+			batch.append(entry)
+		if batch:
+			yield batch
+
+
 # https://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-using-python	
 def available_cpu_count():
 	'''

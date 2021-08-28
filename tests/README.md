@@ -29,6 +29,11 @@ bap-barcode v2.1 -a fastq_br/biorad_v2_R1.fastq.gz -b fastq_br/biorad_v2_R2.fast
 ```
 
 
+## Scale-ATAC
+```
+ bap-scale -f fastq_br/scale -s ScaleTest -o ScalePro
+```
+
 #### Docker
 
 Notes for CAL:
