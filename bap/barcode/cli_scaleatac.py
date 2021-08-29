@@ -130,6 +130,7 @@ def main(fastqs, sample, output, ncores, nreads):
 					missed_tn5 += mismapped_counts[1]
 					missed_both += mismapped_counts[2]
 					npass += mismapped_counts[3]
+					
 	nfail = missed_tn5 + missed_bead - missed_both
 	total = nfail + npass
 	print("Total reads that passed: "+str(npass) + "; Total reads that failed: "+str(nfail))

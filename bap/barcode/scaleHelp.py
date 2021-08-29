@@ -62,7 +62,7 @@ def debarcode_correct_trio(trio):
 	tn5_barcode = sequence2[0:8]
 	corrected_tn5_barcode = correct_tn5_barcode(tn5_barcode)
 	sequence2 = sequence2[8+19:]
-	quality2  = sequence2[8+19:]
+	quality2  = quality2[8+19:]
 	
 	bad_tn5 = 0
 	bad_bead = 0
@@ -78,9 +78,10 @@ def debarcode_correct_trio(trio):
 		bad_both = 1
 	ok = 1 - bad_tn5 - bad_bead + bad_both
 	
-	if(bad_bead + bad_tn5 == 0):
-		ofq1 = formatRead(corrected_bead_barcode + "_" + corrected_tn5_barcode + "_" + title1, sequence1, quality1)
-		ofq2 = formatRead(corrected_bead_barcode + "_" + corrected_tn5_barcode + "_" + title2, sequence2, quality2)
+	if((ok == 1) & (len(sequence2) > 5)):
+		cb = " CB:Z:" + corrected_bead_barcode + corrected_tn5_barcode
+		ofq1 = formatRead(title1.split(" ")[0]+cb, sequence1, quality1)
+		ofq2 = formatRead(title2.split(" ")[0]+cb, sequence2, quality2)
 		return([[ofq1, ofq2], [bad_bead, bad_tn5, bad_both, ok]])
 	else:
 		return([["",""], [bad_bead, bad_tn5, bad_both, ok]])
