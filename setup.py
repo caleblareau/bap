@@ -8,7 +8,7 @@ dependencies = ['biopython','fuzzysearch','click', 'pytest', 'snakemake', 'optpa
 
 setup(
     name='bap-atac',
-    version='0.7.0',
+    version='0.7.1',
     url='https://github.com/caleblareau/bap',
     license='MIT',
     author='Caleb Lareau',
@@ -25,7 +25,6 @@ setup(
             'bap = bap.cli_old_dontEdit:main',
             'bap-barcode = bap.barcode.cli_barcode:main',
             'bap-scale = bap.barcode.cli_scaleatac:main',
-            'bap-pro = bap.cli_bappro:main',
             'bap2 = bap.cli_bap2:main',
             'bap-frag = bap.cli_bap_frag:main',
             'bap-bulk-frag = bap.cli_bap_bulk_frag:main',

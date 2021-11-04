@@ -63,6 +63,8 @@ SAMPLES = SAMPLES + mito_sample
 
 # Create vectors of inputs
 rdsin = [re.sub(".raw.bam$", "_overlapCount.rds", x.replace("/filt_split/", "/frag_overlap/")) for x in SAMPLES_noMito]
+rdsin_adjacent = [re.sub(".raw.bam$", "_adjacentBpCount.rds", x.replace("/filt_split/", "/frag_overlap/")) for x in SAMPLES_noMito]
+
 chrOut = [x.replace("/filt_split/", "/drop_barcode/") for x in SAMPLES_noMito]
 
 simple = [re.sub(".raw.bam$", "", x.replace(output + "/temp/filt_split/", "")) for x in SAMPLES]
@@ -83,6 +85,7 @@ determineDoubles_R = script_dir + "/bin/R/23_callDoublets_bap2.R"
 reannoFrags_R = script_dir + "/bin/R/24_reannoFrags_bap2.R"
 paint_py = script_dir + "/bin/python/25_paintDropBarcode_bap2.py"
 qcRep1_R = script_dir + "/bin/R/26a_QCsimple_bap2.R"
+aggr_adj_tn5_R = script_dir + "/bin/R/27_aggregate_adjacent_Tn5.R"
 
 
 rule all:
@@ -90,6 +93,7 @@ rule all:
 		outdir + "/final/"+name+".implicatedBarcodes.csv.gz",
 		outdir + "/final/"+name+".barcodeTranslate.tsv",
 		outdir + "/final/"+name+".NCsumstats.tsv",
+		outdir + "/final/"+name+".adjacentTn5.rds",
 		outdir + "/final/"+name+".HQbeads.tsv",
 		outdir + "/final/"+name+".bap.bam",
 		outdir + "/final/"+name+".bap.bam.bai",
@@ -209,7 +213,8 @@ rule compute_bap_stat_chr:
 		annobedpe = output + "/temp/filt_split/" + "{name}" + ".frag.bedpe.annotated.tsv.gz"
 	output:
 		fragrds = output + "/temp/frag_overlap/" + "{name}" + "_overlapCount.rds",
-		nc_count = output + "/temp/frag_overlap/" + "{name}" + "_ncCount.tsv"
+		nc_count = output + "/temp/frag_overlap/" + "{name}" + "_ncCount.tsv",
+		tn5rds = output + "/temp/frag_overlap/" + "{name}" + "_adjacentBpCount.rds"
 	threads:
 		1
 	run:
@@ -234,6 +239,22 @@ rule determine_barcode_merges:
 		rdsdir = outdir + "/temp/frag_overlap"
 		r_call_findDoublets = " ".join([R+"script", determineDoubles_R, rdsdir, input.forKnee, input.HQbeads, output.outcsv, minimum_jaccard_index, name, one_to_one, barcoded_tn5, barcode_prior_file])
 		os.system(r_call_findDoublets)
+
+# Adjacent Tn5 work
+rule aggregate_adjacent_Tn5:
+	input:
+		rdsin_adjacent = rdsin_adjacent
+	output:
+		adjacent_Tn5_overlap = outdir + "/final/"+name+".adjacentTn5.rds"
+	threads:
+		1
+	run: 	
+		# collate chr inference and make a single file
+		rdsdir = outdir + "/temp/frag_overlap"
+		r_call_aggr_tn5 = " ".join([R+"script", aggr_adj_tn5_R, rdsdir, output.adjacent_Tn5_overlap])
+		print(r_call_aggr_tn5)
+		os.system(r_call_aggr_tn5)
+
 
 rule reannotate_fragments_get_summary_stats_chr:
 	input:

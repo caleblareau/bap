@@ -29,15 +29,15 @@ regularize_threshold <- as.numeric(args[i+6])
 # Don't execute-- strictly for testing
 if(FALSE){
   nc_threshold <- 6
-  hq_beads_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/final/jaccardPairsForIGV.HQbeads.tsv"
-  anno_bedpe_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/temp/filt_split/jaccardPairsForIGV.chr12.frag.bedpe.annotated.tsv.gz"
-  out_frag_rds_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/temp/frag_overlap/jaccardPairsForIGV.chr12_overlapCount.rds"
-  out_nc_count_file <- "~/dat/Research/BuenrostroResearch/lareau_dev/bap/tests/bap2/temp/frag_overlap/jaccardPairsForIGV.chr12_ncCount.tsv"
+  hq_beads_file <- "~/dat/Research/Boston/lareau_dev/bap/tests/bap2/final/jaccardPairsForIGV.HQbeads.tsv"
+  anno_bedpe_file <- "~/dat/Research/Boston/lareau_dev/bap/tests/bap2/temp/filt_split/jaccardPairsForIGV.chr12.frag.bedpe.annotated.tsv.gz"
+  out_frag_rds_file <- "~/dat/Research/Boston/lareau_dev/bap/tests/bap2/temp/frag_overlap/jaccardPairsForIGV.chr12_overlapCount.rds"
+  out_nc_count_file <- "~/dat/Research/Boston/lareau_dev/bap/tests/bap2/temp/frag_overlap/jaccardPairsForIGV.chr12_ncCount.tsv"
 }
 
 
 # Import fragments
-frags <- fread(cmd = paste0("zcat < ", anno_bedpe_file), col.names = c("read_name", "chr", "start", "end", "bead_barcode"))
+frags <- fread(anno_bedpe_file, col.names = c("read_name", "chr", "start", "end", "bead_barcode"))
 HQbeads <- fread(hq_beads_file, col.names = "beads", header = FALSE)[[1]]
 
 # Filter 1 for eligible barcodes
@@ -72,7 +72,7 @@ make_insert_overlap <- function(element_in_table){
   )
   GAfilt <- makeGRangesFromDataFrame(inserts_df)
   ov <- findOverlaps(GAfilt, GAfilt, type = "equal")
-
+  
   # Make a dataframe of all combinations that have fragments overlapping
   bc1 = barcodes[queryHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
   bc2 = barcodes[subjectHits(ov)[ queryHits(ov) !=  subjectHits(ov)]]
@@ -97,7 +97,42 @@ hugeDF <- rbind(
 # Break up previous massive dplyr call for speed in data.table
 implicatedPairs <- hugeDF[, .(n_both = .N/2), by = list(barc1, barc2)]
 implicatedPairs <- implicatedPairs[n_both >= regularize_threshold]
-  
+
+
+#----------------------
+# New: bap adjacent tn5
+#----------------------
+data.frame(
+  chr = frags$chr,
+  start = frags$start,
+  end = frags$start +1, 
+  barcode = frags$bead_barcode
+) %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE) -> gr1
+
+data.frame(
+  chr = frags$chr,
+  start = frags$end,
+  end = frags$end +1, 
+  barcode = frags$bead_barcode
+) %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE) -> gr2
+
+# Get distances to close transposition events and summarize things
+grd <- distanceToNearest(gr1, gr2)
+
+distance_dt <- data.table(
+  distance = grd@elementMetadata@listData$distance,
+  idx1 = gr1@ranges@start[grd@from],
+  idx2 = gr2@ranges@start[grd@to],
+  bc1 = gr1@elementMetadata$barcode[grd@from],
+  bc2 = gr2@elementMetadata$barcode[grd@to]
+) %>% filter(bc1 != bc2) %>%
+  mutate(barc1 = ifelse(bc1 < bc2, bc1, bc2)) %>% 
+  mutate(barc2 = ifelse(bc1 < bc2, bc2, bc1)) %>% 
+  mutate(distance_computed = idx2 - idx1) %>%
+  filter(distance_computed < 11 & distance_computed > -11)
+
+distance_dt_aggregate <- distance_dt[, .(count = .N), by=list(barc1, barc2, distance_computed)]
+
 # Export
 saveRDS(implicatedPairs, file = out_frag_rds_file)
-
+saveRDS(distance_dt_aggregate, file =  gsub("_overlapCount.rds", "_adjacentBpCount.rds", out_frag_rds_file))
