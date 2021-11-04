@@ -37,6 +37,17 @@ mitochr = options.mito_chr
 
 cpu = int(options.ncores)
 bedtoolsGenomeFile = options.bedtools_reference_genome
+
+# Handle the chromosomes
+chrlens = {}
+with open(bedtoolsGenomeFile) as f:
+	for line in f:
+		tok = line.split("\t")
+		chrlens[tok[0]] = tok[1].strip()
+
+chrlenpass = {x : chrlens[x] for x in chrlens }
+chrs = list(chrlenpass.keys())
+
 def intersection(lst1, lst2):
 	lst3 = [value for value in lst1 if value in lst2]
 	return lst3
@@ -85,33 +96,26 @@ def writeBeadReadName(two):
 	pysam.index(new_bam)
 	return(chrom)
 
-# Handle the chromosomes
-chrlens = {}
-with open(bedtoolsGenomeFile) as f:
-	for line in f:
-		tok = line.split("\t")
-		chrlens[tok[0]] = tok[1].strip()
 
-chrlenpass = {x : chrlens[x] for x in chrlens }
-chrs = list(chrlenpass.keys())
-	
-# Final loop to write out passing reads
-read_barcode_file = [out + "/" + name + "." + chr + ".read_bead." +"tsv.gz" for chr in chrs]
+if __name__ ==  '__main__':
 
-pool = Pool(processes=cpu)
-toy_out = pool.map(writeBeadReadName, zip(chrs, read_barcode_file))
-pool.close()
+	# Final loop to write out passing reads
+	read_barcode_file = [out + "/" + name + "." + chr + ".read_bead." +"tsv.gz" for chr in chrs]
 
-# Make some routing files
-bamchrfiles = [out + "/" + name + "." + chr + ".raw" +".bam" for chr in chrs if chr != mitochr]
-bamchrrouter = open(out.replace("temp/filt_split", ".internal/samples") + "/" + name + ".chrbam.txt", "w") 
-for v in bamchrfiles:
-	bamchrrouter.write(v+"\n")
-bamchrrouter.close() 
+	pool = Pool(processes=cpu)
+	toy_out = pool.map(writeBeadReadName, zip(chrs, read_barcode_file))
+	pool.close()
 
-bamchrrouter2 = open(out.replace("temp/filt_split", ".internal/samples") + "/" + name + ".mitochrbam.txt", "w")
-bamchrrouter2.write(out + "/" + name + "." + mitochr + ".raw" +".bam"+"\n")
-bamchrrouter2.close() 
+	# Make some routing files
+	bamchrfiles = [out + "/" + name + "." + chr + ".raw" +".bam" for chr in chrs if chr != mitochr]
+	bamchrrouter = open(out.replace("temp/filt_split", ".internal/samples") + "/" + name + ".chrbam.txt", "w") 
+	for v in bamchrfiles:
+		bamchrrouter.write(v+"\n")
+	bamchrrouter.close() 
+
+	bamchrrouter2 = open(out.replace("temp/filt_split", ".internal/samples") + "/" + name + ".mitochrbam.txt", "w")
+	bamchrrouter2.write(out + "/" + name + "." + mitochr + ".raw" +".bam"+"\n")
+	bamchrrouter2.close() 
 
 
 

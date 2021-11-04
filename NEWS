@@ -1,3 +1,7 @@
+
+# 0.7.0
+- Added additional support for barcoded tn5
+
 # 0.6.7
 - Fixed an error in bap-barcode associated with a new version of fuzzysearch
 

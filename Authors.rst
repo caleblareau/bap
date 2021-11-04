@@ -5,6 +5,5 @@ Credits
 Development Lead
 ----------------
 
-* Caleb Lareau <clareau@broadinstitute.org>
-
+* Caleb Lareau <clareau@gmail.com>
 

@@ -80,8 +80,8 @@ def main(mode, input, output, name, ncores, reference_genome,
 	drop_tag, bead_tag):
 	
 	"""
-	bap2: ~improved~ Bead-based scATAC-seq data Processing \n
-	Caleb Lareau, clareau <at> broadinstitute <dot> org \n
+	bap-pro: ~improved~ Bead-based scATAC-seq data Processing \n
+	Caleb Lareau, caleb.lareau <at> gmail <dot> com \n
 	
 	mode = ['bam', 'check', 'support']\n
 	"""
@@ -193,6 +193,7 @@ def main(mode, input, output, name, ncores, reference_genome,
 		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
 		line3 = p.bead_tag + " --bedtools-reference-genome " + p.bedtoolsGenomeFile 
 		line4 = " --mito-chr " +p.mitochr + " --ncores " + str(ncores) + " --mapq " + str(mapq)
+		
 		
 		filt_split_cmd = line1 + line2 + line3 + line4 
 		os.system(filt_split_cmd)
