@@ -53,6 +53,10 @@ def mitoChr(reference_genome, mito_chromosome):
 			return("chrM")
 		elif(reference_genome in ["GRCh37", "GRCh38", "GRCm37", "GRCm38"]):
 			return("MT")
+		elif(reference_genome in ["hg38_mm10_s"]):
+			return("Homo_sapiens.MT")
+		elif(reference_genome in ["hg38.mm10"]):
+			return("hg38.chrM")
 		elif(reference_genome == "hg19_mm10_c"):
 			return("humanM")
 		else:
