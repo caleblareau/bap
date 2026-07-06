@@ -2,22 +2,11 @@ import click
 import os
 import os.path
 import sys
-import shutil
-import yaml
-import random
-import string
-import itertools
-import time
 
-import csv
-import re
-from itertools import groupby
 from ..bapHelp import *
-from pkg_resources import get_distribution
-from subprocess import call, check_call
 
 @click.command()
-@click.version_option()
+@click.version_option(version=bap_version())
 
 @click.argument('mode', type=click.Choice(['v1.0', 'v2.0', 'v2.1', 'v2.1-multi', '10X-v1']))
 
@@ -42,36 +31,37 @@ def main(mode, fastq1, fastq2, fastqi, output, ncores, nreads, nmismatches, reve
 	mode = ['v1.0', 'v2.0', 'v2.1', 'v2.1-multi', '10X-v1'] for bead design\n
 	"""
 	
-	__version__ = get_distribution('bap-atac').version
+	__version__ = bap_version()
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 	click.echo(gettime() + "Starting de-barcoding from bap pipeline v%s\n" % __version__)
 	
 	# Parse user settings
-	core_call1 = " --fastq1 " + fastq1 + " --fastq2 " + fastq2 + " --ncores " + str(ncores) 
-	core_call2 = " --nreads " + str(nreads) + " --nmismatches " + str(nmismatches) + " --output " + output
-	core_call = core_call1 + core_call2
-	
+	core_call = [
+		"--fastq1", fastq1, "--fastq2", fastq2, "--ncores", str(ncores),
+		"--nreads", str(nreads), "--nmismatches", str(nmismatches), "--output", output,
+	]
+
 	# Handle mode to handle the configuration and make the right system call
 	if(mode == "v1.0"):
-		cmd = 'python '+script_dir+'/modes/biorad_v1.py '
-		earlier = " --constant1 " + "TAGCCATCGCATTGC" + " --constant2 " + "TACCTCTGAGCTGAA"
-		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
+		script = script_dir + "/modes/biorad_v1.py"
+		earlier = ["--constant1", "TAGCCATCGCATTGC", "--constant2", "TACCTCTGAGCTGAA"]
+		later = ["--nextera", "TCGTCGGCAGCGTC", "--me", "AGATGTGTATAAGAGACAG"]
 	elif(mode == "v2.0"):
-		cmd = 'python '+script_dir+'/modes/biorad_v2.py '
-		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
-		later = " --nextera " + "TGGTAGAGAGGGTG" + " --me " + "AGATGTGTATAAGAGACAG"
+		script = script_dir + "/modes/biorad_v2.py"
+		earlier = ["--constant1", "TATGCATGAC", "--constant2", "AGTCACTGAG"]
+		later = ["--nextera", "TGGTAGAGAGGGTG", "--me", "AGATGTGTATAAGAGACAG"]
 	elif(mode == "v2.1"):
-		cmd = 'python '+script_dir+'/modes/biorad_v2.py '
-		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
-		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
+		script = script_dir + "/modes/biorad_v2.py"
+		earlier = ["--constant1", "TATGCATGAC", "--constant2", "AGTCACTGAG"]
+		later = ["--nextera", "TCGTCGGCAGCGTC", "--me", "AGATGTGTATAAGAGACAG"]
 	elif(mode == "v2.1-multi"):
-		cmd = 'python '+script_dir+'/modes/biorad_v2-multi.py '
-		earlier = " --constant1 " + "TATGCATGAC" + " --constant2 " + "AGTCACTGAG"
-		later = " --nextera " + "TCGTCGGCAGCGTC" + " --me " + "AGATGTGTATAAGAGACAG"
+		script = script_dir + "/modes/biorad_v2-multi.py"
+		earlier = ["--constant1", "TATGCATGAC", "--constant2", "AGTCACTGAG"]
+		later = ["--nextera", "TCGTCGGCAGCGTC", "--me", "AGATGTGTATAAGAGACAG"]
 	else:
 		sys.exit(gettime() + "User-supplied mode %s not found!" % mode)
-	
-	# Assemble the final call
-	sys_call = cmd + earlier + later + core_call + " 2> "+output+".stderr.txt"
-	os.system(sys_call)
+
+	# Assemble the final call; stderr is captured to a log file (stdout stays on the terminal)
+	sys_call = [sys.executable, script] + earlier + later + core_call
+	run_cmd(sys_call, log_file=output + ".stderr.txt", log_stderr_only=True)
 		

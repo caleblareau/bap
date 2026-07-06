@@ -9,5 +9,7 @@ recursive-include bap *
 
 # Misc
 include Authors.rst
-include LICENSE.txt
+include LICENSE
 include NEWS
+include README.md
+include pyproject.toml

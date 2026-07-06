@@ -8,8 +8,6 @@ import string
 import itertools
 import time
 import platform
-from ruamel import yaml
-from pkg_resources import get_distribution
 from .bapHelp import *
 
 def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, supported_genomes):
@@ -75,7 +73,7 @@ class bap2Project():
 		#----------------------------------
 		# Assign straightforward attributes
 		#----------------------------------
-		self.bap_version = get_distribution('bap-atac').version
+		self.bap_version = bap_version()
 		self.script_dir = script_dir
 		self.mode = mode
 		self.output = output
@@ -173,12 +171,12 @@ class bap2Project():
 		else: 
 			click.echo(gettime() + "Could not identify this reference genome: %s" % self.reference_genome)
 			click.echo(gettime() + "Attempting to infer necessary input files from user specification.")
-			necessary = [bedtools_genome, blacklist_file, tss_file, macs2_genome_size, bs_genome]
+			necessary = [bedtools_genome, blacklist_file, tss_file]
 			if '' in necessary:
 				if reference_genome == '':
 					sys.exit("ERROR: specify valid reference genome with --reference-genome flag; QUITTING")
 				else:
-					sys.exit("ERROR: non-supported reference genome specified so these five must be validly specified: --bedtools-genome, --blacklist-file, --tss-file; QUITTING")
+					sys.exit("ERROR: non-supported reference genome specified so these three must be validly specified: --bedtools-genome, --blacklist-file, --tss-file; QUITTING")
 		
 		if(reference_genome in ["hg19-mm10", "hg19_mm10_c"]):
 			self.speciesMix = "yes"

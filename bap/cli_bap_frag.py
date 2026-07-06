@@ -3,22 +3,15 @@ import os
 import os.path
 import sys
 import shutil
-import yaml
-import random
-import string
-import itertools
-import time
+import glob
 import pysam
 
-from pkg_resources import get_distribution
-from subprocess import call, check_call
 from .bapHelp import *
 from .bapFragProjectClass import *
-from ruamel import yaml
-from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
+from ruamel.yaml import YAML
 
 @click.command()
-@click.version_option()
+@click.version_option(version=bap_version())
 
 @click.option('--input', '-i', help='Input for bap-frag; varies by which mode is specified; for `bam`, .bam file with an index.')
 @click.option('--output', '-o', default="bap_out", help='Output directory for analysis; this is where everything is housed.')
@@ -62,14 +55,14 @@ def main(input, output, name, ncores, reference_genome,
 	
 	"""
 	
-	__version__ = get_distribution('bap-atac').version
+	__version__ = bap_version()
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 
 	click.echo(gettime() + "Starting bap-frag pipeline v%s" % __version__)
-	
+
 	# Determine which genomes are available
-	rawsg = os.popen('ls ' + script_dir + "/anno/bedtools/*.sizes").read().strip().split("\n")
-	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]  
+	rawsg = sorted(glob.glob(script_dir + "/anno/bedtools/*.sizes"))
+	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]
 	
 	# Determine number of cores in main job
 	if(ncores == "detect"):
@@ -78,10 +71,10 @@ def main(input, output, name, ncores, reference_genome,
 		ncores = str(ncores)
 	
 	# Parameterize optional snakemake configuration
-	snakeclust = ""
+	snakeclust = []
 	njobs = int(jobs)
 	if(njobs > 0 and cluster != ""):
-		snakeclust = " --jobs " + str(jobs) + " --cluster '" + cluster + "' "
+		snakeclust = ["--jobs", str(jobs), "--cluster", cluster]
 		click.echo(gettime() + "Recognized flags to process jobs on a cluster.")
 
 	# Figure out if the specified reference genome is a species mix
@@ -149,14 +142,18 @@ def main(input, output, name, ncores, reference_genome,
 	click.echo(gettime() + "Splitting input bam files by chromosome for parallel processing.")
 	click.echo(gettime() + "User specified "+ncores+" cores for parallel processing.")
 	
-	line1 = 'python ' +script_dir+'/bin/python/20_names_split_filt.py --input '+p.bamfile
-	line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
-	line3 = p.bead_tag + " --bedtools-reference-genome " + p.bedtoolsGenomeFile 
-	line4 = " --mito-chr " +p.mitochr + " --ncores " + str(ncores) + " --mapq " + str(mapq)
-	
-	
-	filt_split_cmd = line1 + line2 + line3 + line4 
-	os.system(filt_split_cmd)
+	filt_split_cmd = [
+		sys.executable, script_dir + "/bin/python/20_names_split_filt.py",
+		"--input", p.bamfile,
+		"--name", p.name,
+		"--output", temp_filt_split,
+		"--barcode-tag", p.bead_tag,
+		"--bedtools-reference-genome", p.bedtoolsGenomeFile,
+		"--mito-chr", p.mitochr,
+		"--ncores", str(ncores),
+		"--mapq", str(mapq),
+	]
+	run_cmd(filt_split_cmd)
 
 	#----------------------------------------
 	# Step 2 - Process fragments by Snakemake
@@ -164,15 +161,22 @@ def main(input, output, name, ncores, reference_genome,
 	click.echo(gettime() + "Processing per-chromosome fragments in parallel. This is the most computationally intensive step.")
 	# Round trip the .yaml of user configuration
 	y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
+	yaml_writer = YAML()
+	yaml_writer.default_flow_style = False
 	with open(y_s, 'w') as yaml_file:
-		yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
-	os.system("cp " + y_s +  " " + logs + "/" + p.name + ".parameters.txt")
-	
+		yaml_writer.dump(dict(p), yaml_file)
+	shutil.copyfile(y_s, logs + "/" + p.name + ".parameters.txt")
+
 	# Assemble some log files for the snake file
 	snake_stats = logs + "/" + p.name + ".snakemake.stats"
 	snake_log = logs + "/" + p.name + ".snakemake.log"
-	snakecmd_chr = 'snakemake'+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap_frags --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+' &>' + snake_log
-	os.system(snakecmd_chr)
+	snakecmd_chr = ["snakemake"] + snakeclust + [
+		"--snakefile", script_dir + "/bin/snake/Snakefile.bap_frags",
+		"--cores", ncores,
+		"--config", "cfp=" + y_s,
+		"--stats", snake_stats,
+	]
+	run_cmd(snakecmd_chr, log_file=snake_log, check=False)
 		
 	
 	#-------------------------------------------------------

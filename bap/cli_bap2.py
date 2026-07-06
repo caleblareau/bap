@@ -3,22 +3,15 @@ import os
 import os.path
 import sys
 import shutil
-import yaml
-import random
-import string
-import itertools
-import time
+import glob
 import pysam
 
-from pkg_resources import get_distribution
-from subprocess import call, check_call
 from .bapHelp import *
 from .bap2ProjectClass import *
-from ruamel import yaml
-from ruamel.yaml.scalarstring import SingleQuotedScalarString as sqs
+from ruamel.yaml import YAML
 
 @click.command()
-@click.version_option()
+@click.version_option(version=bap_version())
 
 @click.argument('mode', type=click.Choice(['bam',  'check', 'support']))
 
@@ -86,15 +79,15 @@ def main(mode, input, output, name, ncores, reference_genome,
 	mode = ['bam', 'check', 'support']\n
 	"""
 	
-	__version__ = get_distribution('bap-atac').version
+	__version__ = bap_version()
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 
 	click.echo(gettime() + "Starting bap2 pipeline v%s" % __version__)
 	output = output.rstrip("/") # just for consistency
-	
+
 	# Determine which genomes are available
-	rawsg = os.popen('ls ' + script_dir + "/anno/bedtools/*.sizes").read().strip().split("\n")
-	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]  
+	rawsg = sorted(glob.glob(script_dir + "/anno/bedtools/*.sizes"))
+	supported_genomes = [x.replace(script_dir + "/anno/bedtools/chrom_", "").replace(".sizes", "") for x in rawsg]
 	
 	# Determine number of cores in main job
 	if(ncores == "detect"):
@@ -103,10 +96,10 @@ def main(mode, input, output, name, ncores, reference_genome,
 		ncores = str(ncores)
 	
 	# Parameterize optional snakemake configuration
-	snakeclust = ""
+	snakeclust = []
 	njobs = int(jobs)
 	if(njobs > 0 and cluster != ""):
-		snakeclust = " --jobs " + str(jobs) + " --cluster '" + cluster + "' "
+		snakeclust = ["--jobs", str(jobs), "--cluster", cluster]
 		click.echo(gettime() + "Recognized flags to process jobs on a cluster.")
 	
 
@@ -189,13 +182,18 @@ def main(mode, input, output, name, ncores, reference_genome,
 		click.echo(gettime() + "Splitting input bam files by chromosome for parallel processing.")
 		click.echo(gettime() + "User specified "+ncores+" cores for parallel processing.")
 		
-		line1 = 'python ' +script_dir+'/bin/python/20_names_split_filt.py --input '+p.bamfile
-		line2 = ' --name ' + p.name + ' --output ' + temp_filt_split + ' --barcode-tag ' 
-		line3 = p.bead_tag + " --bedtools-reference-genome " + p.bedtoolsGenomeFile 
-		line4 = " --mito-chr " +p.mitochr + " --ncores " + str(ncores) + " --mapq " + str(mapq)
-		
-		filt_split_cmd = line1 + line2 + line3 + line4 
-		os.system(filt_split_cmd)
+		filt_split_cmd = [
+			sys.executable, script_dir + "/bin/python/20_names_split_filt.py",
+			"--input", p.bamfile,
+			"--name", p.name,
+			"--output", temp_filt_split,
+			"--barcode-tag", p.bead_tag,
+			"--bedtools-reference-genome", p.bedtoolsGenomeFile,
+			"--mito-chr", p.mitochr,
+			"--ncores", str(ncores),
+			"--mapq", str(mapq),
+		]
+		run_cmd(filt_split_cmd)
 
 		#----------------------------------------
 		# Step 2 - Process fragments by Snakemake
@@ -203,22 +201,25 @@ def main(mode, input, output, name, ncores, reference_genome,
 		click.echo(gettime() + "Processing bam file using a Snakemake workflow. This is the most computationally intensive step.")
 		# Round trip the .yaml of user configuration
 		y_s = of + "/.internal/parseltongue/bap.object.bam.yaml"
+		yaml_writer = YAML()
+		yaml_writer.default_flow_style = False
 		with open(y_s, 'w') as yaml_file:
-			yaml.dump(dict(p), yaml_file, default_flow_style=False, Dumper=yaml.RoundTripDumper)
-		os.system("cp " + y_s +  " " + logs + "/" + p.name + ".parameters.txt")
-		
+			yaml_writer.dump(dict(p), yaml_file)
+		shutil.copyfile(y_s, logs + "/" + p.name + ".parameters.txt")
+
 		# Assemble some log files for the snake file
 		snake_stats = logs + "/" + p.name + ".snakemake.stats"
 		snake_log = logs + "/" + p.name + ".snakemake.log"
-		
-		# Handle edge cases of needing to write snakemake stdout to log
-		if(snakemake_stdout):
-			snake_log_preference = ""
-		else:
-			snake_log_preference = ' &>' + snake_log
-		
-		snakecmd_chr = p.snakemake+snakeclust+' --snakefile '+script_dir+'/bin/snake/Snakefile.bap2.chr --cores '+ncores+' --config cfp="' + y_s + '" --stats '+snake_stats+snake_log_preference
-		os.system(snakecmd_chr)
+
+		snakecmd_chr = [p.snakemake] + snakeclust + [
+			"--snakefile", script_dir + "/bin/snake/Snakefile.bap2.chr",
+			"--cores", ncores,
+			"--config", "cfp=" + y_s,
+			"--stats", snake_stats,
+		]
+		# Snakemake's own exit code is not checked here; success is verified below
+		# by the presence of the final .bam so the user gets an actionable message.
+		run_cmd(snakecmd_chr, log_file=(None if snakemake_stdout else snake_log), check=False)
 		
 		# Check to make sure snakemake Processing worked
 		finalBamFile = p.output + "/final/" + p.name + ".bap.bam"
@@ -236,12 +237,16 @@ def main(mode, input, output, name, ncores, reference_genome,
 			
 			dict_file = fin+"/"+p.name+".barcodeTranslate.tsv"
 			
-			line1 = 'python ' +script_dir+'/bin/python/17_processMito.py --input '+p.bamfile
-			line2 = ' --output ' + mito + "/" + p.name + ".mito.bam" + " --mitochr " + p.mitochr 
-			line3 = ' --bead-barcode ' + p.bead_tag + ' --drop-barcode ' + p.drop_tag + " --dict-file " + dict_file
-			mito_cmd = line1 + line2 + line3
-			
-			os.system(mito_cmd)
+			mito_cmd = [
+				sys.executable, script_dir + "/bin/python/17_processMito.py",
+				"--input", p.bamfile,
+				"--output", mito + "/" + p.name + ".mito.bam",
+				"--mitochr", p.mitochr,
+				"--bead-barcode", p.bead_tag,
+				"--drop-barcode", p.drop_tag,
+				"--dict-file", dict_file,
+			]
+			run_cmd(mito_cmd)
 		
 		
 		#-------------------------------------------------------

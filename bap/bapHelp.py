@@ -1,4 +1,3 @@
-import itertools
 import time
 import shutil
 import re
@@ -6,18 +5,61 @@ import os
 import sys
 import csv
 import gzip
-from ruamel import yaml
+import glob
+import subprocess
 from functools import partial
+from importlib.metadata import version, PackageNotFoundError
+
+
+def bap_version():
+	'''
+	Return the installed bap-atac version, or "unknown" if the package
+	metadata cannot be located (e.g. running from an uninstalled checkout).
+	'''
+	try:
+		return version("bap-atac")
+	except PackageNotFoundError:
+		return "unknown"
+
+
+def run_cmd(args, log_file=None, log_stderr_only=False, shell=False, check=True):
+	'''
+	Run an external command from a list of arguments (no shell by default),
+	raising a clear error if it fails. This replaces the historical
+	os.system(<string>) calls, avoiding shell-injection and quoting issues.
+
+	args:            list of command arguments (or a string when shell=True)
+	log_file:        optional path; command output is written here. By default
+	                 both stdout and stderr are captured (equivalent to `&>`).
+	log_stderr_only: when True, only stderr is captured to log_file and stdout
+	                 is inherited by the terminal (equivalent to `2>`).
+	shell:           only set True for commands that need a shell pipeline
+	check:           when True, exit with a clear message on a non-zero return
+	                 code; set False to let the caller inspect the result
+	'''
+	if log_file is not None:
+		with open(log_file, 'w') as fh:
+			if log_stderr_only:
+				completed = subprocess.run(args, stderr=fh, shell=shell)
+			else:
+				completed = subprocess.run(args, stdout=fh, stderr=subprocess.STDOUT, shell=shell)
+	else:
+		completed = subprocess.run(args, shell=shell)
+	if check and completed.returncode != 0:
+		printed = args if isinstance(args, str) else " ".join(str(a) for a in args)
+		sys.exit(gettime() + "ERROR: command failed (exit %d): %s" % (completed.returncode, printed))
+	return completed
+
 
 def string_hamming_distance(str1, str2):
 	'''
 	Fast hamming distance over 2 strings known to be of same length.
-	In information theory, the Hamming distance between two strings of equal 
-	length is the number of positions at which the corresponding symbols 
+	In information theory, the Hamming distance between two strings of equal
+	length is the number of positions at which the corresponding symbols
 	are different.
 	eg "karolin" and "kathrin" is 3.
 	'''
-	return sum(itertools.imap(operator.ne, str1, str2))
+	return sum(c1 != c2 for c1, c2 in zip(str1, str2))
 
 def intersection(lst1, lst2):
 	lst3 = [value for value in lst1 if value in lst2]
@@ -67,7 +109,7 @@ def get_software_path(tool, abs_path):
 		if(abs_path == ""):
 			sys.exit("ERROR: cannot find "+tool+" in environment; add it to user PATH environment or specify executable using a flag.")
 	if(abs_path != ""):
-		if(os.path.isfile(abs_file)):
+		if(os.path.isfile(abs_path)):
 			tool_path = abs_path
 	return(tool_path)
 
@@ -96,7 +138,10 @@ def check_R_packages(required_packages, R_path):
 	'''
 	Determines whether or not R packages are properly installed
 	'''
-	installed_packages = os.popen(R_path + ''' -e "installed.packages()" | awk '{print $1}' | sort | uniq''').read().strip().split("\n")
+	completed = subprocess.run(
+		[R_path, "--vanilla", "--slave", "-e", "cat(rownames(installed.packages()), sep='\\n')"],
+		stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+	installed_packages = completed.stdout.strip().split("\n")
 	if(not set(required_packages) < set(installed_packages)):
 		sys.exit("ERROR: cannot find the following R package: " + str(set(required_packages) - set(installed_packages)) + "\n" + 
 			"Install it in your R console and then try rerunning proatac (but there may be other missing dependencies).")
@@ -150,7 +195,7 @@ def inferSampleVectors(input):
 	
 	# Otherwise figure out .fastq files from directory, do the merging, and infer sample names
 	else:
-		files = os.popen("ls " + input.rstrip("/") +"/*.fastq.gz").read().strip().split("\n")
+		files = sorted(glob.glob(input.rstrip("/") + "/*.fastq.gz"))
 		if(len(files) < 2):
 			sys.exit("ERROR: input determined to be a directory but no paired .fastq.gz files found; QUITTING")
 		files1 = [filename.replace("_R1", "_1").replace("_R2", "_1").replace("_2", "_1") for filename in files]
