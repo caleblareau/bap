@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bap-atac"
+version = "0.7.1"
+description = "Bead-based scATAC-seq data Processing."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Caleb Lareau", email = "clareau@gmail.com" },
+]
+keywords = ["scATAC-seq", "single-cell", "bioinformatics", "barcode", "ATAC"]
+dependencies = [
+    "biopython",
+    "fuzzysearch",
+    "click",
+    "snakemake",
+    "optparse-pretty",
+    "multiprocess",
+    "regex",
+    "pysam",
+    "ruamel.yaml>=0.17",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Operating System :: Unix",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+[project.urls]
+Homepage = "https://github.com/caleblareau/bap"
+Documentation = "https://github.com/caleblareau/bap/wiki"
+Repository = "https://github.com/caleblareau/bap.git"
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+bap = "bap.cli_old_dontEdit:main"
+bap-barcode = "bap.barcode.cli_barcode:main"
+bap-scale = "bap.barcode.cli_scaleatac:main"
+bap2 = "bap.cli_bap2:main"
+bap-frag = "bap.cli_bap_frag:main"
+bap-bulk-frag = "bap.cli_bap_bulk_frag:main"
+bap-reanno = "bap.cli_reanno:main"
+
+[tool.setuptools]
+# Ship the non-Python assets (anno/, bin/, barcode/modes, barcode/whitelist, ...)
+# declared via MANIFEST.in's `recursive-include bap *`.
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["bap*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: end-to-end tests that require external tools (samtools, bedtools, R, snakemake); skipped automatically when they are absent",
+]

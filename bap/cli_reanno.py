@@ -2,22 +2,12 @@ import click
 import os
 import os.path
 import sys
-import shutil
-import yaml
-import random
-import string
-import itertools
-import time
 import pysam
 
-import csv
-import re
-from itertools import groupby
 from .bapHelp import *
-from pkg_resources import get_distribution
 
 @click.command()
-@click.version_option()
+@click.version_option(version=bap_version())
 
 @click.option('--input', '-i', help='Input bam file.')
 @click.option('--output', '-o', help='Output bam file.')
@@ -32,7 +22,7 @@ def main(input, output, sep, tag):
 	Caleb Lareau, clareau <at> broadinstitute <dot> org \n	
 	"""
 	
-	__version__ = get_distribution('bap-atac').version
+	__version__ = bap_version()
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 	click.echo(gettime() + "Starting re-barcoding from bap pipeline v%s" % __version__)
 	

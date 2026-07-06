@@ -2,22 +2,11 @@ import click
 import os
 import os.path
 import sys
-import shutil
-import yaml
-import random
-import string
-import itertools
-import time
 import glob
+import gzip
 
-import csv
-import re
-from itertools import groupby
 from ..bapHelp import *
 from .scaleHelp import *
-
-from pkg_resources import get_distribution
-from subprocess import call, check_call
 
 from multiprocessing import Pool, freeze_support
 from Bio import SeqIO
@@ -25,7 +14,7 @@ from Bio.Seq import Seq
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 @click.command()
-@click.version_option()
+@click.version_option(version=bap_version())
 
 @click.option('--fastqs', '-f', help='Path of folder created by mkfastq or bcl2fastq; can be comma separated that will be collapsed into one output.')
 @click.option('--sample', '-s', help='Prefix of the filenames of FASTQs to select; can be comma separated that will be collapsed into one output.')
@@ -43,7 +32,7 @@ def main(fastqs, sample, output, ncores, nreads):
 	Trims, processes Tn5 barcode, and corrects bead barcode in one shot \n
 	"""
 	
-	__version__ = get_distribution('bap-atac').version
+	__version__ = bap_version()
 	script_dir = os.path.dirname(os.path.realpath(__file__))
 	click.echo(gettime() + "Starting de-barcoding of scale data from bap pipeline v%s" % __version__)
 	

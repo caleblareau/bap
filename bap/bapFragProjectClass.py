@@ -8,8 +8,6 @@ import string
 import itertools
 import time
 import platform
-from ruamel import yaml
-from pkg_resources import get_distribution
 from .bapHelp import *
 
 def getBfiles(bedtools_genome, blacklist_file, reference_genome, script_dir, supported_genomes):
@@ -69,7 +67,7 @@ class bapFragProject():
 		#----------------------------------
 		# Assign straightforward attributes
 		#----------------------------------
-		self.bap_version = get_distribution('bap-atac').version
+		self.bap_version = bap_version()
 		self.script_dir = script_dir
 		self.bamfile = input
 		self.name = name
@@ -202,7 +200,7 @@ class bapBulkFragProject():
 		#----------------------------------
 		# Assign straightforward attributes
 		#----------------------------------
-		self.bap_version = get_distribution('bap').version
+		self.bap_version = bap_version()
 		self.script_dir = script_dir
 		self.bamfile = input
 		self.name = name
